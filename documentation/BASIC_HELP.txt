@@ -1,0 +1,3 @@
+Environment variables used:
++ IN_DEV: if set, app is launched in "debug" mode, with extra debugging nodes and more logged info
++ ALL_NODES_LIB_PATH: Path(s) where the app will scan for node classes

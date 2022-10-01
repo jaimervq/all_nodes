@@ -1,0 +1,36 @@
+# SCENE simple_regex
+# ------------------
+# Description: Simple regex pattern match
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- PrintToConsole_1:
+    class_name: PrintToConsole
+    x_pos: 129
+    y_pos: -141
+- RegexMatch_1:
+    class_name: RegexMatch
+    x_pos: -155
+    y_pos: -120
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      out_str: TEST_123_TEST
+    x_pos: -438
+    y_pos: -152
+- StrInput_2:
+    class_name: StrInput
+    node_attributes:
+      out_str: .+\d{3}.+$
+    x_pos: -437
+    y_pos: -35
+
+# Connections section: connections to be done between nodes
+connections:
+- RegexMatch_1.match -> PrintToConsole_1.in_object_0
+- StrInput_1.out_str -> RegexMatch_1.in_str
+- StrInput_2.out_str -> RegexMatch_1.pattern
+
+
+# Scene created at: 2022-11-02 10:59:39.085681
+# Created by: jaime.rvq

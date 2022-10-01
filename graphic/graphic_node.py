@@ -1,0 +1,830 @@
+# -*- coding: UTF-8 -*-
+"""
+Author: Jaime Rivera
+Date: November 2022
+Copyright: MIT License
+
+           Copyright (c) 2022 Jaime Rivera
+
+           Permission is hereby granted, free of charge, to any person obtaining a copy
+           of this software and associated documentation files (the "Software"), to deal
+           in the Software without restriction, including without limitation the rights
+           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+           copies of the Software, and to permit persons to whom the Software is
+           furnished to do so, subject to the following conditions:
+
+           The above copyright notice and this permission notice shall be included in all
+           copies or substantial portions of the Software.
+
+           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+           SOFTWARE.
+
+Brief:
+"""
+
+__author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
+__copyright__ = "Copyright 2022, Jaime Rivera"
+__credits__ = []
+__license__ = "MIT License"
+
+
+import ast
+
+from PySide2 import QtWidgets
+from PySide2 import QtCore
+from PySide2 import QtGui
+from PySide2 import QtSvg
+
+from all_nodes import constants
+from all_nodes import utils
+from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
+
+
+LOGGER = utils.get_logger(__name__)
+
+
+# -------------------------------- NODE CLASS -------------------------------- #
+class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
+    def __init__(self, logic_node, color_name):
+
+        # LOGIC NODE
+        self.logic_node = logic_node
+
+        # SHAPE
+        self.extra_header = 0
+        self.node_width = 450
+
+        # GRAPHICS OF THE NODE
+        QtWidgets.QGraphicsPathItem.__init__(self)
+        self.setData(0, constants.GRAPHIC_NODE)
+        self.setAcceptHoverEvents(True)
+        self.setFlags(
+            QtWidgets.QGraphicsPathItem.ItemIsMovable
+            | QtWidgets.QGraphicsPathItem.ItemIsSelectable
+            | QtWidgets.QGraphicsPathItem.ItemSendsScenePositionChanges
+        )
+
+        self.base_color = QtGui.QColor(color_name)
+        self.bright_color_name = utils.get_bright_color(color_name)
+
+        self.class_text = QtWidgets.QGraphicsTextItem(parent=self)
+        self.proxy_help_btn = QtWidgets.QGraphicsProxyWidget(parent=self)
+
+        self.selection_marquee = QtWidgets.QGraphicsPathItem(parent=self)
+        self.selection_marquee.hide()
+        self.error_marquee = QtWidgets.QGraphicsPathItem(parent=self)
+        self.error_marquee.setFlag(QtWidgets.QGraphicsItem.ItemStacksBehindParent)
+        self.error_marquee.hide()
+        self.glow = QtWidgets.QGraphicsPathItem(parent=self)
+        self.glow.hide()
+        self.additional_info_text = QtWidgets.QGraphicsTextItem(parent=self)
+
+        self.svg_renderer = QtSvg.QSvgRenderer("icons:badges.svg")
+        self.black = QtSvg.QGraphicsSvgItem(parentItem=self)
+        self.badge_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
+        self.badge_icon.setSharedRenderer(self.svg_renderer)
+        self.badge_icon.setElementId("neutral")
+        self.badge_icon.hide()
+
+        # ATTRIBUTES
+        self.graphic_attributes = []
+
+        # SPECIAL / INPUT
+        self.input_datatype = None
+        if hasattr(self.logic_node, "INPUT_TYPE"):
+            self.input_datatype = self.logic_node.INPUT_TYPE
+            self.extra_header = constants.HEADER_HEIGHT
+            self.setScale(0.7)
+
+        # SETUP
+        self.setup_node()
+        self.add_graphic_attributes()
+        self.make_shape()
+        self.place_graphic_attributes()
+        self.setup_widget()
+        self.update_attribute_from_widget()
+
+    @property
+    def node_height(self):
+        total_h = (
+            constants.HEADER_HEIGHT
+            + self.extra_header
+            + (self.logic_node.get_max_in_or_out_count()) * constants.STRIPE_HEIGHT
+        )
+        total_h += constants.STRIPE_HEIGHT
+
+        return total_h
+
+    def reset(self):
+        """Reset the appearance of the node, so it shows no execution feedback (badges, marquees...)."""
+        LOGGER.info("Resetting graphic node {}".format(self.logic_node.full_name))
+        self.badge_icon.hide()
+        self.error_marquee.hide()
+        self.additional_info_text.hide()
+        self.update_attribute_from_widget()
+
+    def show_result(self):
+        """Display visual indications around the node to show the result of its execution."""
+        self.badge_icon.show()
+
+        if self.logic_node.success == constants.NOT_RUN:
+            self.badge_icon.setElementId("neutral")
+            self.badge_icon.setToolTip("NOT RUN")
+
+            self.error_marquee.hide()
+
+        elif self.logic_node.success == constants.SUCCESSFUL:
+            self.badge_icon.setElementId("okay")
+            self.badge_icon.setToolTip('<p style="color: lime">SUCCESS!')
+
+            self.error_marquee.hide()
+
+        elif self.logic_node.success == constants.FAILED:
+            self.badge_icon.setElementId("failed")
+            self.badge_icon.setToolTip(
+                '<p style="color: orange">FAILED:<br>' + "<br>"
+                "".join(self.logic_node.fail_log)
+            )
+
+            self.additional_info_text.setHtml(
+                '<p style="color: orange">FAILED:<br>' + "<br>"
+                "".join(self.logic_node.fail_log)
+            )
+            if constants.IN_SCREEN_ERRORS:
+                self.additional_info_text.show()
+
+            self.error_marquee.setPen(constants.NODE_FAILED_PEN)
+            self.error_marquee.setBrush(constants.NODE_FAILED_BRUSH)
+            self.error_marquee.show()
+
+        elif self.logic_node.success == constants.ERROR:
+            self.badge_icon.setElementId("error")
+            self.badge_icon.setToolTip(
+                '<p style="color: red">ERROR:<br>'
+                + "<br>".join(self.logic_node.error_log)
+            )
+
+            self.additional_info_text.setHtml(
+                '<p style="color: red">ERROR:<br>'
+                + "<br>".join(self.logic_node.error_log)
+            )
+            if constants.IN_SCREEN_ERRORS:
+                self.additional_info_text.show()
+
+            self.error_marquee.setPen(constants.NODE_ERROR_PEN)
+            self.error_marquee.setBrush(constants.NODE_ERROR_BRUSH)
+            self.error_marquee.show()
+
+    def update_name(self):
+        """Update the text shown in the node's name."""
+        self.class_text.setHtml(
+            '<p align="left"><font color=white>{0}'.format(self.logic_node.full_name)
+        )
+
+    def update_attribute_from_widget(self):
+        if self.input_datatype == str:
+            text = self.proxy_input_widget.widget().text()
+            if text:
+                self.logic_node.set_special_attr_value("out_str", text)
+        elif self.input_datatype == dict:
+            text = self.proxy_input_widget.widget().text()
+            if text:
+                try:
+                    eval_dict = ast.literal_eval(text)
+                    if eval_dict and type(eval_dict) == dict:
+                        self.logic_node.set_special_attr_value("out_dict", eval_dict)
+                except (ValueError, SyntaxError):
+                    pass
+        elif self.input_datatype == list:
+            text = self.proxy_input_widget.widget().text()
+            if text:
+                try:
+                    eval_list = ast.literal_eval(text)
+                    if eval_list and type(eval_list) == list:
+                        self.logic_node.set_special_attr_value("out_list", eval_list)
+                except (ValueError, SyntaxError):
+                    pass
+        elif self.input_datatype == bool:
+            checked = self.proxy_input_widget.widget().isChecked()
+            self.logic_node.set_special_attr_value("out_bool", checked)
+        elif self.input_datatype == int:
+            val = self.proxy_input_widget.widget().value()
+            self.logic_node.set_special_attr_value("out_int", val)
+        elif self.input_datatype == float:
+            val = self.proxy_input_widget.widget().value()
+            self.logic_node.set_special_attr_value("out_float", val)
+            self.logic_node.set_special_attr_value("out_int", int(val))
+
+        if self.scene():
+            GS.attribute_editor_refresh_node_requested.emit(self.logic_node.uuid)
+
+    def guess_width_to_use(self):
+        longest_in_name = max(
+            [
+                attribute.attr_text.boundingRect().width()
+                for attribute in self.graphic_attributes
+                if attribute.connector_type == constants.INPUT
+            ]
+        )
+        longest_out_name = max(
+            [
+                attribute.attr_text.boundingRect().width()
+                for attribute in self.graphic_attributes
+                if attribute.connector_type == constants.OUTPUT
+            ]
+        )
+        self.node_width = max(
+            longest_in_name + longest_out_name,
+            self.class_text.boundingRect().width()
+            + self.proxy_help_btn.boundingRect().width()
+            + 20,
+        )
+
+        return False
+
+    def itemChange(self, change, value):
+        if change == QtWidgets.QGraphicsItem.GraphicsItemChange.ItemSelectedHasChanged:
+            self.set_selected_appearance()
+        elif change in [
+            QtWidgets.QGraphicsItem.GraphicsItemChange.ItemScenePositionHasChanged
+        ]:
+            self.redraw_lines()
+
+        return QtWidgets.QGraphicsItem.itemChange(self, change, value)
+
+    def redraw_lines(self):
+        self.scene().redraw_node_lines(self)
+
+    def setup_node(self):
+        # BASIC BORDER
+        self.setPen(QtGui.QPen(QtGui.QColor(self.bright_color_name), 2))
+
+        # NODE NAME
+        self.class_text.setHtml(
+            '<p align="left"><font color=white>{0}'.format(self.logic_node.full_name)
+        )
+        node_class_font = QtGui.QFont(
+            constants.NODE_FONT, int(0.4 * constants.HEADER_HEIGHT)
+        )
+        node_class_font.setUnderline(True)
+        self.class_text.setFont(node_class_font)
+        self.class_text.moveBy(10, 0)
+
+        # HELP
+        help_btn = QtWidgets.QPushButton(parent=None)
+        help_btn.setStyleSheet(
+            "QPushButton:hover{color:yellow; background-color:rgba(255,255,0,50)}"
+            "QPushButton{color:white; border-radius:3px; border:1px solid white; background:transparent;}"
+        )
+        help_btn.setFixedSize(
+            int(0.4 * constants.HEADER_HEIGHT), int(0.4 * constants.HEADER_HEIGHT)
+        )
+        help_btn.setText("?")
+        help_btn.setFont(
+            QtGui.QFont(constants.NODE_FONT, int(0.45 * help_btn.height()))
+        )
+        help_btn.clicked.connect(self.show_help)
+        self.proxy_help_btn = QtWidgets.QGraphicsProxyWidget(parent=self)
+        self.proxy_help_btn.setWidget(help_btn)
+
+        # ADDITIONAL INFO
+        node_id_font = QtGui.QFont(
+            constants.NODE_FONT, int(0.2 * constants.STRIPE_HEIGHT)
+        )
+        self.additional_info_text.setFont(node_id_font)
+        self.additional_info_text.hide()
+
+    def make_shape(self):
+        # BASIC SHAPE
+        self.guess_width_to_use()
+        new_path = QtGui.QPainterPath()
+        new_path.addRoundedRect(
+            QtCore.QRect(0, 0, self.node_width, self.node_height),
+            constants.CHAMFER_RADIUS,
+            constants.CHAMFER_RADIUS,
+        )
+        self.setPath(new_path)
+
+        # ADDITIONAL INFO MOVEMENT
+        self.additional_info_text.moveBy(
+            -constants.CHAMFER_RADIUS,
+            self.node_height + constants.PLUG_RADIUS * 3,
+        )
+
+        # BUTTON MOVEMENT
+        self.proxy_help_btn.setPos(
+            self.node_width
+            - self.proxy_help_btn.widget().width()
+            - constants.CHAMFER_RADIUS / 2,
+            constants.CHAMFER_RADIUS / 2,
+        )
+
+        # FILLING
+        grad = QtGui.QLinearGradient(0, 0, 0, self.node_height)
+        grad.setColorAt(0.5, self.base_color)
+        lighter_color = QtGui.QColor(
+            self.base_color.red() + 50,
+            self.base_color.green() + 50,
+            self.base_color.blue() + 50,
+        )
+        grad.setColorAt(1.0, lighter_color)
+        self.setBrush(grad)
+
+        # GLOW
+        glow_pen = QtGui.QPen(
+            QtGui.QColor(self.bright_color_name), constants.NODE_SELECTED_GLOW_THICKNESS
+        )
+        self.glow.setPen(glow_pen)
+        self.glow.setPath(new_path)
+        blur = QtWidgets.QGraphicsBlurEffect()
+        blur.setBlurRadius(glow_pen.width() * 2)
+        self.glow.setGraphicsEffect(blur)
+        self.glow.setZValue(40)
+
+        # SELECTION MARQUEE
+        self.selection_marquee.setPath(new_path)
+        self.selection_marquee.setPen(constants.NODE_SELECTED_PEN)
+        self.selection_marquee.setZValue(50)
+
+        # ERROR MARQUEE
+        error_path = QtGui.QPainterPath()
+        error_path.addRoundedRect(
+            QtCore.QRect(
+                0,
+                0,
+                self.node_width + constants.PLUG_RADIUS * 6,
+                self.node_height + constants.PLUG_RADIUS * 6,
+            ),
+            constants.CHAMFER_RADIUS * 2,
+            constants.CHAMFER_RADIUS * 2,
+        )
+        self.error_marquee.setPath(error_path)
+        self.error_marquee.moveBy(
+            -constants.PLUG_RADIUS * 3, -constants.PLUG_RADIUS * 3
+        )
+
+        # STRIPES
+        stripe_path = QtGui.QPainterPath()
+        stripe_path.addRect(
+            QtCore.QRect(0, 0, self.node_width, constants.STRIPE_HEIGHT)
+        )
+        for row_count in range(self.logic_node.get_max_in_or_out_count()):
+            stripe = QtWidgets.QGraphicsPathItem(parent=self)
+            stripe.setPath(stripe_path)
+            stripe.setPen(QtGui.QPen(QtCore.Qt.NoPen))
+            stripe.moveBy(
+                0,
+                constants.HEADER_HEIGHT
+                + self.extra_header
+                + row_count * constants.STRIPE_HEIGHT,
+            )
+            if row_count % 2 == 0:
+                stripe.setBrush(QtGui.QColor(255, 255, 255, 20))
+
+        # BADGES
+        self.badge_icon.setZValue(80)
+        self.badge_icon.setPos(
+            self.node_width
+            - self.badge_icon.boundingRect().width()
+            - constants.CHAMFER_RADIUS,
+            self.node_height - constants.STRIPE_HEIGHT / 2,
+        )
+
+    def add_graphic_attributes(self):
+        i = 0
+        for attr in self.logic_node.get_input_attrs():
+            attr = GeneralGraphicAttribute(attr, self, i)
+            self.graphic_attributes.append(attr)
+            i += 1
+
+        i = 0
+        for attr in self.logic_node.get_output_attrs():
+            attr = GeneralGraphicAttribute(attr, self, i)
+            self.graphic_attributes.append(attr)
+            i += 1
+
+    def place_graphic_attributes(self):
+        for attr in self.graphic_attributes:
+            attr.setup_graphics()
+
+    def set_selected_appearance(self):
+
+        self.setZValue(10)
+
+        if self.isSelected():
+            self.selection_marquee.show()
+            if constants.GLOW_EFFECTS:
+                self.glow.show()
+        else:
+            self.glow.hide()
+            self.selection_marquee.hide()
+
+    def show_help(self):
+        """Show a window with the help/usage of this node class."""
+        help_text = self.logic_node.get_node_html_help()
+        info_window = QtWidgets.QMessageBox()
+        info_window.setText(help_text)
+        info_window.setWindowTitle("Help")
+        info_window.setIcon(QtWidgets.QMessageBox.Information)
+
+        f = QtCore.QFile(r"ui:stylesheet.qss")
+        with open(f.fileName(), "r") as s:
+            info_window.setStyleSheet(s.read())
+
+        info_window.exec_()
+
+    def setup_widget(self):
+        """For special nodes that take input, setup a widget to recieve the input"""
+        if not self.input_datatype:
+            return
+
+        # Set type of widget depending on the type of input needed
+        input_widget = QtWidgets.QLineEdit(parent=None)
+        if self.input_datatype == str:
+            input_widget.setStyleSheet(
+                "background:transparent; color:white; border:1px solid white;"
+            )
+            input_widget.setPlaceholderText("str here")
+
+            if self.logic_node.get_attribute_value("out_str"):
+                input_widget.setText(self.logic_node.get_attribute_value("out_str"))
+
+            input_widget.textChanged.connect(self.update_attribute_from_widget)
+
+        elif self.input_datatype == dict:
+            input_widget.setStyleSheet(
+                "background:transparent; color:white; border:1px solid white;"
+            )
+            input_widget.setPlaceholderText("Paste dict here")
+
+            if self.logic_node.get_attribute_value("out_dict"):
+                input_widget.setText(self.logic_node.get_attribute_value("out_dict"))
+
+            input_widget.textChanged.connect(self.update_attribute_from_widget)
+
+        elif self.input_datatype == list:
+            input_widget.setStyleSheet(
+                "background:transparent; color:white; border:1px solid white;"
+            )
+            input_widget.setPlaceholderText("Paste list here")
+
+            if self.logic_node.get_attribute_value("out_list"):
+                input_widget.setText(self.logic_node.get_attribute_value("out_list"))
+
+            input_widget.textChanged.connect(self.update_attribute_from_widget)
+
+        elif self.input_datatype == bool:
+            input_widget = QtWidgets.QCheckBox("False", parent=None)
+            input_widget.setStyleSheet("background:transparent; color:white;")
+            input_widget.stateChanged.connect(
+                lambda: input_widget.setText(
+                    ["False", "True"][input_widget.isChecked()]
+                )
+            )
+
+            if self.logic_node.get_attribute_value("out_bool"):
+                input_widget.setText(self.logic_node.get_attribute_value("out_bool"))
+
+            input_widget.stateChanged.connect(self.update_attribute_from_widget)
+
+        elif self.input_datatype == int:
+            input_widget = QtWidgets.QSpinBox(parent=None)
+            input_widget.setMaximum(int(1e6))
+            input_widget.setMinimum(int(-1e6))
+            input_widget.setStyleSheet(
+                "background:transparent; color:white; border:1px solid white;"
+            )
+
+            if self.logic_node.get_attribute_value("out_int"):
+                input_widget.setValue(self.logic_node.get_attribute_value("out_int"))
+
+            input_widget.valueChanged.connect(self.update_attribute_from_widget)
+
+        elif self.input_datatype == float:
+            input_widget = QtWidgets.QDoubleSpinBox(parent=None)
+            input_widget.setMaximum(1e6)
+            input_widget.setMinimum(-1e6)
+            input_widget.setStyleSheet(
+                "background:transparent; color:white; border:1px solid white;"
+            )
+
+            if self.logic_node.get_attribute_value("out_float"):
+                input_widget.setValue(self.logic_node.get_attribute_value("out_float"))
+
+            input_widget.valueChanged.connect(self.update_attribute_from_widget)
+
+        # Set size of the widget and add it to a graphics proxy widget
+        input_widget.setFixedSize(
+            int(0.9 * self.node_width), int(0.8 * constants.HEADER_HEIGHT)
+        )
+        input_widget.setFont(
+            QtGui.QFont(constants.NODE_FONT, int(0.5 * input_widget.height()))
+        )
+        self.proxy_input_widget = QtWidgets.QGraphicsProxyWidget(parent=self)
+        self.proxy_input_widget.setWidget(input_widget)
+        self.proxy_input_widget.moveBy(0.05 * self.node_width, constants.HEADER_HEIGHT)
+
+    def clear_all_connections(self):
+        for g_a in self.graphic_attributes:
+            g_a.clear_connections()
+
+    def __str__(self):
+        return "Grapic node " + self.logic_node.full_name
+
+    def __getitem__(self, item: str):
+        for g_attr in self.graphic_attributes:
+            if g_attr.logic_attribute.attribute_name == item:
+                return g_attr
+        LOGGER.error("Error, no graphic attribute with that name {}".format(item))
+
+
+# -------------------------------- Graphic Attribute -------------------------------- #
+class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
+    def __init__(self, logic_attribute, parent_node, row_index):
+        # BASIC PROPERTIES
+        self.logic_attribute = logic_attribute
+        self.connector_type = self.logic_attribute.connector_type
+        self.row_index = row_index
+
+        self.connected_graphic_attrs = set()
+
+        # GRAPHIC SETUP
+        QtWidgets.QGraphicsPathItem.__init__(self, parent=parent_node)
+        self.setData(0, constants.GRAPHIC_ATTRIBUTE)
+
+        self.parent_node = parent_node
+
+        self.plug_polygon = QtWidgets.QGraphicsPathItem(parent=self)
+
+        self.attr_text = QtWidgets.QGraphicsTextItem(parent=self)
+        attr_text_font = QtGui.QFont(
+            constants.NODE_FONT, int(0.4 * constants.STRIPE_HEIGHT)
+        )
+        self.attr_text.setFont(attr_text_font)
+        self.attr_text.setHtml(
+            "<font color=white>↦ {0} <font color=cyan>({1})".format(
+                logic_attribute.attribute_name,
+                logic_attribute.get_datatype_str(),
+            )
+        )
+        if logic_attribute.is_optional:
+            self.attr_text.setHtml(
+                "<font color=#60ffffff>∗ {0} <font color=#6000FFFF>({1})".format(
+                    logic_attribute.attribute_name,
+                    logic_attribute.get_datatype_str(),
+                )
+            )
+        if self.logic_attribute.connector_type == constants.OUTPUT:
+            self.attr_text.setHtml(
+                "<font color=cyan>({0}) <font color=white> {1} ↦".format(
+                    self.logic_attribute.get_datatype_str(),
+                    self.logic_attribute.attribute_name,
+                )
+            )
+            if logic_attribute.is_optional:
+                self.attr_text.setHtml(
+                    "<font color=#6000FFFF>({0}) <font color=#60ffffff> {1} *".format(
+                        logic_attribute.get_datatype_str(),
+                        logic_attribute.attribute_name,
+                    )
+                )
+
+        self.glow = QtWidgets.QGraphicsPathItem(parent=self)
+        self.glow.hide()
+
+    def __str__(self):
+        return self.logic_attribute.full_name
+
+    @property
+    def x(self):
+        return self.scenePos().x()
+
+    def plug_coords(self):
+        return self.plug_polygon.scenePos()
+
+    def has_input_connected(self):
+        return self.logic_attribute.has_input_connected()
+
+    @property
+    def center_point(self):
+        return self.scenePos()
+
+    def setup_graphics(self):
+
+        self.setPen(QtGui.QPen(QtCore.Qt.NoPen))
+
+        # Plug shape (will be different shape depending on data type)
+        plug_path = QtGui.QPainterPath()
+
+        if self.logic_attribute.get_datatype_str() == "bool":
+            plug_polygon = QtGui.QPolygon(
+                [
+                    QtCore.QPoint(-constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
+                    QtCore.QPoint(0, -constants.PLUG_RADIUS * 0.5),
+                    QtCore.QPoint(constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
+                    QtCore.QPoint(constants.PLUG_RADIUS, constants.PLUG_RADIUS),
+                    QtCore.QPoint(0, constants.PLUG_RADIUS * 0.5),
+                    QtCore.QPoint(-constants.PLUG_RADIUS, constants.PLUG_RADIUS),
+                ]
+            )
+            plug_path.addPolygon(plug_polygon)
+
+        elif self.logic_attribute.get_datatype_str() == "list":
+            plug_polygon = QtGui.QPolygon(
+                [
+                    QtCore.QPoint(-constants.PLUG_RADIUS, -constants.PLUG_RADIUS * 0.7),
+                    QtCore.QPoint(-constants.PLUG_RADIUS, constants.PLUG_RADIUS * 0.7),
+                    QtCore.QPoint(constants.PLUG_RADIUS, constants.PLUG_RADIUS * 0.7),
+                    QtCore.QPoint(+constants.PLUG_RADIUS, -constants.PLUG_RADIUS * 0.7),
+                ]
+            )
+            plug_path.addPolygon(plug_polygon)
+
+        elif self.logic_attribute.get_datatype_str() == "dict":
+            plug_polygon = QtGui.QPolygon(
+                [
+                    QtCore.QPoint(-constants.PLUG_RADIUS, 0),
+                    QtCore.QPoint(0, constants.PLUG_RADIUS),
+                    QtCore.QPoint(constants.PLUG_RADIUS, 0),
+                    QtCore.QPoint(0, -constants.PLUG_RADIUS),
+                ]
+            )
+            plug_path.addPolygon(plug_polygon)
+
+        elif self.logic_attribute.get_datatype_str() == "str":
+            plug_path.addEllipse(
+                QtCore.QPoint(0, 0), constants.PLUG_RADIUS, constants.PLUG_RADIUS
+            )
+
+        elif self.logic_attribute.get_datatype_str() == "tuple":
+            plug_polygon = QtGui.QPolygon(
+                [
+                    QtCore.QPoint(
+                        -constants.PLUG_RADIUS * 0.8, constants.PLUG_RADIUS * 0.8
+                    ),
+                    QtCore.QPoint(
+                        -constants.PLUG_RADIUS * 0.8, -constants.PLUG_RADIUS * 0.8
+                    ),
+                    QtCore.QPoint(
+                        constants.PLUG_RADIUS * 0.8, constants.PLUG_RADIUS * 0.8
+                    ),
+                    QtCore.QPoint(
+                        +constants.PLUG_RADIUS * 0.8, -constants.PLUG_RADIUS * 0.8
+                    ),
+                ]
+            )
+            plug_path.addPolygon(plug_polygon)
+
+        elif self.logic_attribute.get_datatype_str() in ("int", "float"):
+            plug_polygon = QtGui.QPolygon(
+                [
+                    QtCore.QPoint(-constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
+                    QtCore.QPoint(constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
+                    QtCore.QPoint(constants.PLUG_RADIUS, constants.PLUG_RADIUS),
+                    QtCore.QPoint(-constants.PLUG_RADIUS, constants.PLUG_RADIUS),
+                ]
+            )
+            plug_path.addPolygon(plug_polygon)
+
+        elif self.logic_attribute.get_datatype_str() == "object":
+            plug_path.addEllipse(
+                QtCore.QPoint(0, 0), constants.PLUG_RADIUS, constants.PLUG_RADIUS * 0.6
+            )
+
+        else:
+            plug_polygon = QtGui.QPolygon(
+                [
+                    QtCore.QPoint(-constants.PLUG_RADIUS, constants.PLUG_RADIUS),
+                    QtCore.QPoint(constants.PLUG_RADIUS, 0),
+                    QtCore.QPoint(-constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
+                ]
+            )
+            plug_path.addPolygon(plug_polygon)
+
+        plug_path.closeSubpath()
+        self.plug_polygon.setPath(plug_path)
+        self.plug_polygon.setPen(constants.CONNECTOR_AVAILABLE_PEN)
+        self.plug_polygon.setBrush(
+            QtGui.QBrush(
+                QtGui.QColor(
+                    self.parent_node.base_color.red() + 35,
+                    self.parent_node.base_color.green() + 35,
+                    self.parent_node.base_color.blue() + 35,
+                )
+            )
+        )
+        self.plug_polygon.setZValue(50)
+
+        self.plug_polygon.setData(0, constants.PLUG)
+        self.plug_polygon.setData(1, self)
+
+        # Glow
+        self.glow.setPath(plug_path)
+        glow_pen = QtGui.QPen(
+            QtGui.QColor(self.parent_node.bright_color_name),
+            constants.NODE_SELECTED_GLOW_THICKNESS,
+        )
+        self.glow.setPen(glow_pen)
+        blur = QtWidgets.QGraphicsBlurEffect()
+        blur.setBlurRadius(glow_pen.width() * 1.5)
+        self.glow.setGraphicsEffect(blur)
+        self.glow.setZValue(40)
+
+        # Move elements
+        self.moveBy(
+            0,
+            constants.HEADER_HEIGHT
+            + self.parent_node.extra_header
+            + self.row_index * constants.STRIPE_HEIGHT,
+        )
+
+        if self.logic_attribute.connector_type == constants.INPUT:
+            self.plug_polygon.moveBy(
+                -constants.PLUG_RADIUS * 1.2,
+                constants.STRIPE_HEIGHT / 2,
+            )
+            self.glow.moveBy(
+                -constants.PLUG_RADIUS * 1.2,
+                constants.STRIPE_HEIGHT / 2,
+            )
+        elif self.logic_attribute.connector_type == constants.OUTPUT:
+            self.attr_text.moveBy(
+                self.parent_node.node_width - self.attr_text.boundingRect().width(), 0
+            )
+            self.plug_polygon.moveBy(
+                self.parent_node.node_width + constants.PLUG_RADIUS * 1.2,
+                constants.STRIPE_HEIGHT / 2,
+            )
+            self.glow.moveBy(
+                self.parent_node.node_width + constants.PLUG_RADIUS * 1.2,
+                constants.STRIPE_HEIGHT / 2,
+            )
+
+    def connect_graphic_attr(self, other_graphic_attr, check_logic=True):
+        """
+        Connect this graphic attribute to another one.
+
+        Args:
+            other_graphic_attr (GeneralGraphicAttribute): attribute to try to connect
+            check_logic (bool): check the connection of logic attributes
+
+        Returns: bool, whether the attribute could be connected
+
+        """
+        can_connect = True
+        if check_logic:
+            can_connect = self.logic_attribute.connect_to_other(
+                other_graphic_attr.logic_attribute
+            )
+        if can_connect:
+            if self.connector_type == constants.INPUT:
+                self.connected_graphic_attrs = {other_graphic_attr}
+                other_graphic_attr.connected_graphic_attrs.add(self)
+            else:
+                self.connected_graphic_attrs.add(other_graphic_attr)
+                other_graphic_attr.connected_graphic_attrs = {self}
+
+        self.show_connected_status()
+        other_graphic_attr.show_connected_status()
+
+        return can_connect
+
+    def clear_connections(self):
+        connected_g_attrs = list(self.connected_graphic_attrs)
+        for connected_g_attr in connected_g_attrs:
+            self.disconnect_from(connected_g_attr)
+
+    def disconnect_from(self, other_graphic_attr):
+        self.logic_attribute.disconnect_from_other(other_graphic_attr.logic_attribute)
+
+        self.connected_graphic_attrs.remove(other_graphic_attr)
+        other_graphic_attr.connected_graphic_attrs.remove(self)
+
+        self.show_connected_status()
+        other_graphic_attr.show_connected_status()
+
+    def disconnect_input(self):
+        if self.connector_type == constants.INPUT and self.connected_graphic_attrs:
+            self.logic_attribute.disconnect_input()
+
+            connected_out_graphic_attr = next(iter(self.connected_graphic_attrs))
+
+            self.connected_graphic_attrs.remove(connected_out_graphic_attr)
+            connected_out_graphic_attr.connected_graphic_attrs.remove(self)
+
+            self.show_connected_status()
+            connected_out_graphic_attr.show_connected_status()
+
+    def show_connected_status(self):
+        if self.connected_graphic_attrs:
+            if constants.GLOW_EFFECTS:
+                self.glow.show()
+            self.plug_polygon.setPen(constants.CONNECTOR_USED_PEN)
+        else:
+            self.glow.hide()
+            self.plug_polygon.setPen(constants.CONNECTOR_AVAILABLE_PEN)

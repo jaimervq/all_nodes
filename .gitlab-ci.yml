@@ -1,0 +1,21 @@
+# STAGES
+stages:
+  - test
+
+# Run tests
+run_tests:
+  image: python:3.10
+  stage: test
+
+  before_script:
+    # Install missing deps
+    - apt-get update
+    - apt-get install -y libgl1-mesa-dev
+
+    # Install deps launch
+    - pip install -r requirements.txt
+    - parentdir="$(dirname `pwd`)"
+    - export PYTHONPATH=$parentdir:$PYTHONPATH
+
+  script:
+    - python -m unittest discover ./test

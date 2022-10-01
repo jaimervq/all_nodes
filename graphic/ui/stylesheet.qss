@@ -1,0 +1,210 @@
+/* Copyright: MIT License
+
+              Copyright (c) 2022 Jaime Rivera
+
+              Permission is hereby granted, free of charge, to any person obtaining a copy
+              of this software and associated documentation files (the "Software"), to deal
+              in the Software without restriction, including without limitation the rights
+              to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+              copies of the Software, and to permit persons to whom the Software is
+              furnished to do so, subject to the following conditions:
+
+              The above copyright notice and this permission notice shall be included in all
+              copies or substantial portions of the Software.
+
+              THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+              IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+              FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+              AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+              LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+              OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+              SOFTWARE.
+*/
+
+/* ---------------------------- QWidget ---------------------------- */
+QWidget
+{
+	background-color: #303340;
+	color: #fff;
+}
+
+/* ---------------------------- QMenu ---------------------------- */
+QMenu
+{
+	background-color: #303340;
+	color: #fff;
+}
+
+QMenu::item
+{
+    background-color: #303340;
+
+}
+
+QMenu::item:selected
+{
+    border:2px solid #eb7a02;
+}
+
+/* ---------------------------- QGraphicsView ---------------------------- */
+QGraphicsView
+{
+background-color: rgba(0,0,0,50%);
+}
+
+/* ---------------------------- QToolTip ---------------------------- */
+QToolTip
+{
+	background-color: #303340;
+	color: #fff;
+    border:1px solid #404040;
+}
+
+/* ---------------------------- QLineEdit ---------------------------- */
+QLineEdit
+{
+	background-color: rgba(10,12,20,190);
+	color: white;
+    border: 1px solid #404040;
+	border-radius: 2px;
+	padding: 3px;
+	padding-left: 5px;
+}
+
+/* ---------------------------- QPushButton ---------------------------- */
+QPushButton
+{
+    background-color: qlineargradient(spread:repeat, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255,255,255,20), stop:0.2 rgba(255,255,255,40), stop:1 rgba(0,0,0,40));
+    border:1px solid black;
+    border-radius: 4px;
+	padding: 5px;
+	padding-left: 15px;
+	padding-right: 15px;
+
+}
+
+QPushButton:hover
+{
+    border:2px solid #eb7a02;
+    border-radius: 4px;
+
+}
+
+
+/* ---------------------------- QTabWidget ---------------------------- */
+QTabBar::tab
+{
+	background-color: transparent;
+	color: #ffffff;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #666;
+	border-bottom: none;
+	padding: 5px;
+	padding-left: 30px;
+	padding-right: 30px;
+}
+
+QTabBar::tab:!selected
+{
+	color: #b1b1b1;
+	border-bottom-style: solid;
+    top: 2px;
+}
+
+QTabBar::tab:selected
+{
+    background-color: #0c0c0d;
+    color:#eb7a02;
+	margin-bottom: 0px;
+}
+
+QTabWidget::pane
+{
+	border: 1px solid #404040;
+}
+
+/* ---------------------------- QTreeView ---------------------------- */
+QTreeView::branch:closed:has-children
+{
+	image: url("icons:plus.svg");
+}
+
+QTreeView::branch:open:has-children
+{
+	image: url("icons:expand.svg");
+}
+
+QTreeView::item:hover
+{
+	color: #fff;
+	border:1px dashed #eb7a02;
+	margin-right:10px;
+}
+
+QTreeView::item:selected, QTreeView::item:hover:selected
+{
+	color: #fff;
+	border:2px solid #eb7a02;
+	margin-right:10px;
+}
+
+/* ---------------------------- QLabel ---------------------------- */
+QLabel
+{
+	background-color: transparent;
+}
+
+/* ---------------------------- QDockWidget ---------------------------- */
+QDockWidget
+{
+	background-color: transparent;
+	titlebar-close-icon: url("icons:close.svg");
+	titlebar-normal-icon: url("icons:float.svg");
+}
+
+/* ---------------------------- QToolButton ---------------------------- */
+QToolButton
+{
+	background-color: transparent;
+	color: #fff;
+	border:none;
+	padding: 4px;
+}
+
+QToolButton:hover
+{
+	background-color: rgba(183, 134, 32, 30);
+	border: 1px solid #b36500;
+}
+
+QToolButton:pressed
+{
+	background-color: qlineargradient(spread:repeat, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0,0,0,150), stop:0.2 rgba(0,0,0,0), stop:0.8 rgba(0,0,0,0), stop:1 rgba(0,0,0,150));
+	border: 1px solid #b36500;
+}
+
+/* ---------------------------- QScrollBar ---------------------------- */
+QScrollBar:vertical
+{
+background-color: transparent;
+width: 8px;
+}
+
+QScrollBar::handle:vertical
+{
+border: 0px solid red;
+border-radius:4px;
+background: #eb7a02;
+min-height: 20px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical
+{
+background-color: transparent;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical
+{
+background-color: transparent;
+}

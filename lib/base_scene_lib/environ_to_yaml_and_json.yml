@@ -1,0 +1,76 @@
+# SCENE environ_to_yaml_and_json
+# ------------------------------
+# Description: Basic setup to print out all the environment
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- DictToJson_2:
+    class_name: DictToJson
+    x_pos: 53
+    y_pos: 100
+- DictToYaml_1:
+    class_name: DictToYaml
+    x_pos: -775
+    y_pos: -201
+- GetEntireEnviron_1:
+    class_name: GetEntireEnviron
+    x_pos: -1162
+    y_pos: -329
+- JSON_temp_file:
+    class_name: CreateTempFile
+    x_pos: -378
+    y_pos: 244
+- PrintToConsole_1:
+    class_name: PrintToConsole
+    x_pos: 566
+    y_pos: -95
+- StartFile_1:
+    class_name: StartFile
+    x_pos: -266
+    y_pos: -120
+- StartFile_2:
+    class_name: StartFile
+    x_pos: 564
+    y_pos: 293
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      out_str: .yml
+    x_pos: -1425
+    y_pos: -50
+- StrInput_2:
+    class_name: StrInput
+    node_attributes:
+      out_str: .json
+    x_pos: -709
+    y_pos: 275
+- YAML_temp_file:
+    class_name: CreateTempFile
+    x_pos: -1157
+    y_pos: -63
+- YamlToDict_1:
+    class_name: YamlToDict
+    x_pos: -341
+    y_pos: 49
+
+# Connections section: connections to be done between nodes
+connections:
+- DictToJson_2.COMPLETED -> PrintToConsole_1.START
+- DictToJson_2.COMPLETED -> StartFile_2.START
+- DictToYaml_1.COMPLETED -> StartFile_1.START
+- DictToYaml_1.COMPLETED -> YamlToDict_1.START
+- GetEntireEnviron_1.environ_dict -> DictToYaml_1.in_dict
+- JSON_temp_file.tempfile_path -> DictToJson_2.json_filepath_to_write
+- JSON_temp_file.tempfile_path -> PrintToConsole_1.in_object_1
+- JSON_temp_file.tempfile_path -> StartFile_2.file_path
+- StrInput_1.out_str -> YAML_temp_file.suffix
+- StrInput_2.out_str -> JSON_temp_file.suffix
+- YAML_temp_file.tempfile_path -> DictToYaml_1.yaml_filepath_to_write
+- YAML_temp_file.tempfile_path -> PrintToConsole_1.in_object_0
+- YAML_temp_file.tempfile_path -> StartFile_1.file_path
+- YAML_temp_file.tempfile_path -> YamlToDict_1.yaml_filepath
+- YamlToDict_1.out_dict -> DictToJson_2.in_dict
+
+
+# Scene created at: 2022-11-16 19:23:59.113345
+# Created by: jaime.rvq

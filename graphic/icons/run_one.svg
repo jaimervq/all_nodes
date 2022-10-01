@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="30" height="30" viewBox="0 0 30 30" xml:space="preserve">
+<desc>Created with Fabric.js 4.6.0</desc>
+<defs>
+</defs>
+<g transform="matrix(1.07 0 0 1.31 14.83 14.32)" id="e5NagriodbNMuMZEmgqGp"  >
+<path style="stroke: rgb(0,0,0); stroke-width: 0.3; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(87,224,18); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(0, 0)" d="M -11.29129 -8.43952 L -11.29129 8.43952 L 11.29129 -1.6076899999999998 z" stroke-linecap="round" />
+</g>
+<g transform="matrix(1 0 0 1 19.27 20.52)" id="Cu9pkLl96c2PrmiZsWNm4"  >
+<path style="stroke: rgb(0,0,0); stroke-width: 0.5; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-5.45, -5.45)" d="M 5.45045 0 C 8.4591 0 10.9009 2.4418 10.9009 5.45045 C 10.9009 8.4591 8.4591 10.9009 5.45045 10.9009 C 2.4418 10.9009 0 8.4591 0 5.45045 C 0 2.4418 2.4418 0 5.45045 0 z" stroke-linecap="round" />
+</g>
+<g transform="matrix(1 0 0 1 19.32 20.61)" id="9ww0OZsX-Hvk0-OY_aiWy"  >
+<path style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-19.29, -20.18)" d="M 18.098 22.797 Q 18.028 22.797 17.988 22.737 Q 17.948 22.678 17.948 22.616 L 17.948 22.616 Q 17.948 22.542 17.979 22.502 Q 18.01 22.463 18.093 22.454 L 18.093 22.454 Q 18.392 22.432 18.627 22.366 Q 18.862 22.3 18.862 22.173 L 18.862 22.173 L 18.867 18.323 Q 18.414 18.578 18.098 18.578 L 18.098 18.578 Q 17.997 18.578 17.946 18.477 Q 17.896 18.376 17.896 18.292 L 17.896 18.292 Q 17.896 18.191 17.931 18.141 Q 17.966 18.09 18.054 18.086 L 18.054 18.086 Q 18.291 18.068 18.665 17.93 Q 19.038 17.791 19.315 17.571 L 19.315 17.571 L 19.733 17.571 L 19.728 22.137 Q 19.728 22.291 19.957 22.359 Q 20.185 22.427 20.528 22.454 L 20.528 22.454 Q 20.625 22.463 20.655 22.491 Q 20.686 22.52 20.686 22.616 L 20.686 22.616 Q 20.686 22.678 20.647 22.737 Q 20.607 22.797 20.537 22.797 L 20.537 22.797 L 18.098 22.797 Z" stroke-linecap="round" />
+</g>
+</svg>

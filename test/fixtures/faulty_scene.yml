@@ -1,0 +1,22 @@
+# SCENE environ_to_yaml_and_json
+# ------------------------------
+# Description: Scene with a node incorrectly renamed (only the node, not in the connections section)
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- YAML_temp_file_RENAMED:
+    class_name: CreateTempFile
+    x_pos: -992
+    y_pos: -63
+- YamlToDict_1:
+    class_name: YamlToDict
+    x_pos: -341
+    y_pos: 49
+
+# Connections section: connections to be done between nodes
+connections:
+- YAML_temp_file.tempfile_path -> YamlToDict_1.yaml_filepath
+
+
+# Scene created at: 2022-10-21 16:46:47.807919
+# Created by: jaime.rvq

@@ -1,0 +1,42 @@
+## General registry of the styles (colors and icons) for all types of nodes
+
+
+# GENERAL LIBRARY --------------------------------------
+casting_nodes:
+    color: '#1d0a40'
+
+special_input_nodes:
+    color: '#4b007a'
+
+debug_nodes:
+    color: '#404040'
+
+# PIPELINE --------------------------------------
+pipeline:
+    color: '#4D002B'
+    default_icon: pipe
+
+# MAYA --------------------------------------
+maya:
+    color: '#03422A'
+    default_icon: maya
+
+# NUKE --------------------------------------
+nuke:
+    color: '#513A01'
+    default_icon: nuke
+
+# HOUDINI --------------------------------------
+houdini:
+    color: '#420716'
+    default_icon: houdini
+
+# UNREAL --------------------------------------
+unreal:
+    color: '#04302f'
+    default_icon: unreal
+
+# SHOTGRID --------------------------------------
+shotgrid:
+    color: '#043054'
+    default_icon: shotgrid
