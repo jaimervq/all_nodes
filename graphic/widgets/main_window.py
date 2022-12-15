@@ -1,32 +1,4 @@
 # -*- coding: UTF-8 -*-
-"""
-Author: Jaime Rivera
-Date: November 2022
-Copyright: MIT License
-
-           Copyright (c) 2022 Jaime Rivera
-
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
-
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
-
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-           SOFTWARE.
-
-Brief: Main window of the app.
-"""
-
 __author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
 __copyright__ = "Copyright 2022, Jaime Rivera"
 __credits__ = []
@@ -43,10 +15,10 @@ from PySide2 import QtWidgets
 
 from all_nodes import constants
 from all_nodes.graphic import graphic_scene
-from all_nodes.logic import ALL_CLASSES, ALL_SCENES
-from all_nodes import utils
 from all_nodes.graphic.widgets.attribute_editor import AttributeEditor
 from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
+from all_nodes.logic import ALL_CLASSES, ALL_SCENES
+from all_nodes import utils
 
 
 LOGGER = utils.get_logger(__name__)
@@ -91,7 +63,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         # MENU
         self.create_menus()
 
-        # ELEMENTS
+        # ELEMENTS OF THE UI
         self.ui.nodes_tree.setMinimumWidth(260)
         self.ui.nodes_tree.setDragEnabled(True)
 
@@ -100,22 +72,45 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.ui.reset_current_btn.setIcon(QtGui.QIcon("icons:reset.png"))
         self.ui.run_current_btn.setIcon(QtGui.QIcon("icons:brain.png"))
 
-        # Stylesheet
+        # STYLESHEET
         f = QtCore.QFile(r"ui:stylesheet.qss")
         with open(f.fileName(), "r") as s:
             self.setStyleSheet(s.read())
 
-        # CONNECTIONS
-        self.ui.reset_current_btn.clicked.connect(self.reset_current_scene)
-        self.ui.run_current_btn.clicked.connect(self.run_current_scene)
-        self.ui.filter_le.textChanged.connect(self.filter_nodes_by_name)
-        self.ui.tabWidget.currentChanged.connect(self.attr_editor.clear_all)
+        # SET CONNECTIONS
+        self.make_connections()
 
         # INITIALIZE
         self.populate_tree()
         self.create_dock_windows()
         self.show()
 
+    def make_connections(self):
+        # UI elements
+        self.ui.reset_current_btn.clicked.connect(self.reset_current_scene)
+        self.ui.run_current_btn.clicked.connect(self.run_current_scene)
+        self.ui.filter_le.textChanged.connect(self.filter_nodes_by_name)
+        self.ui.tabWidget.currentChanged.connect(self.attr_editor.clear_all)
+        self.ui.tabWidget.currentChanged.connect(self.show_scene_results)
+
+        # Global signaler
+        GS.tab_names_refresh_requested.connect(self.refresh_tab_names)
+
+        GS.attribute_editor_node_addition_requested.connect(
+            self.add_node_to_attribute_editor_by_uuid
+        )
+        GS.attribute_editor_refresh_node_requested.connect(
+            self.refresh_node_in_attribute_editor_by_uuid
+        )
+        GS.attribute_editor_remove_node_requested.connect(
+            self.remove_node_in_attribute_editor_by_uuid
+        )
+
+        GS.attribute_editor_context_expansion_requested.connect(self.expand_context)
+
+        GS.attribute_editor_global_refresh_requested.connect(self.attr_editor.refresh)
+
+    # UI SETUP ----------------------
     def create_menus(self):
         """Create and populate menu bar."""
 
@@ -159,15 +154,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         file_menu.addAction(load_scene_action)
 
         scene_menu = menu.addMenu("&Scene")
-        add_scene_action = QtWidgets.QAction("Add new scene tab", self)
-        add_scene_action.setIcon(QtGui.QIcon("icons:plus.png"))
-        add_scene_action.triggered.connect(self.add_scene)
-        scene_menu.addAction(add_scene_action)
-        rename_scene_action = QtWidgets.QAction("Rename current scene", self)
-        rename_scene_action.setIcon(QtGui.QIcon("icons:rename.png"))
-        rename_scene_action.triggered.connect(self.rename_current_scene)
-        scene_menu.addAction(rename_scene_action)
-        scene_menu.addSeparator()
         add_scenes_recursive(ALL_SCENES, scene_menu)
 
         window_menu = menu.addMenu("&Window")
@@ -248,100 +234,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             for i in range(lib_item.childCount()):
                 lib_item.child(i).setExpanded(True)
 
-    def add_scene(self):
-        """Add a new graphic scene to the widget (in a new tab)"""
-        scene_number = self.ui.tabWidget.count()
-
-        graphics_view = graphic_scene.CustomGraphicsView()
-        graphics_scene = graphic_scene.CustomScene()
-
-        graphics_view.setScene(graphics_scene)
-        graphics_scene.setSceneRect(-20000, -20000, 40000, 40000)
-        graphics_scene.setParent(graphics_view)
-
-        graphics_scene.dropped_node.connect(self.add_node_to_current)
-        GS.attribute_editor_node_addition_requested.connect(
-            self.add_node_to_attribute_editor_by_uuid
-        )
-        GS.attribute_editor_refresh_node_requested.connect(
-            self.refresh_node_in_attribute_editor_by_uuid
-        )
-        GS.attribute_editor_remove_node_requested.connect(
-            self.remove_node_in_attribute_editor_by_uuid
-        )
-        GS.attribute_editor_global_refresh_requested.connect(self.attr_editor.refresh)
-        graphics_scene.in_screen_feedback.connect(graphics_view.show_feedback)
-
-        self.ui.tabWidget.addTab(graphics_view, "Scene {}".format(scene_number))
-        self.ui.tabWidget.setCurrentIndex(scene_number)
-
-    def rename_current_scene(self):
-        """Rename the scene/tab the user is working on."""
-        dialog = QtWidgets.QInputDialog()
-        result = dialog.getText(self, "Rename", "Specify new name for scene")
-        if not result[0] or not result[1]:
-            return
-        new_name = result[0]
-        self.ui.tabWidget.setTabText(self.ui.tabWidget.currentIndex(), new_name)
-
-    def get_node_by_uuid(self, uuid):
-        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-        current_logic_scene = current_gw.scene().logic_scene
-        for n in current_logic_scene.all_nodes():
-            if n.uuid == uuid:
-                return n
-
-    def refresh_node_in_attribute_editor_by_uuid(self, uuid):
-        n = self.get_node_by_uuid(uuid)
-        self.attr_editor.refresh_node_panel(n)
-
-    def remove_node_in_attribute_editor_by_uuid(self, uuid):
-        n = self.get_node_by_uuid(uuid)
-        self.attr_editor.remove_node_panel(n)
-
-    def add_node_to_attribute_editor_by_uuid(self, uuid):
-        n = self.get_node_by_uuid(uuid)
-        self.attr_editor.add_node_panel(n)
-
-    def save_scene(self):
-        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-        current_scene = current_gw.scene()
-        current_scene.save_to_file()
-
-    def load_scene(self, source_file=None):
-        # Filepath
-        if source_file is None:
-            dialog = QtWidgets.QFileDialog()
-            result = dialog.getOpenFileName(
-                caption="Specify source file", filter="*.yml"
-            )
-            if not result[0] or not result[1]:
-                return
-            source_file = result[0]
-
-        # Add scene and load
-        self.add_scene()
-        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-        current_scene = current_gw.scene()
-        current_scene.load_from_file(source_file)
-        current_scene.fit_in_view()
-        self.ui.tabWidget.setTabText(
-            self.ui.tabWidget.currentIndex(),
-            os.path.splitext(os.path.basename(source_file))[0],
-        )
-
-    def run_current_scene(self):
-        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-        current_scene = current_gw.scene()
-        current_scene.run_graphic_scene()
-        self.attr_editor.refresh()
-
-    def reset_current_scene(self):
-        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-        current_scene = current_gw.scene()
-        current_scene.reset_graphic_scene()
-        self.attr_editor.refresh()
-
     def filter_nodes_by_name(self):
         filter = self.ui.filter_le.text().lower()
         for i in range(self.ui.nodes_tree.topLevelItemCount()):
@@ -365,9 +257,125 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             if not lib_visible_count:
                 lib_item.setHidden(True)
 
+    # TABS ----------------------
+    def add_scene(self, context=None):
+        """
+        Add a new graphic scene to the widget (in a new tab)
+        """
+        scene_name = "ROOT"
+        if context:
+            scene_name = context.full_name
+
+        graphics_view = graphic_scene.CustomGraphicsView()
+        graphics_scene = graphic_scene.CustomScene(context)
+        graphics_view.setScene(graphics_scene)
+
+        graphics_scene.setSceneRect(-20000, -20000, 40000, 40000)
+        graphics_scene.setParent(graphics_view)
+        graphics_scene.dropped_node.connect(self.add_node_to_current)
+        graphics_scene.in_screen_feedback.connect(graphics_view.show_feedback)
+
+        if context:
+            graphics_scene.load_from_file(context.CONTEXT_DEFINITION_FILE, False)
+
+        self.ui.tabWidget.addTab(graphics_view, scene_name)
+        self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count() - 1)
+
+    def expand_context(self, uuid):
+        n = self.get_node_by_uuid(uuid)
+
+        # See if the context is already expanded
+        for i in range(self.ui.tabWidget.count()):
+            gw = self.ui.tabWidget.widget(i)
+            logic_scene = gw.scene().logic_scene
+            if logic_scene.context == n:
+                self.ui.tabWidget.setCurrentIndex(i)
+                return
+
+        # Otherwise, expand it
+        self.add_scene(n)
+        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_scene = current_gw.scene()
+        current_scene.fit_in_view()
+
+    def refresh_tab_names(self):
+        for i in range(self.ui.tabWidget.count()):
+            gw = self.ui.tabWidget.widget(i)
+            logic_scene = gw.scene().logic_scene
+            if logic_scene.context:
+                self.ui.tabWidget.setTabText(i, logic_scene.context.full_name)
+                return
+
+    # NODE UTILITY ----------------------
+    def get_node_by_uuid(self, uuid):
+        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_logic_scene = current_gw.scene().logic_scene
+        for n in current_logic_scene.all_nodes():
+            if n.uuid == uuid:
+                return n
+
     def add_node_to_current(self, x, y):
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
         selected = self.ui.nodes_tree.selectedItems()[0]
         node_type = str(selected.data(0, QtCore.Qt.UserRole)).strip()
         current_scene.add_graphic_node_by_name(node_type, x, y)
+
+    # ATTRIBUTE EDITOR ----------------------
+    def refresh_node_in_attribute_editor_by_uuid(self, uuid):
+        n = self.get_node_by_uuid(uuid)
+        self.attr_editor.refresh_node_panel(n)
+
+    def remove_node_in_attribute_editor_by_uuid(self, uuid):
+        n = self.get_node_by_uuid(uuid)
+        self.attr_editor.remove_node_panel(n)
+
+    def add_node_to_attribute_editor_by_uuid(self, uuid):
+        n = self.get_node_by_uuid(uuid)
+        self.attr_editor.add_node_panel(n)
+
+    # SAVE AND LOAD ----------------------
+    def save_scene(self):
+        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_scene = current_gw.scene()
+        current_scene.save_to_file()
+
+    def load_scene(self, source_file):
+        # Filepath
+        if not source_file:
+            dialog = QtWidgets.QFileDialog()
+            result = dialog.getOpenFileName(
+                caption="Specify source file", filter="*.yml"
+            )
+            if not result[0] or not result[1]:
+                return
+            source_file = result[0]
+
+        # Add scene and load
+        self.add_scene()
+        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_scene = current_gw.scene()
+        current_scene.load_from_file(source_file)
+        current_scene.fit_in_view()
+        self.ui.tabWidget.setTabText(
+            self.ui.tabWidget.currentIndex(),
+            os.path.splitext(os.path.basename(source_file))[0],
+        )
+
+    # SCENE EXECUTION ----------------------
+    def run_current_scene(self):
+        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_scene = current_gw.scene()
+        current_scene.run_graphic_scene()
+        self.attr_editor.refresh()
+
+    def reset_current_scene(self):
+        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_scene = current_gw.scene()
+        current_scene.reset_graphic_scene()
+        self.attr_editor.refresh()
+
+    def show_scene_results(self):
+        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_scene = current_gw.scene()
+        current_scene.show_result_on_nodes()

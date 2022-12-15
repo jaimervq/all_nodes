@@ -1,32 +1,4 @@
 # -*- coding: UTF-8 -*-
-"""
-Author: Jaime Rivera
-Date: November 2022
-Copyright: MIT License
-
-           Copyright (c) 2022 Jaime Rivera
-
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
-
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
-
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-           SOFTWARE.
-
-Brief: Every-day-use nodes of the project
-"""
-
 __author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
 __copyright__ = "Copyright 2022, Jaime Rivera"
 __credits__ = []
@@ -186,7 +158,7 @@ class PrintToConsole(GeneralLogicNode):
             attr_name = "in_object_{}".format(i)
             val = self.get_attribute_value(attr_name)
             if val is not None:
-                LOGGER.info("[{}] {}:{}".format(self.full_name, attr_name, val))
+                LOGGER.info("[{}] {}:{}".format(self.node_name, attr_name, val))
 
 
 class JsonToDict(GeneralLogicNode):
@@ -310,6 +282,8 @@ class TxtToList(GeneralLogicNode):
 
 class CreateTempFile(GeneralLogicNode):
 
+    NICE_NAME = "Create temp file"
+
     INPUTS_DICT = {"suffix": {"type": str, "optional": True}}
     OUTPUTS_DICT = {"tempfile_path": {"type": str}}
 
@@ -364,6 +338,8 @@ class LaunchSubprocess(GeneralLogicNode):
 
 class GetEntireEnviron(GeneralLogicNode):
 
+    NICE_NAME = "Get entire environment"
+
     OUTPUTS_DICT = {"environ_dict": {"type": dict}}
 
     def run(self):
@@ -373,6 +349,10 @@ class GetEntireEnviron(GeneralLogicNode):
 
 
 class GetEnvVariable(GeneralLogicNode):
+
+    NICE_NAME = "get env variable"
+    HELP = "Get the value of an environment variable, with possibility of a fallback" \
+           "value if the variable is not defined"
 
     INPUTS_DICT = {
         "env_variable_name": {"type": str},

@@ -1,0 +1,22 @@
+# SCENE environ_to_yaml
+# ---------------------
+# Description: Simple scene to write the environ out to a yaml file
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- EnvironToYmlCtx_1:
+    class_name: EnvironToYmlCtx
+    x_pos: -904
+    y_pos: -284
+- StartFile_1:
+    class_name: StartFile
+    x_pos: -611
+    y_pos: -304
+
+# Connections section: connections to be done between nodes
+connections:
+- EnvironToYmlCtx_1.yaml_filepath -> StartFile_1.file_path
+
+
+# Scene created at: 2023-01-24 23:13:10.371378
+# Created by: jaime.rvq

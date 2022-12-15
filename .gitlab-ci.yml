@@ -13,7 +13,7 @@ run_tests:
     - apt-get update
     - apt-get install -y libgl1-mesa-dev
 
-    # Install deps launch
+    # Install requirements and set PYTHONPATH
     - pip install -r requirements.txt
     - parentdir="$(dirname `pwd`)"
     - export PYTHONPATH=$parentdir:$PYTHONPATH
@@ -28,7 +28,7 @@ release_job:
   rules:
     - if: $CI_COMMIT_TAG
   script:
-    - echo "running release_job"
+    - echo "Running release_job"
   release:
     tag_name: '$CI_COMMIT_TAG'
     description: '$CI_COMMIT_TAG'

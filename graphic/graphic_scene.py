@@ -1,38 +1,11 @@
 # -*- coding: UTF-8 -*-
-"""
-Author: Jaime Rivera
-Date: November 2022
-Copyright: MIT License
-
-           Copyright (c) 2022 Jaime Rivera
-
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
-
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
-
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-           SOFTWARE.
-
-Brief:
-"""
-
 __author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
 __copyright__ = "Copyright 2022, Jaime Rivera"
 __credits__ = []
 __license__ = "MIT License"
 
 
+from functools import partial
 import logging
 import os
 import pprint
@@ -70,15 +43,24 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QtWidgets.QGraphicsView.NoAnchor)
 
+        self.drag_pos = None
         self.middle_pressed = False
+        self.left_pressed = False
 
         self.feedback_line = QtWidgets.QLineEdit(parent=self)
         self.feedback_line.setReadOnly(True)
         self.feedback_line.setFont(QtGui.QFont("arial", 12))
         self.feedback_line.hide()
 
+        self.shift_x = -100
+        self.shift_y = 0
+        self.shifter = QtCore.QTimer()
+        self.shifter.setInterval(20)
+        # self.shifter.timeout.connect(self.move_continuous)
+
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
 
+    # UTILITY ----------------------
     def show_feedback(self, message, level=logging.INFO):
         """
         Display a basic piece of feedback on screen, on top of the graphics scene.
@@ -123,33 +105,52 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.feedback_line.setGraphicsEffect(effect)
         anim.start()
 
+    # VIEW MANIPULATION ----------------------
+    def move_continuous(self):
+        self.translate(self.shift_x, self.shift_y)
+
+    # RESIZE EVENTS ----------------------
     def resizeEvent(self, event):
         QtWidgets.QGraphicsView.resizeEvent(self, event)
         self.feedback_line.move(25, self.height() - 50)
         self.feedback_line.setFixedSize(self.width(), 30)
 
+    # MOUSE EVENTS ----------------------
     def mousePressEvent(self, event):
         self.middle_pressed = False
 
+        self.drag_pos = event.pos()
         if event.button() == QtCore.Qt.MidButton:
-            self._dragPos = event.pos()
             self.middle_pressed = True
+        elif event.button() == QtCore.Qt.LeftButton:
+            self.left_pressed = True
 
         QtWidgets.QGraphicsView.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
         new_pos = event.pos()
 
-        if self.middle_pressed:
-            disp = new_pos - self._dragPos
-            self._dragPos = new_pos
-            self.translate(disp.x(), disp.y())
+        if self.middle_pressed and self.drag_pos:
+            disp = new_pos - self.drag_pos
+            self.drag_pos = new_pos
+            transform = self.transform()
+            deltaX = disp.x() / transform.m11()
+            deltaY = disp.y() / transform.m22()
+            self.translate(deltaX, deltaY)
+
+        elif self.left_pressed:
+            if new_pos.x() + 500 > self.width():
+                self.setSceneRect(self.sceneRect().translated(10.0, 1))
 
         QtWidgets.QGraphicsView.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.MidButton:
             self.middle_pressed = False
+            self.drag_pos = None
+        if event.button() == QtCore.Qt.LeftButton:
+            self.left_pressed = False
+            self.shifter.stop()
 
         QtWidgets.QGraphicsView.mouseReleaseEvent(self, event)
 
@@ -157,17 +158,12 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         zoom_increase = 1.45
         zoom_decrease = 0.65
 
-        old_pos = self.mapToScene(event.pos())
-
         if event.delta() > 0:
             self.scale(zoom_increase, zoom_increase)
         else:
             self.scale(zoom_decrease, zoom_decrease)
 
-        new_pos = self.mapToScene(event.pos())
-        disp = new_pos - old_pos
-        self.translate(disp.x(), disp.y())
-
+    # DRAG AND DROP EVENT ----------------------
     def dragEnterEvent(self, event):
         QtWidgets.QGraphicsView.dragEnterEvent(self, event)
         event.acceptProposedAction()
@@ -183,11 +179,11 @@ class CustomScene(QtWidgets.QGraphicsScene):
     dropped_node = QtCore.Signal(int, int)
     in_screen_feedback = QtCore.Signal(str, int)
 
-    def __init__(self):
+    def __init__(self, context=None):
         QtWidgets.QGraphicsScene.__init__(self)
 
         # Logic scene
-        self.logic_scene = LogicScene()
+        self.logic_scene = context.internal_scene if context else LogicScene()
 
         # Nodes
         self.all_nodes = set()
@@ -208,15 +204,17 @@ class CustomScene(QtWidgets.QGraphicsScene):
         self.testing_path.setZValue(-1)
         self.addItem(self.testing_path)
 
+    # SCENE SETUP ----------------------
     def drawBackground(self, painter, rect):
         pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 150), 2)
         painter.setPen(pen)
-        for i in range(-40_000, 40_000, 200):
+        for i in range(-20_000, 20_000, 200):
             if i > rect.x() and i < rect.x() + rect.width():
-                painter.drawLine(QtCore.QLine(i, -40_000, i, 40_000))
+                painter.drawLine(QtCore.QLine(i, -20_000, i, 20_000))
             if i > rect.y() and i < rect.y() + rect.height():
-                painter.drawLine(QtCore.QLine(-40_000, i, 40_000, i))
+                painter.drawLine(QtCore.QLine(-20_000, i, 20_000, i))
 
+    # ADD AND DELETE NODES ----------------------
     def add_graphic_node_by_name(
         self, node_classname: str, x: int = 0, y: int = 0
     ) -> GeneralGraphicNode:
@@ -244,7 +242,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     self.all_nodes.add(new_graph_node)
                     LOGGER.info(
                         "Created graphic node from logic node {} at x:{} y:{}".format(
-                            logic_node.full_name, x, y
+                            logic_node.node_name, x, y
                         )
                     )
                     new_graph_node.moveBy(x, y)
@@ -263,53 +261,11 @@ class CustomScene(QtWidgets.QGraphicsScene):
         self.all_nodes.remove(graphic_node)
         self.removeItem(graphic_node)
 
-        self.logic_scene.remove_node_by_name(graphic_node.logic_node.full_name)
+        self.logic_scene.remove_node_by_name(graphic_node.logic_node.node_name)
 
         del graphic_node
 
-    def selected_nodes(self) -> list:
-        """
-        Gather all selected nodes.
-
-        Returns: list, with all selected nodes.
-
-        """
-        sel_nodes = []
-        for n in self.all_nodes:
-            if n.isSelected():
-                sel_nodes.append(n)
-        return sel_nodes
-
-    def clear_node_lines(self, node: GeneralGraphicNode):
-        for line in self.items():
-            g_1, g_2 = line.data(1), line.data(2)
-            if line.data(0) == constants.CONNECTOR_LINE and node in [
-                g_1.parent_node,
-                g_2.parent_node,
-            ]:
-                self.removeItem(line)
-
-    def redraw_node_lines(self, node: GeneralGraphicNode):
-        graphic_attrs = [
-            c
-            for c in self.items()
-            if c.data(0) == "GRAPHIC_ATTRIBUTE" and c.parent_node == node
-        ]
-
-        lines_to_redraw = set()
-        for g in graphic_attrs:
-            g_1, g_2 = None, None
-            for line in self.items():
-                g_1, g_2 = line.data(1), line.data(2)
-
-                if line.data(0) == constants.CONNECTOR_LINE and g in [g_1, g_2]:
-                    self.removeItem(line)
-                    lines_to_redraw.add((g_1, g_2))
-
-        if node in self.items():
-            for g_1, g_2 in lines_to_redraw:
-                self.draw_valid_line(g_1, g_2)
-
+    # NODE CONNECTIONS/LINES ----------------------
     def connect_graphic_attrs(
         self,
         graphic_attr_1: GeneralGraphicAttribute,
@@ -384,6 +340,27 @@ class CustomScene(QtWidgets.QGraphicsScene):
         new_valid_line.setData(2, graphic_attr_2)
         self.addItem(new_valid_line)
 
+    def redraw_node_lines(self, node: GeneralGraphicNode):
+        graphic_attrs = [
+            c
+            for c in self.items()
+            if c.data(0) == "GRAPHIC_ATTRIBUTE" and c.parent_node == node
+        ]
+
+        lines_to_redraw = set()
+        for g in graphic_attrs:
+            g_1, g_2 = None, None
+            for line in self.items():
+                g_1, g_2 = line.data(1), line.data(2)
+
+                if line.data(0) == constants.CONNECTOR_LINE and g in [g_1, g_2]:
+                    self.removeItem(line)
+                    lines_to_redraw.add((g_1, g_2))
+
+        if node in self.items():
+            for g_1, g_2 in lines_to_redraw:
+                self.draw_valid_line(g_1, g_2)
+
     def disconnect_graphic_attrs(
         self,
         graphic_attr_1: GeneralGraphicAttribute,
@@ -392,13 +369,25 @@ class CustomScene(QtWidgets.QGraphicsScene):
         graphic_attr_1.disconnect_from(graphic_attr_2)
         GS.attribute_editor_global_refresh_requested.emit()
 
+    def clear_node_lines(self, node: GeneralGraphicNode):
+        for line in self.items():
+            g_1, g_2 = line.data(1), line.data(2)
+            if line.data(0) == constants.CONNECTOR_LINE and node in [
+                g_1.parent_node,
+                g_2.parent_node,
+            ]:
+                self.removeItem(line)
+
+    # SAVE AND LOAD ----------------------
     def save_to_file(self):
         """
         Save this graphics scene to a file.
         """
         # Ask for filepath
         dialog = QtWidgets.QFileDialog()
-        result = dialog.getSaveFileName(caption="Specify target file", filter="*.yml")
+        result = dialog.getSaveFileName(
+            caption="Specify target file", filter="*.yml *.ctx"
+        )
         if not result[0] or not result[1]:
             return
         target_file = result[0]
@@ -406,7 +395,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         # Grab logic scene info and add the xy coords
         the_dict = self.logic_scene.convert_scene_to_dict()
         for g_node in self.all_nodes:
-            node_name = g_node.logic_node.full_name
+            node_name = g_node.logic_node.node_name
             for node_dict in the_dict["nodes"]:
                 if node_name in node_dict:
                     node_dict[node_name]["x_pos"] = int(g_node.scenePos().x())
@@ -416,7 +405,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         # Save logic scene
         self.logic_scene.save_to_file(target_file, the_dict)
 
-    def load_from_file(self, source_file: str):
+    def load_from_file(self, source_file: str, create_logic_nodes=True):
         """
         Create a graphic scene from a file.
 
@@ -429,13 +418,15 @@ class CustomScene(QtWidgets.QGraphicsScene):
         with open(source_file, "r") as file:
             scene_dict = yaml.safe_load(file)
 
-        new_logic_nodes = self.logic_scene.load_from_file(source_file)
+        new_logic_nodes = self.logic_scene.all_logic_nodes
+        if create_logic_nodes:
+            new_logic_nodes = self.logic_scene.load_from_file(source_file)
 
         # Create graphic nodes
         for logic_node in new_logic_nodes:
             for node_dict in scene_dict["nodes"]:
                 node_name = next(iter(node_dict))
-                if logic_node.full_name.endswith(node_name):
+                if logic_node.node_name.endswith(node_name):
                     self.add_graphic_node_from_logic_node(
                         logic_node,
                         node_dict[node_name]["x_pos"],
@@ -457,17 +448,17 @@ class CustomScene(QtWidgets.QGraphicsScene):
             for (
                 connected_logic_attribute
             ) in g_attribute.logic_attribute.connected_attributes:
-                connected_logic_attributes.append(connected_logic_attribute.full_name)
+                connected_logic_attributes.append(connected_logic_attribute.dot_name)
             for logic_attr_full_name in connected_logic_attributes:
                 for other_g_attribute in all_graphic_attrs:
                     if (
-                        other_g_attribute.logic_attribute.full_name
+                        other_g_attribute.logic_attribute.dot_name
                         == logic_attr_full_name
                     ):
                         LOGGER.info(
                             "Connected graphic attributes {} -> {}".format(
-                                g_attribute.logic_attribute.full_name,
-                                other_g_attribute.logic_attribute.full_name,
+                                g_attribute.logic_attribute.dot_name,
+                                other_g_attribute.logic_attribute.dot_name,
                             )
                         )
                         self.connect_graphic_attrs(
@@ -475,6 +466,173 @@ class CustomScene(QtWidgets.QGraphicsScene):
                         )
                         break
 
+    # NODE-SPECIFIC ----------------------
+    def rename_graphic_node(self, graphic_node: GeneralGraphicNode):
+        """
+        Rename a graphic node in the scene.
+
+        Args:
+            graphic_node (GeneralGraphicNode): node to be renamed
+
+        """
+        logic_node = graphic_node.logic_node
+        new_name, ok = QtWidgets.QInputDialog().getText(
+            None,
+            "Rename node " + logic_node.node_name,
+            "New name:",
+        )
+        if ok and new_name:
+            if self.logic_scene.rename_node(logic_node, new_name):
+                graphic_node.update_name()
+                GS.attribute_editor_refresh_node_requested.emit(logic_node.uuid)
+                GS.tab_names_refresh_requested.emit()
+            else:
+                if logic_node.node_name == new_name:
+                    self.in_screen_feedback.emit(
+                        "Cannot rename to '{}', it is the same name as now".format(
+                            new_name
+                        ),
+                        logging.INFO,
+                    )
+                else:
+                    if not GeneralLogicNode.name_is_valid(new_name):
+                        self.in_screen_feedback.emit(
+                            "Cannot rename to '{}', naming must start with uppercase and "
+                            "cannot include special characters".format(new_name),
+                            logging.WARNING,
+                        )
+                    else:
+                        self.in_screen_feedback.emit(
+                            "Cannot rename to '{}', "
+                            "check that no other node has that name".format(new_name),
+                            logging.WARNING,
+                        )
+
+    def examine_code(self, graphic_node: GeneralGraphicNode):
+        """
+        Show the code of a node in an external editor.
+
+        If the node is a context, show its .yml definition file as well.
+
+        Args:
+            graphic_node (GeneralGraphicNode): node to examine code from
+
+        """
+        logic_node = graphic_node.logic_node
+        try:
+            subprocess.Popen(["notepad", logic_node.FILEPATH])
+            if logic_node.IS_CONTEXT:
+                subprocess.Popen(["notepad", logic_node.CONTEXT_DEFINITION_FILE])
+        except Exception as e:
+            msg = "Could not open the code in editor: {}".format(e)
+            LOGGER.error(msg)
+            self.in_screen_feedback.emit(msg, logging.ERROR)
+
+    def expand_context(self, graphic_node: GeneralGraphicNode):
+        GS.attribute_editor_context_expansion_requested.emit(
+            graphic_node.logic_node.uuid
+        )
+
+    def show_log(self, graphic_node: GeneralGraphicNode):
+        """
+        For debugging purposes, print to screen internal information of a node.
+
+        Args:
+            graphic_node (GeneralGraphicNode): node to display info from.
+
+        """
+        print(
+            "\n{}\n{}".format(
+                graphic_node.logic_node.node_name,
+                "-" * len(graphic_node.logic_node.node_name),
+            )
+        )
+        pprint.pprint(graphic_node.logic_node.get_node_full_dict())
+
+    def run_single_node(self, graphic_node: GeneralGraphicNode):
+        """
+        Execute a graphic node.
+
+        Args:
+            graphic_node (GeneralGraphicNode): node to execute
+
+        """
+        logic_node = graphic_node.logic_node
+        self.in_screen_feedback.emit("Running only selected node(s)", logging.INFO)
+        logic_node.run_single()
+        graphic_node.show_result()
+        GS.attribute_editor_global_refresh_requested.emit()
+
+    def reset_single_node(self, graphic_node: GeneralGraphicNode):
+        """
+        Reset appearance of a graphic node and then also reset its
+        internal logic node.
+
+        Args:
+            graphic_node (GeneralGraphicNode): node to reset
+
+        """
+        graphic_node.reset()
+        graphic_node.logic_node.reset()
+        self.in_screen_feedback.emit("Resetting selected node(s)", logging.INFO)
+        GS.attribute_editor_global_refresh_requested.emit()
+
+    def deselect_all(self):
+        """Deselect all graphic nodes."""
+        for n in self.all_nodes:
+            n.setSelected(False)
+
+    # SCENE EXECUTION ----------------------
+    def reset_all_graphic_nodes(self):
+        """Reset all graphic nodes."""
+        utils.print_separator("Resetting all graphic nodes")
+        for g_node in self.all_nodes:
+            g_node.reset()
+
+    def show_result_on_nodes(self):
+        """Display the internal result of each graphic node."""
+        for g_node in self.all_nodes:
+            g_node.show_result()
+
+    def reset_graphic_scene(self):
+        self.reset_all_graphic_nodes()
+        self.logic_scene.reset_all_nodes()
+        GS.attribute_editor_global_refresh_requested.emit()
+
+    def run_graphic_scene(self):
+        self.reset_all_graphic_nodes()
+        self.logic_scene.run_all_nodes()
+        self.show_result_on_nodes()
+        GS.attribute_editor_global_refresh_requested.emit()
+
+    # UTILITY ----------------------
+    def selected_nodes(self) -> list:
+        """
+        Gather all selected nodes.
+
+        Returns: list, with all selected nodes.
+
+        """
+        sel_nodes = []
+        for n in self.all_nodes:
+            if n.isSelected():
+                sel_nodes.append(n)
+        return sel_nodes
+
+    def fit_in_view(self):
+        self.parent().resetMatrix()
+        nodes = list(self.all_nodes)
+        if self.selected_nodes():
+            nodes = self.selected_nodes()
+        if not nodes:
+            return
+        rect = nodes[0].sceneBoundingRect()
+        for n in nodes:
+            rect = rect.united(n.sceneBoundingRect())
+
+        self.parent().fitInView(rect, QtCore.Qt.KeepAspectRatio)
+
+    # CONTEXT EVENTS ----------------------
     def contextMenuEvent(self, event):
         selection_rect = QtCore.QRect(
             event.scenePos().x() - 1,
@@ -502,6 +660,15 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 reset_single_node_action.triggered.connect(
                     lambda: self.reset_single_node(item)
                 )
+                if item.logic_node.IS_CONTEXT:
+                    menu.addSeparator()
+                    expand_context_action = menu.addAction(
+                        "Expand context (Ctrl + Return ⏎)"
+                    )
+                    expand_context_action.setIcon(QtGui.QIcon("icons:cube.png"))
+                    expand_context_action.triggered.connect(
+                        lambda: self.expand_context(item)
+                    )
                 if constants.IN_DEV:
                     menu.addSeparator()
                     print_node_log_action = menu.addAction("Print node log")
@@ -517,81 +684,38 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         QtWidgets.QGraphicsScene.contextMenuEvent(self, event)
 
-    def rename_graphic_node(self, graphic_node: GeneralGraphicNode):
-        logic_node = graphic_node.logic_node
-        new_name, ok = QtWidgets.QInputDialog().getText(
-            None,
-            "Rename node " + logic_node.full_name,
-            "New name:",
-        )
-        if ok and new_name:
-            if self.logic_scene.rename_node(logic_node, new_name):
-                graphic_node.update_name()
-                GS.attribute_editor_refresh_node_requested.emit(logic_node.uuid)
-            else:
-                if logic_node.full_name == new_name:
-                    self.in_screen_feedback.emit(
-                        "Cannot rename to '{}', it is the same name as now".format(
-                            new_name
-                        ),
-                        logging.INFO,
-                    )
-                else:
-                    if not GeneralLogicNode.name_is_valid(new_name):
-                        self.in_screen_feedback.emit(
-                            "Cannot rename to '{}', naming must start with uppercase and "
-                            "cannot include special characters".format(new_name),
-                            logging.WARNING,
-                        )
-                    else:
-                        self.in_screen_feedback.emit(
-                            "Cannot rename to '{}', "
-                            "check that no other node has that name".format(new_name),
-                            logging.WARNING,
-                        )
+    # KEYBOARD EVENTS ----------------------
+    def keyPressEvent(self, event: QtWidgets.QGraphicsScene.event):
+        QtWidgets.QGraphicsScene.keyPressEvent(self, event)
 
-    def examine_code(self, graphic_node: GeneralGraphicNode):
-        """
-        Show the code of a node in an external editor.
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
 
-        Args:
-            graphic_node (GeneralGraphicNode): node to examine code from
+        if self.focusItem():  # Means we are editing a widget in some input node
+            return
 
-        """
-        logic_node = graphic_node.logic_node
-        try:
-            subprocess.Popen(["notepad", logic_node.filepath])
-        except Exception as e:
-            msg = "Could not open the code in editor: {}".format(e)
-            LOGGER.error(msg)
-            self.in_screen_feedback.emit(msg, logging.ERROR)
+        if event.key() == QtCore.Qt.Key_Delete:
+            for n in self.selected_nodes():
+                GS.attribute_editor_remove_node_requested.emit(n.logic_node.uuid)
+                self.delete_node(n)
+        elif event.key() == QtCore.Qt.Key_F:
+            self.fit_in_view()
+        elif event.key() == QtCore.Qt.Key_Return and not modifiers:
+            for n in self.selected_nodes():
+                self.run_single_node(n)
+        elif event.key() == QtCore.Qt.Key_R:
+            for n in self.selected_nodes():
+                self.reset_single_node(n)
+        elif event.key() == QtCore.Qt.Key_E:
+            for n in self.selected_nodes():
+                self.examine_code(n)
+        elif (
+            event.key() == QtCore.Qt.Key_Return
+            and modifiers == QtCore.Qt.ControlModifier
+        ):
+            for n in self.selected_nodes():
+                self.expand_context(n)
 
-    def show_log(self, graphic_node: GeneralGraphicNode):
-        print(
-            "\n{}\n{}".format(
-                graphic_node.logic_node.full_name,
-                "-" * len(graphic_node.logic_node.full_name),
-            )
-        )
-        pprint.pprint(graphic_node.logic_node.get_node_full_dict())
-
-    def run_single_node(self, graphic_node: GeneralGraphicNode):
-        logic_node = graphic_node.logic_node
-        self.in_screen_feedback.emit("Running only selected node(s)", logging.INFO)
-        logic_node.run_single()
-        graphic_node.show_result()
-        GS.attribute_editor_global_refresh_requested.emit()
-
-    def reset_single_node(self, graphic_node: GeneralGraphicNode):
-        graphic_node.reset()
-        graphic_node.logic_node.reset()
-        self.in_screen_feedback.emit("Resetting selected node(s)", logging.INFO)
-        GS.attribute_editor_global_refresh_requested.emit()
-
-    def deselect_all(self):
-        for n in self.all_nodes:
-            n.setSelected(False)
-
+    # MOUSE EVENTS ----------------------
     def mousePressEvent(self, event):
         QtWidgets.QGraphicsScene.mousePressEvent(self, event)
 
@@ -744,6 +868,12 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     )
                     graphic_attr_2 = new_g_node["out_int"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
+                elif graphic_attr_1.logic_attribute.data_type == float:
+                    new_g_node = self.add_graphic_node_by_name(
+                        "FloatInput", event_x, event_y
+                    )
+                    graphic_attr_2 = new_g_node["out_float"]
+                    self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type == bool:
                     new_g_node = self.add_graphic_node_by_name(
                         "BoolInput", event_x, event_y
@@ -765,60 +895,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         GS.attribute_editor_global_refresh_requested.emit()
 
-    def reset_all_graphic_nodes(self):
-        utils.print_separator("Resetting all graphic nodes")
-        for g_node in self.all_nodes:
-            g_node.reset()
-
-    def show_result_on_nodes(self):
-        """Display the internal result of each node."""
-        for g_node in self.all_nodes:
-            g_node.show_result()
-
-    def reset_graphic_scene(self):
-        self.reset_all_graphic_nodes()
-        self.logic_scene.reset_all_nodes()
-        GS.attribute_editor_global_refresh_requested.emit()
-
-    def run_graphic_scene(self):
-        self.reset_all_graphic_nodes()
-        self.logic_scene.run_all_nodes()
-        self.show_result_on_nodes()
-        GS.attribute_editor_global_refresh_requested.emit()
-
-    def keyPressEvent(self, event: QtWidgets.QGraphicsScene.event):
-        QtWidgets.QGraphicsScene.keyPressEvent(self, event)
-
-        if self.focusItem():  # Means we are editing a widget in some input node
-            return
-
-        if event.key() == QtCore.Qt.Key_Delete:
-            for n in self.selected_nodes():
-                GS.attribute_editor_remove_node_requested.emit(n.logic_node.uuid)
-                self.delete_node(n)
-        elif event.key() == QtCore.Qt.Key_F:
-            self.fit_in_view()
-        elif event.key() == QtCore.Qt.Key_Return:
-            for n in self.selected_nodes():
-                self.run_single_node(n)
-        elif event.key() == QtCore.Qt.Key_R:
-            for n in self.selected_nodes():
-                self.reset_single_node(n)
-        elif event.key() == QtCore.Qt.Key_E:
-            for n in self.selected_nodes():
-                self.examine_code(n)
-
-    def fit_in_view(self):
-        self.parent().resetMatrix()
-        nodes = list(self.all_nodes)
-        if self.selected_nodes():
-            nodes = self.selected_nodes()
-        rect = nodes[0].sceneBoundingRect()
-        for n in nodes:
-            rect = rect.united(n.sceneBoundingRect())
-
-        self.parent().fitInView(rect, QtCore.Qt.KeepAspectRatio)
-
+    # DRAG AND DROP EVENT ----------------------
     def dragEnterEvent(self, event):
         QtWidgets.QGraphicsScene.dragEnterEvent(self, event)
         event.acceptProposedAction()

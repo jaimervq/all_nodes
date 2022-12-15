@@ -8,8 +8,15 @@ casting_nodes:
 special_input_nodes:
     color: '#4b007a'
 
+special_context_nodes:
+    color: '#707070'
+    default_icon: cube
+
 debug_nodes:
     color: '#404040'
+
+flow_control_nodes:
+    color: "#294a41"
 
 # PIPELINE --------------------------------------
 pipeline:

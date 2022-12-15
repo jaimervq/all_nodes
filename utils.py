@@ -1,32 +1,4 @@
 # -*- coding: UTF-8 -*-
-"""
-Author: Jaime Rivera
-Date: November 2022
-Copyright: MIT License
-
-           Copyright (c) 2022 Jaime Rivera
-
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
-
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
-
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-           SOFTWARE.
-
-Brief:
-"""
-
 __author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
 __copyright__ = "Copyright 2022, Jaime Rivera"
 __credits__ = []
@@ -71,6 +43,16 @@ def print_separator(message):
 
 # -------------------------------- CONFIGS -------------------------------- #
 def get_config(config_name):
+    """
+    Get a config from an existing yaml file.
+
+    Args:
+        config_name (str): name of config to read from configs folder
+
+    Returns:
+        dict: with read config
+
+    """
     root = os.path.abspath(__file__)
     root_dir_path = os.path.dirname(root)
     config_file = os.path.join(root_dir_path, "config", config_name + ".yml")
@@ -81,6 +63,14 @@ def get_config(config_name):
 
 # -------------------------------- NODE CLASSES -------------------------------- #
 NODE_STYLES = get_config("node_lib_styles")
+
+CLASSES_TO_SKIP = [
+    "GeneralLogicNode",
+    "Run",
+    "SpecialInputNode",
+    "GrabInputFromCtx",
+    "SetOutputToCtx",
+]
 
 
 def register_node_lib(full_path, all_classes_dict):
@@ -105,9 +95,9 @@ def register_node_lib(full_path, all_classes_dict):
     module_classes = list()
     class_counter = 0
     for name, cls in class_memebers:
-        if name in ["GeneralLogicNode", "SpecialInputNode"]:
+        if name in CLASSES_TO_SKIP:
             continue
-        setattr(cls, "filepath", full_path)  # TODO not ideal?
+        setattr(cls, "FILEPATH", full_path)  # TODO not ideal?
         module_classes.append((name, cls))
         class_counter += 1
 
@@ -116,7 +106,7 @@ def register_node_lib(full_path, all_classes_dict):
     all_classes_dict[module_name]["module_filename"] = module_filename
     all_classes_dict[module_name]["classes"] = module_classes
 
-    all_classes_dict[module_name]["color"] = "#4D004C"  # Default color
+    all_classes_dict[module_name]["color"] = constants.DEFAULT_NODE_COLOR
     for style in NODE_STYLES:
         if style in module_name:
             all_classes_dict[module_name]["color"] = NODE_STYLES[style].get(
@@ -169,22 +159,11 @@ def get_all_node_classes():
 
     executor = concurrent.futures.ThreadPoolExecutor()
     all_classes_dict = dict()
-    # TODO register clases in a list to make sure there are no repeated names
     for full_path in all_py:
         executor.submit(register_node_lib, full_path, all_classes_dict)
 
+    # TODO examine classes to make sure there are no repeated names?
     return all_classes_dict
-
-
-def get_bright_color(color_name):
-    base_color = QtGui.QColor(color_name)
-    h, s, v = (
-        base_color.hue(),
-        base_color.saturation(),
-        base_color.value(),
-    )
-    bright_color = QtGui.QColor.fromHsv(h, 255, 255)
-    return bright_color.name()
 
 
 # -------------------------------- SCENES -------------------------------- #
@@ -194,7 +173,7 @@ def get_all_scenes_recursive(libraries_path=None, scenes_dict=None):
         if not os.getenv("ALL_NODES_LIB_PATH"):
             root = os.path.abspath(__file__)
             root_dir_path = os.path.dirname(root)
-            default_lib_path = os.path.join(root_dir_path, "lib")
+            default_lib_path = os.path.join(root_dir_path, "lib/example_scene_lib")
             libraries_path.append(default_lib_path)
             LOGGER.warning(
                 "Env variable 'ALL_NODES_LIB_PATH' is not defined, "
@@ -268,3 +247,15 @@ def get_scene_from_alias(scenes_dict, alias):
                             scene_path = full_path
 
     return scene_path
+
+
+# -------------------------------- UTILITY -------------------------------- #
+def get_bright_color(color_name):
+    base_color = QtGui.QColor(color_name)
+    h, s, v = (
+        base_color.hue(),
+        base_color.saturation(),
+        base_color.value(),
+    )
+    bright_color = QtGui.QColor.fromHsv(h, 255, 255)
+    return bright_color.name()

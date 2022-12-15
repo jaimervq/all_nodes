@@ -1,32 +1,4 @@
 # -*- coding: UTF-8 -*-
-"""
-Author: Jaime Rivera
-Date: November 2022
-Copyright: MIT License
-
-           Copyright (c) 2022 Jaime Rivera
-
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
-
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
-
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-           SOFTWARE.
-
-Brief: Attribute editor widget, where nodes will be displayed and/or edited.
-"""
-
 __author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
 __copyright__ = "Copyright 2022, Jaime Rivera"
 __credits__ = []
@@ -64,7 +36,13 @@ class NodePanel(QtWidgets.QWidget):
         self.represent_node()
 
     def get_node_color(self):
-        """"""
+        """
+        Examine the configs and find the color associated to the represented node
+
+        Returns:
+            QtGui.QColor: color that corresponds to the logic node
+
+        """
         node_color = QtGui.QColor(constants.DEFAULT_NODE_COLOR)
         for module in ALL_CLASSES:
             classes = ALL_CLASSES[module]["classes"]
@@ -74,6 +52,7 @@ class NodePanel(QtWidgets.QWidget):
                     node_color = QtGui.QColor(ALL_CLASSES[module]["color"])
                     node_color.setAlphaF(0.8)
                     return node_color
+
         return node_color
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
@@ -105,15 +84,22 @@ class NodePanel(QtWidgets.QWidget):
         QtWidgets.QWidget.paintEvent(self, event)
 
     def clear(self):
+        """
+        Clear all contents of this widget.
+        """
         for i in reversed(range(self.grid_layout.count())):
             w = self.grid_layout.itemAt(i).widget()
             if w:
                 w.deleteLater()
 
     def represent_node(self):
+        """
+        Add the needed child widgets to properly represent all the
+        internal information in the node.
+        """
         self.row_count = 0
 
-        name_label = QtWidgets.QLabel(self.logic_node.full_name)
+        name_label = QtWidgets.QLabel(self.logic_node.node_name)
         name_label.setFont(QtGui.QFont("arial", 14))
         self.grid_layout.addWidget(name_label, self.row_count, 0, 1, 3)
         close_btn = QtWidgets.QToolButton()
@@ -186,6 +172,15 @@ class NodePanel(QtWidgets.QWidget):
         self.grid_layout.addItem(verticalSpacer, self.row_count, 0, 1, 3)
 
     def represent_attribute(self, attr):
+        """
+        Add one of the node's attributes to the widget.
+
+        It will consist of different parts: a name label, an input text line...
+
+        Args:
+            attr (GeneralLogicAttribute): attr to be represented
+
+        """
         attr_name = attr.attribute_name
         data_type = attr.data_type
         name_l = QtWidgets.QLabel("{} ({})".format(attr_name, attr.get_datatype_str()))
@@ -209,6 +204,7 @@ class NodePanel(QtWidgets.QWidget):
             regex = QtCore.QRegExp("[01]")
             if value is not None:
                 attrib_value_le.setText(str(int(value)))
+        # TODO corner case: if it is an empty str, the None placeholder will show
 
         validator = QtGui.QRegExpValidator(regex)
         attrib_value_le.setValidator(validator)
@@ -286,6 +282,16 @@ class AttributeEditor(QtWidgets.QScrollArea):
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
     def add_node_panel(self, logic_node):
+        """
+        Add a logic node to the attribute editor.
+
+        Args:
+            logic_node (GeneralLogicNode): logic node to be represented
+
+        Returns:
+            bool: whether or not the node could be added
+
+        """
         for i in range(self.layout.count()):
             w = self.layout.itemAt(i).widget()
             if w:
@@ -295,6 +301,13 @@ class AttributeEditor(QtWidgets.QScrollArea):
         return True
 
     def refresh_node_panel(self, logic_node):
+        """
+        Refresh the representation/widget of a logic node in attribute editor.
+
+        Args:
+            logic_node (GeneralLogicNode): logic node to be refreshed
+
+        """
         for i in range(self.layout.count()):
             w = self.layout.itemAt(i).widget()
             if w:
@@ -304,6 +317,13 @@ class AttributeEditor(QtWidgets.QScrollArea):
                     return
 
     def remove_node_panel(self, logic_node):
+        """
+        Remove the representation/widget of a logic node in attribute editor.
+
+        Args:
+            logic_node (GeneralLogicNode): logic node to be removed
+
+        """
         for i in range(self.layout.count()):
             w = self.layout.itemAt(i).widget()
             if w:
@@ -312,6 +332,9 @@ class AttributeEditor(QtWidgets.QScrollArea):
                     return
 
     def refresh(self):
+        """
+        Perform an overall refresh of all representations of nodes.
+        """
         for i in range(self.layout.count()):
             w = self.layout.itemAt(i).widget()
             if w:
@@ -319,6 +342,9 @@ class AttributeEditor(QtWidgets.QScrollArea):
                 w.represent_node()
 
     def clear_all(self):
+        """
+        Remove all representations of nodes.
+        """
         for i in range(self.layout.count()):
             w = self.layout.itemAt(i).widget()
             if w:

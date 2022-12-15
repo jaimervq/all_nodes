@@ -1,32 +1,3 @@
-# -*- coding: UTF-8 -*-
-"""
-Author: Jaime Rivera
-Date: November 2022
-Copyright: MIT License
-
-           Copyright (c) 2022 Jaime Rivera
-
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
-
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
-
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-           SOFTWARE.
-
-Brief:
-"""
-
 __author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
 __copyright__ = "Copyright 2022, Jaime Rivera"
 __credits__ = []
@@ -88,3 +59,44 @@ class ConcatStr(GeneralLogicNode):
             if val is not None:
                 out_str += val
         self.set_output("out_str", out_str)
+
+
+class MultiToStr(GeneralLogicNode):
+
+    INPUTS_DICT = {
+        "in_int": {"type": int, "optional": True},
+        "in_float": {"type": float, "optional": True},
+        "in_bool": {"type": bool, "optional": True},
+        "in_dict": {"type": dict, "optional": True},
+        "in_object": {"type": object, "optional": True},
+    }
+
+    OUTPUTS_DICT = {
+        "[NOTHING]": {"type": object, "optional": True},
+        "out_int_to_str": {"type": str, "optional": True},
+        "out_float_to_str": {"type": str, "optional": True},
+        "out_bool_to_str": {"type": str, "optional": True},
+        "out_dict_to_str": {"type": str, "optional": True},
+        "out_object_to_str": {"type": str, "optional": True},
+    }
+
+    def run(self):
+        in_int = self.get_attribute_value("in_int")
+        if in_int is not None:
+            self.set_output("out_int_to_str", str(in_int))
+
+        in_float = self.get_attribute_value("in_float")
+        if in_float is not None:
+            self.set_output("out_float_to_str", str(in_float))
+
+        in_bool = self.get_attribute_value("in_bool")
+        if in_bool is not None:
+            self.set_output("out_bool_to_str", str(in_bool))
+
+        in_dict = self.get_attribute_value("in_dict")
+        if in_dict is not None:
+            self.set_output("out_dict_to_str", str(in_dict))
+
+        in_object = self.get_attribute_value("in_object")
+        if in_object is not None:
+            self.set_output("out_object_to_str", str(in_object))
