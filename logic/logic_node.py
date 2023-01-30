@@ -1,32 +1,4 @@
 # -*- coding: UTF-8 -*-
-"""
-Author: Jaime Rivera
-Date: November 2022
-Copyright: MIT License
-
-           Copyright (c) 2022 Jaime Rivera
-
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
-
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
-
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-           SOFTWARE.
-
-Brief:
-"""
-
 from __future__ import annotations
 
 __author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
@@ -36,8 +8,10 @@ __license__ = "MIT License"
 
 import ast
 import inspect
+import os
 import pprint
 import re
+import time
 import uuid
 
 from all_nodes import constants
@@ -67,11 +41,16 @@ class GeneralLogicNode:
 
     """
 
+    FILEPATH = ""
+
     NICE_NAME = None
     HELP = ""
 
     INPUTS_DICT = {}
     OUTPUTS_DICT = {}
+
+    IS_CONTEXT = False
+    CONTEXT_DEFINITION_FILE = None
 
     VALID_NAMING_PATTERN = "^[A-Z]+[a-zA-Z0-9_]*$"
 
@@ -79,7 +58,7 @@ class GeneralLogicNode:
 
         # General properties
         self.class_name = type(self).__name__
-        self.full_name = self.class_name + "_1"
+        self.node_name = self.class_name + "_1"
         self.uuid = str(uuid.uuid4())
 
         # Attributes
@@ -87,10 +66,18 @@ class GeneralLogicNode:
         self.check_attributes_validity()
         self.create_attributes()
 
+        # Context it belongs to
+        self.context = None
+
+        # Is context
+        self.internal_scene = None
+        self.build_internal()
+
         # Run
         self.success = constants.NOT_RUN
         self.fail_log = []
         self.error_log = []
+        self.execution_time = 0
 
         # Feedback
         LOGGER.debug("Initialized node! {}".format(self.class_name))
@@ -103,12 +90,12 @@ class GeneralLogicNode:
         return False
 
     def rename(self, new_name):
-        if self.full_name == new_name:
+        if self.node_name == new_name:
             return True
 
         if self.name_is_valid(new_name):
-            LOGGER.debug("Renamed node '{}' to '{}'".format(self.full_name, new_name))
-            self.full_name = new_name
+            LOGGER.debug("Renamed node '{}' to '{}'".format(self.node_name, new_name))
+            self.node_name = new_name
             return True
         else:
             LOGGER.warning("Name proposed for node is not valid: {}".format(new_name))
@@ -117,9 +104,9 @@ class GeneralLogicNode:
 
     def force_rename(self, new_name):
         LOGGER.debug(
-            "Forcing renaming of node '{}' to '{}'".format(self.full_name, new_name)
+            "Forcing renaming of node '{}' to '{}'".format(self.node_name, new_name)
         )
-        self.full_name = new_name
+        self.node_name = new_name
         return True
 
     def get_max_in_or_out_count(self):
@@ -129,28 +116,27 @@ class GeneralLogicNode:
         out_dict = dict()
 
         out_dict["class"] = self.class_name
+        out_dict["node_name"] = self.node_name
         out_dict["full_name"] = self.full_name
         out_dict["uuid"] = self.uuid
 
         out_dict["node_attributes"] = dict()
         for attr in self.all_attributes:
-            out_dict["node_attributes"][attr.full_name] = dict()
-            out_dict["node_attributes"][attr.full_name][
+            out_dict["node_attributes"][attr.dot_name] = dict()
+            out_dict["node_attributes"][attr.dot_name][
                 "attribute_name"
             ] = attr.attribute_name
-            out_dict["node_attributes"][attr.full_name]["value"] = attr.value
-            out_dict["node_attributes"][attr.full_name][
+            out_dict["node_attributes"][attr.dot_name]["value"] = attr.value
+            out_dict["node_attributes"][attr.dot_name][
                 "connector_type"
             ] = attr.connector_type
-            out_dict["node_attributes"][attr.full_name][
-                "is_optional"
-            ] = attr.is_optional
-            out_dict["node_attributes"][attr.full_name]["data_type"] = attr.data_type
-            out_dict["node_attributes"][attr.full_name][
+            out_dict["node_attributes"][attr.dot_name]["is_optional"] = attr.is_optional
+            out_dict["node_attributes"][attr.dot_name]["data_type"] = attr.data_type
+            out_dict["node_attributes"][attr.dot_name][
                 "data_type_str"
             ] = attr.get_datatype_str()
-            out_dict["node_attributes"][attr.full_name]["connected_to"] = [
-                c_attr.full_name for c_attr in attr.connected_attributes
+            out_dict["node_attributes"][attr.dot_name]["connected_to"] = [
+                c_attr.dot_name for c_attr in attr.connected_attributes
             ]
         out_dict["success"] = self.success
         out_dict["error_log"] = self.error_log
@@ -166,20 +152,20 @@ class GeneralLogicNode:
     def get_node_basic_dict(self):
         out_dict = dict()
 
-        out_dict[self.full_name] = dict()
-        out_dict[self.full_name]["class_name"] = self.class_name
+        out_dict[self.node_name] = dict()
+        out_dict[self.node_name]["class_name"] = self.class_name
 
-        out_dict[self.full_name]["node_attributes"] = dict()
+        out_dict[self.node_name]["node_attributes"] = dict()
         for attr in self.all_attributes:
             if (
                 attr.attribute_name not in [constants.START, constants.COMPLETED]
                 and attr.value is not None
             ):
-                out_dict[self.full_name]["node_attributes"][
+                out_dict[self.node_name]["node_attributes"][
                     attr.attribute_name
                 ] = attr.value
-        if not out_dict[self.full_name]["node_attributes"]:
-            out_dict[self.full_name].pop("node_attributes")
+        if not out_dict[self.node_name]["node_attributes"]:
+            out_dict[self.node_name].pop("node_attributes")
 
         return out_dict
 
@@ -187,7 +173,7 @@ class GeneralLogicNode:
         connections_list = list()
         for attr in self.get_output_attrs():
             for connected in attr.connected_attributes:
-                connections_list.append([attr.full_name, connected.full_name])
+                connections_list.append([attr.dot_name, connected.dot_name])
         return connections_list
 
     def out_connected_nodes(self):
@@ -198,6 +184,13 @@ class GeneralLogicNode:
         return connected_nodes
 
     # PROPERTIES ----------------------
+    @property
+    def full_name(self):
+        if self.context:
+            return self.context.full_name + "." + self.node_name
+        else:
+            return self.node_name
+
     @property
     def all_attribute_names(self):
         return [a.attribute_name for a in self.all_attributes]
@@ -268,19 +261,20 @@ class GeneralLogicNode:
 
     def set_attribute_value(self, attribute_name: str, value):
         if attribute_name not in self.all_attribute_names:
-            LOGGER.error(
+            raise RuntimeError(
                 "Error! No valid attribute {} in the node".format(attribute_name)
             )
-            return
 
         for attribute in self.all_attributes:
             if attribute.attribute_name == attribute_name:
                 if isinstance(value, attribute.data_type):
                     attribute.set_value(value)
                 else:
-                    LOGGER.error(
-                        "Not a valid type! {} not valid for {}(type:{})".format(
-                            value, attribute.full_name, attribute.get_datatype_str()
+                    raise RuntimeError(
+                        "Not a valid type! {} not valid for {} (needed: {})".format(
+                            value,
+                            attribute.dot_name,
+                            attribute.get_datatype_str(),
                         )
                     )
 
@@ -317,6 +311,12 @@ class GeneralLogicNode:
             )
             return
 
+        if value_str == "":
+            for attribute in self.all_attributes:
+                if attribute.attribute_name == attribute_name:
+                    attribute.clear()
+                    return
+
         for attribute in self.all_attributes:
             if attribute.attribute_name == attribute_name:
                 if attribute.data_type == str:
@@ -350,7 +350,9 @@ class GeneralLogicNode:
 
     def get_attribute_value(self, attribute_name: str):
         if attribute_name not in self.all_attribute_names:
-            LOGGER.error("Error! No valid attribute in the node")
+            LOGGER.error(
+                "Error! No valid attribute {} in the node".format(attribute_name)
+            )
             return
 
         return self[attribute_name].get_value()
@@ -389,9 +391,9 @@ class GeneralLogicNode:
         for attr in self.get_input_attrs():
             if attr.is_optional and attr.is_empty():
                 if attr.has_input_connected():
-                    not_set_attrs.append(attr.full_name)
+                    not_set_attrs.append(attr.dot_name)
             elif attr.is_empty():
-                not_set_attrs.append(attr.full_name)
+                not_set_attrs.append(attr.dot_name)
 
         if not_set_attrs:
             LOGGER.warning(
@@ -407,7 +409,7 @@ class GeneralLogicNode:
         not_set_attrs = []
         for attr in self.get_output_attrs():
             if attr.is_empty() and not attr.is_optional:
-                not_set_attrs.append(attr.full_name)
+                not_set_attrs.append(attr.dot_name)
 
         if not_set_attrs:
             LOGGER.warning(
@@ -419,13 +421,44 @@ class GeneralLogicNode:
 
         return True
 
+    # CONTEXT ----------------------
+    def build_internal(self):
+        if not self.IS_CONTEXT:
+            return
+
+        from all_nodes.logic.logic_scene import LogicScene
+
+        LOGGER.debug(
+            "Building internal scene for context node {}".format(self.full_name)
+        )
+
+        self.internal_scene = LogicScene()
+        self.internal_scene.context = self
+        self.internal_scene.set_name(self.full_name)
+
+        context_definition_file = os.path.join(
+            os.path.dirname(os.path.abspath(self.FILEPATH)),
+            self.class_name + ".ctx",
+        )
+        if os.path.isfile(context_definition_file):
+            self.CONTEXT_DEFINITION_FILE = context_definition_file
+            self.internal_scene.load_from_file(self.CONTEXT_DEFINITION_FILE)
+            self.internal_scene.set_context_to_nodes(self)
+        else:
+            raise RuntimeError(
+                "No context definition file found for {}. Expected at: {}".format(
+                    self.class_name, context_definition_file
+                )
+            )
+
+    def set_context(self, context):
+        self.context = context
+
     # RUN ----------------------
     def _run(self, execute_connected=True):
 
-        # Check it is not run
-        if self.success != constants.NOT_RUN:
-            LOGGER.info("Node {} is already executed".format(self.full_name))
-            return
+        # Start timer
+        t1 = time.time()
 
         # Check inputs
         if not self.check_all_inputs_have_value():
@@ -442,12 +475,24 @@ class GeneralLogicNode:
         )
 
         # Run
-        try:
-            self.run()
-        except Exception as e:
-            self.error(str(e))
-            LOGGER.exception(e)
-            return
+        if self.IS_CONTEXT:
+            self.internal_scene.run_all_nodes()
+            internal_failures = self.internal_scene.gather_failed_nodes()
+            if internal_failures:
+                for f in internal_failures:
+                    self.fail(f)
+            internal_errors = self.internal_scene.gather_errored_nodes()
+            if internal_errors:
+                for e in internal_errors:
+                    self.error(e)
+
+        else:
+            try:
+                self.run()
+            except Exception as e:
+                self.error(str(e))
+                LOGGER.exception(e)
+                return
 
         # Result of Run
         if self.success == constants.FAILED:
@@ -486,6 +531,9 @@ class GeneralLogicNode:
         )
         self.propagate_results()
 
+        # Stop timer
+        self.execution_time = time.time() - t1
+
         # Execute connected
         if execute_connected:
             for node in self.out_connected_nodes():
@@ -499,13 +547,19 @@ class GeneralLogicNode:
     def run_single(self):
         self._run(execute_connected=False)
 
+    def run_chain(self):
+        self._run(execute_connected=True)
+
     def run(self):
         """To be reimplemented in each subclass"""
-        self.fail(
-            "Class '{}' does not have the 'run' method implemented!".format(
-                self.class_name
+        if self.IS_CONTEXT:
+            LOGGER.debug("Contexts do not need to implement the 'run' method")
+        else:
+            self.fail(
+                "Class '{}' does not have the 'run' method implemented!".format(
+                    self.class_name
+                )
             )
-        )
 
     def fail(self, message=None):
         """
@@ -545,13 +599,19 @@ class GeneralLogicNode:
 
     def reset(self):
         LOGGER.info("Resetting node " + self.full_name)
+        for attr in self.get_input_attrs():
+            if attr.has_connections():
+                attr.clear()
         for attr in self.get_output_attrs():
             attr.clear()
 
         self.success = constants.NOT_RUN
-
         self.fail_log = []
         self.error_log = []
+        self.execution_time = 0
+
+        if self.IS_CONTEXT:
+            self.internal_scene.reset_all_nodes()
 
     # SPECIAL METHODS ----------------------
     def __getitem__(self, item: str):
@@ -561,6 +621,7 @@ class GeneralLogicNode:
         LOGGER.error(
             "Error, no attribute with that name {}.{}".format(self.full_name, item)
         )
+        return None
 
     def __str__(self):
         return "<{} object>".format(self.full_name, self.class_name)
@@ -601,7 +662,7 @@ class SpecialInputNode(GeneralLogicNode):
             if attribute.attribute_name == attribute_name:
                 LOGGER.debug(
                     "Setting special attribute {} to {}".format(
-                        attribute.full_name, value
+                        attribute.dot_name, value
                     )
                 )
                 self.set_attribute_value(attribute_name, value)
@@ -662,10 +723,20 @@ class GeneralLogicAttribute:
 
     # PROPERTIES ----------------------
     @property
+    def dot_name(self):
+        return self.parent_node.node_name + "." + self.attribute_name
+
+    @property
     def full_name(self):
         return self.parent_node.full_name + "." + self.attribute_name
 
-    # MAIN METHODS ----------------------
+    # GET AND SET ----------------------
+    def get_value(self):
+        return self.value
+
+    def is_empty(self) -> bool:
+        return self.value is None
+
     def set_value(self, new_value):
         self.value = new_value
         LOGGER.debug("Setting {} to new value {}".format(self.full_name, self.value))
@@ -673,30 +744,34 @@ class GeneralLogicAttribute:
     def clear(self):
         self.value = None
 
-    def get_value(self):
-        return self.value
-
-    def is_empty(self) -> bool:
-        return self.value is None
-
+    # CONNECTIONS ----------------------
     def get_connections_list(self):
         connections = []
         if self.has_connections():
             for connected_attr in self.connected_attributes:
                 if self.connector_type == constants.INPUT:
-                    connections.append([connected_attr.full_name, self.full_name])
+                    connections.append([connected_attr.dot_name, self.dot_name])
                 else:
-                    connections.append([self.full_name, connected_attr.full_name])
+                    connections.append([self.dot_name, connected_attr.dot_name])
 
         return connections
+
+    def has_input_connected(self) -> bool:
+        return (
+            self.connector_type == constants.INPUT
+            and len(self.connected_attributes) > 0
+        )
+
+    def has_connections(self) -> bool:
+        return len(self.connected_attributes) > 0
 
     def connect_to_other(self, other_attribute: GeneralLogicAttribute) -> bool:
 
         if not self.parent_node != other_attribute.parent_node:
             LOGGER.warning(
                 "Cannot connect {} and {}, both same node {}".format(
-                    self.full_name,
-                    other_attribute.full_name,
+                    self.dot_name,
+                    other_attribute.dot_name,
                     self.parent_node.full_name,
                 )
             )
@@ -705,7 +780,7 @@ class GeneralLogicAttribute:
         if not self.connector_type != other_attribute.connector_type:
             LOGGER.warning(
                 "Cannot connect {} and {}, both are {}".format(
-                    self.full_name, other_attribute.full_name, self.connector_type
+                    self.dot_name, other_attribute.dot_name, self.connector_type
                 )
             )
             return False
@@ -717,9 +792,9 @@ class GeneralLogicAttribute:
             if object not in [self.data_type, other_attribute.data_type]:
                 LOGGER.warning(
                     "Cannot connect {} {} {}, different datatypes {}{}{}".format(
-                        self.full_name,
+                        self.dot_name,
                         connection_direction,
-                        other_attribute.full_name,
+                        other_attribute.dot_name,
                         self.get_datatype_str(),
                         connection_direction,
                         other_attribute.get_datatype_str(),
@@ -736,46 +811,34 @@ class GeneralLogicAttribute:
 
         LOGGER.info(
             "Connected {} {} {}".format(
-                self.full_name, connection_direction, other_attribute.full_name
+                self.dot_name, connection_direction, other_attribute.dot_name
             )
         )
 
         return True
-
-    def has_input_connected(self) -> bool:
-        return (
-            self.connector_type == constants.INPUT
-            and len(self.connected_attributes) > 0
-        )
-
-    def has_connections(self) -> bool:
-        return len(self.connected_attributes) > 0
-
-    def disconnect_input(self):
-        if self.connector_type == constants.INPUT and self.connected_attributes:
-            self.disconnect_from_other(next(iter(self.connected_attributes)))
-
-    def get_datatype_str(self) -> str:
-        type = str(self.data_type)
-        if "." in str(self.data_type):
-            return re.search("'.+\.(.+)'", type).group(1)
-        return re.search("'(.+)'", type).group(1)
 
     def disconnect_from_other(self, other_attribute: GeneralLogicAttribute):
         self.connected_attributes.remove(other_attribute)
         other_attribute.connected_attributes.remove(self)
         if self.connector_type == constants.OUTPUT:
             LOGGER.info(
-                "Disconnected {} -/- {}".format(
-                    self.full_name, other_attribute.full_name
-                )
+                "Disconnected {} -/- {}".format(self.dot_name, other_attribute.dot_name)
             )
         else:
             LOGGER.info(
-                "Disconnected {} -/- {}".format(
-                    other_attribute.full_name, self.full_name
-                )
+                "Disconnected {} -/- {}".format(other_attribute.dot_name, self.dot_name)
             )
+
+    def disconnect_input(self):
+        if self.connector_type == constants.INPUT and self.connected_attributes:
+            self.disconnect_from_other(next(iter(self.connected_attributes)))
+
+    # UTILITY ----------------------
+    def get_datatype_str(self) -> str:
+        type = str(self.data_type)
+        if "." in str(self.data_type):
+            return re.search("'.+\.(.+)'", type).group(1)
+        return re.search("'(.+)'", type).group(1)
 
     def propagate_value(self):
         for connected_attr in self.connected_attributes:
@@ -783,7 +846,7 @@ class GeneralLogicAttribute:
 
     # SPECIAL METHODS ----------------------
     def __str__(self):
-        return "GeneralLogicAttribute: {}, value:{}".format(self.full_name, self.value)
+        return "GeneralLogicAttribute: {}, value:{}".format(self.dot_name, self.value)
 
 
 # -------------------------------- UTILITY -------------------------------- #

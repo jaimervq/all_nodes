@@ -1,32 +1,4 @@
 # -*- coding: UTF-8 -*-
-"""
-Author: Jaime Rivera
-Date: November 2022
-Copyright: MIT License
-
-           Copyright (c) 2022 Jaime Rivera
-
-           Permission is hereby granted, free of charge, to any person obtaining a copy
-           of this software and associated documentation files (the "Software"), to deal
-           in the Software without restriction, including without limitation the rights
-           to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-           copies of the Software, and to permit persons to whom the Software is
-           furnished to do so, subject to the following conditions:
-
-           The above copyright notice and this permission notice shall be included in all
-           copies or substantial portions of the Software.
-
-           THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-           IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-           FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-           AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-           LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-           OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-           SOFTWARE.
-
-Brief:
-"""
-
 from __future__ import annotations
 
 __author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
@@ -40,6 +12,7 @@ import getpass
 import os
 import yaml
 
+from all_nodes import constants
 from all_nodes import utils
 from all_nodes.logic import ALL_CLASSES, ALL_SCENES
 from all_nodes.logic.logic_node import GeneralLogicNode
@@ -51,6 +24,10 @@ LOGGER = utils.get_logger(__name__)
 class LogicScene:
     def __init__(self):
 
+        self.scene_name = None
+
+        self.context = None
+
         self.all_logic_nodes = set()
         self.class_counter = dict()
 
@@ -58,6 +35,7 @@ class LogicScene:
 
         LOGGER.debug("Initialized logic scene")
 
+    # NODE ADDITION AND DELETION ----------------------
     def add_node_by_name(
         self, node_classname: str, rename_on_create=True
     ) -> GeneralLogicNode:
@@ -77,29 +55,26 @@ class LogicScene:
                                 + "_"
                                 + str(self.class_counter[node_classname]),
                             )
+
+                    if self.context:
+                        new_logic_node.set_context(self.context)
                     return new_logic_node
 
-        raise RuntimeError("No class {} was found!".format(node_classname))
+        raise LogicSceneError("No class {} was found!".format(node_classname))
 
-    def rename_node(self, node, new_name: str) -> bool:
-        for n in self.all_logic_nodes:
-            if n.uuid == node.uuid:
-                continue
-            if n.full_name == new_name:
-                LOGGER.error("Node {} already exists!".format(new_name))
-                return False
+    def clear(self):
+        self.all_logic_nodes = set()
+        LOGGER.info("Cleared logic scene")
 
-        return node.rename(new_name)
+    def remove_node_by_name(self, node_fullname):
+        for node in self.all_logic_nodes:
+            if node.node_name == node_fullname:
+                self.all_logic_nodes.remove(node)
+                LOGGER.info("Removed logic node {}".format(node_fullname))
+                return
+        raise RuntimeError("No node matches name" + node_fullname)
 
-    def rename_node_with_namespace(self, node, new_name: str) -> None:
-        for n in self.all_logic_nodes:
-            if n.uuid == node.uuid:
-                continue
-            if n.full_name == new_name:
-                raise LogicSceneError("Node {} already exists!".format(new_name))
-
-        return node.force_rename(new_name)
-
+    # NODE RETRIEVAL ----------------------
     def all_nodes(self):
         return self.all_logic_nodes
 
@@ -110,7 +85,7 @@ class LogicScene:
         starting_nodes = []
         for n in self.all_logic_nodes:
             if n.is_starting_node():
-                LOGGER.info("Node {} to be used as starting node".format(n.full_name))
+                LOGGER.info("Node {} to be used as starting node".format(n.node_name))
                 starting_nodes.append(n)
 
         if not starting_nodes:
@@ -120,29 +95,80 @@ class LogicScene:
 
     def to_node(self, node_full_name):
         for node in self.all_logic_nodes:
-            if node.full_name == node_full_name:
+            if node.node_name == node_full_name:
                 return node
 
-    def clear(self):
-        self.all_logic_nodes = set()
-        LOGGER.info("Cleared logic scene")
+    # NODE MANIPULATION ----------------------
+    def rename_node(self, node, new_name: str) -> bool:
+        for n in self.all_logic_nodes:
+            if n.uuid == node.uuid:
+                continue
+            if n.node_name == new_name:
+                LOGGER.error("Node {} already exists!".format(new_name))
+                return False
 
-    def remove_node_by_name(self, node_fullname):
+        return node.rename(new_name)
+
+    def rename_node_with_namespace(self, node, new_name: str) -> None:
+        for n in self.all_logic_nodes:
+            if n.uuid == node.uuid:
+                continue
+            if n.node_name == new_name:
+                raise LogicSceneError("Node {} already exists!".format(new_name))
+
+        return node.force_rename(new_name)
+
+    def set_context_to_nodes(self, context):
         for node in self.all_logic_nodes:
-            if node.full_name == node_fullname:
-                self.all_logic_nodes.remove(node)
-                LOGGER.info("Removed logic node {}".format(node_fullname))
-                return
-        raise RuntimeError("No node matches name" + node_fullname)
+            node.set_context(context)
 
+    def connect_attrs_by_name(self, source_attr_name, target_attr_name):
+        source_attr, target_attr = None, None
+        for node in self.all_logic_nodes:
+            for attr in node.all_attributes:
+                if attr.dot_name == source_attr_name:
+                    source_attr = attr
+                    break
+                elif attr.dot_name == target_attr_name:
+                    target_attr = attr
+                    break
+            if source_attr and target_attr:
+                source_attr.connect_to_other(target_attr)  # TODO check for result
+                return
+
+        # Errors
+        source_node_name = source_attr_name.rsplit(".", 1)[0]
+        target_node_name = target_attr_name.rsplit(".", 1)[0]
+        if self.to_node(source_node_name) is None:
+            raise LogicSceneError(
+                "Cannot connect! {} -> {}, source node '{}' does not exist"
+                "".format(source_attr_name, target_attr_name, source_node_name)
+            )
+        elif self.to_node(target_node_name) is None:
+            raise LogicSceneError(
+                "Cannot connect! {} -> {}, target node '{}' does not exist"
+                "".format(source_attr_name, target_attr_name, target_node_name)
+            )
+        elif source_attr is None:
+            raise LogicSceneError(
+                "Cannot connect! {} -> {}, source attribute '{}' does not exist"
+                "".format(source_attr_name, target_attr_name, source_attr_name)
+            )
+        elif target_attr is None:
+            raise LogicSceneError(
+                "Cannot connect! {} -> {}, target attribute '{}' does not exist"
+                "".format(source_attr_name, target_attr_name, target_attr_name)
+            )
+
+    # SAVE AND LOAD ----------------------
     def convert_scene_to_dict(self):
         scene_dict = dict()
 
         scene_dict["nodes"] = list()
-        all_node_names = sorted([n.full_name for n in self.all_logic_nodes])
+        all_node_names = sorted([n.node_name for n in self.all_logic_nodes])
         for name in all_node_names:
             for node in self.all_logic_nodes:
-                if node.full_name == name:
+                if node.node_name == name:
                     node_dict = node.get_node_basic_dict()
                     scene_dict["nodes"].append(node_dict)
                     break
@@ -163,9 +189,13 @@ class LogicScene:
         if scene_dict is None:
             scene_dict = self.convert_scene_to_dict()
 
+        save_type = "scene"
+        _, ext = os.path.splitext(filepath)
+        if ext == ".ctx":
+            save_type = "context"
         with open(filepath, "w") as file:
-            header = "# SCENE {}".format(
-                os.path.splitext(os.path.basename(filepath))[0]
+            header = "# {} {}".format(
+                save_type.upper(), os.path.splitext(os.path.basename(filepath))[0]
             )
             file.write(header)
             file.write("\n# " + "-" * (len(header) - 2))
@@ -183,14 +213,14 @@ class LogicScene:
                 )
                 yaml.dump(scene_dict["connections"], file)
 
-            file.write("\n\n# Scene created at: {}".format(datetime.datetime.now()))
+            file.write(
+                "\n\n# {} created at: {}".format(
+                    save_type.capitalize(), datetime.datetime.now()
+                )
+            )
             file.write("\n# Created by: {}".format(getpass.getuser()))
 
         LOGGER.info("Wrote scene to file: {}".format(filepath))
-
-    def get_namespace(self):
-        self.pasted_count += 1
-        return "pasted_{}::".format(self.pasted_count)
 
     def load_from_file(self, scene_path: str, namespace: str = None) -> list:
 
@@ -263,55 +293,47 @@ class LogicScene:
 
         return new_nodes
 
-    def connect_attrs_by_name(self, source_attr_name, target_attr_name):
-        source_attr, target_attr = None, None
-        for node in self.all_logic_nodes:
-            for attr in node.all_attributes:
-                if attr.full_name == source_attr_name:
-                    source_attr = attr
-                    break
-                elif attr.full_name == target_attr_name:
-                    target_attr = attr
-                    break
-            if source_attr and target_attr:
-                source_attr.connect_to_other(target_attr)  # TODO check for result
-                return
+    # SCENE PROPERTIES ----------------------
+    def set_name(self, new_name):
+        self.scene_name = new_name
 
-        # Errors
-        source_node_name = source_attr_name.rsplit(".", 1)[0]
-        target_node_name = target_attr_name.rsplit(".", 1)[0]
-        if self.to_node(source_node_name) is None:
-            raise LogicSceneError(
-                "Cannot connect! {} -> {}, source node '{}' does not exist"
-                "".format(source_attr_name, target_attr_name, source_node_name)
-            )
-        elif self.to_node(target_node_name) is None:
-            raise LogicSceneError(
-                "Cannot connect! {} -> {}, target node '{}' does not exist"
-                "".format(source_attr_name, target_attr_name, target_node_name)
-            )
-        elif source_attr is None:
-            raise LogicSceneError(
-                "Cannot connect! {} -> {}, source attribute '{}' does not exist"
-                "".format(source_attr_name, target_attr_name, source_attr_name)
-            )
-        elif target_attr is None:
-            raise LogicSceneError(
-                "Cannot connect! {} -> {}, target attribute '{}' does not exist"
-                "".format(source_attr_name, target_attr_name, target_attr_name)
-            )
+    def get_namespace(self):
+        self.pasted_count += 1
+        return "pasted_{}::".format(self.pasted_count)
 
+    # EXECUTION ----------------------
     def reset_all_nodes(self):
-        utils.print_separator("Resetting all logic nodes")
+        LOGGER.debug("Resetting all logic nodes of scene {}".format(self.scene_name))
         for node in self.all_logic_nodes:
             node.reset()
 
     def run_all_nodes(self):
-        utils.print_separator("Running logic scene")
+        if self.scene_name:
+            utils.print_separator("Running {}".format(self.scene_name))
+        else:
+            utils.print_separator("Running logic scene")
+
         for node in self.get_starting_nodes():
             node._run()
         LOGGER.info("Finished running logic scene")
         print("\n", end="")
+
+    # FEEDBACK GATHERING ----------------------
+    def gather_failed_nodes(self):
+        failed_log = []
+        for node in self.all_logic_nodes:
+            if node.success in [constants.FAILED, constants.ERROR]:
+                for line in node.fail_log:
+                    failed_log.append(node.full_name + ": " + line)
+        return failed_log
+
+    def gather_errored_nodes(self):
+        errored_log = []
+        for node in self.all_logic_nodes:
+            if node.success in [constants.FAILED, constants.ERROR]:
+                for line in node.error_log:
+                    errored_log.append(node.full_name + ": " + line)
+        return errored_log
 
 
 class LogicSceneError(Exception):

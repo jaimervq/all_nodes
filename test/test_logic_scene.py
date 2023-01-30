@@ -67,7 +67,7 @@ class LogicSceneTesting(unittest.TestCase):
 
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("StrInput")
-        full_name = n_1.full_name
+        full_name = n_1.node_name
         n_2 = logic_scene.to_node(full_name)
         self.assertEqual(n_1, n_2)
 
@@ -95,7 +95,6 @@ class LogicSceneTesting(unittest.TestCase):
             os.path.join(self.FIXTURES_FOLDER, "environ_to_yaml_and_json.yml")
         )
         self.assertEqual(logic_scene.node_count(), 9)
-        # logic_scene.run_all_nodes()  # To be run locally, as it will start files
 
     def test_load_scene_from_file_2(self):
         utils.print_separator("TEST STARTED - " + "test_load_scene_from_file_2")
@@ -145,7 +144,7 @@ class LogicSceneTesting(unittest.TestCase):
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("PrintToConsole")
         n_2 = logic_scene.add_node_by_name("YamlToDict")
-        self.assertFalse(logic_scene.rename_node(n_1, n_2.full_name))
+        self.assertFalse(logic_scene.rename_node(n_1, n_2.node_name))
 
 
 # -------------------------------- MAIN -------------------------------- #

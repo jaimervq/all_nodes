@@ -38,7 +38,7 @@ class NodeTesting(unittest.TestCase):
 
         n_1 = general_nodes.GetDictKey()
         in_dict_attr = n_1["in_dict"]
-        self.assertRegex(in_dict_attr.full_name, "GetDictKey_\d+\.in_dict")
+        self.assertRegex(in_dict_attr.dot_name, "GetDictKey_\d+\.in_dict")
 
     def test_connection(self):
         """
@@ -55,7 +55,7 @@ class NodeTesting(unittest.TestCase):
 
     def test_getting_internal_dict(self):
         """
-        Test
+        Test displaying the internal debug dict of a node
         """
         utils.print_separator("TEST STARTED - " + "test_getting_internal_dict")
 
@@ -72,21 +72,21 @@ class NodeTesting(unittest.TestCase):
         utils.print_separator("TEST STARTED - " + "test_inputs_checked_run")
 
         n_1 = debug_nodes.EmptyNode()
-        n_1._run()
-        self.assertTrue(n_1.success)
+        n_1.run_single()
+        self.assertEqual(n_1.success, constants.SUCCESSFUL)
 
         n_2 = general_nodes.JsonToDict()
-        n_2._run()
+        n_2.run_single()
         self.assertEqual(n_2.success, constants.NOT_RUN)
 
         n_3 = general_nodes.CreateTempFile()
-        n_3._run()
-        self.assertTrue(n_3.success)
+        n_3.run_single()
+        self.assertEqual(n_3.success, constants.SUCCESSFUL)
 
         n_4 = general_nodes.CreateTempFile()
         n_4["suffix"].set_value(".txt")
-        n_4._run()
-        self.assertTrue(n_4.success)
+        n_4.run_single()
+        self.assertEqual(n_4.success, constants.SUCCESSFUL)
 
     def test_run_node_1(self):
         """
@@ -118,6 +118,9 @@ class NodeTesting(unittest.TestCase):
         self.assertFalse(os.path.exists(out_temp_path))
 
     def test_node_fails(self):
+        """
+        Test a case where a node should fail
+        """
         utils.print_separator("TEST STARTED - " + "test_node_fails")
 
         n_1 = general_nodes.GetDictKey()
@@ -128,12 +131,26 @@ class NodeTesting(unittest.TestCase):
         self.assertEqual(n_1.success, constants.FAILED)
 
     def test_node_exception(self):
+        """
+        Test a case where a node should error and display the error
+        """
         utils.print_separator("TEST STARTED - " + "test_node_exception")
 
         n_1 = debug_nodes.ErrorNode()
         n_1._run()
 
         self.assertEqual(n_1.success, constants.ERROR)
+
+    def test_node_execution_time(self):
+        """
+        Test the execution time of nodes is being measured
+        """
+        utils.print_separator("TEST STARTED - " + "test_node_execution_time")
+
+        n_1 = debug_nodes.TimedNode()
+        n_1.run_single()
+
+        self.assertGreater(n_1.execution_time, 1.0)
 
 
 # -------------------------------- MAIN -------------------------------- #
