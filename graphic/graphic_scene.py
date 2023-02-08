@@ -52,12 +52,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.feedback_line.setFont(QtGui.QFont("arial", 12))
         self.feedback_line.hide()
 
-        self.shift_x = -100
-        self.shift_y = 0
-        self.shifter = QtCore.QTimer()
-        self.shifter.setInterval(20)
-        # self.shifter.timeout.connect(self.move_continuous)
-
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
 
     # UTILITY ----------------------
@@ -104,10 +98,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.feedback_line.setText(message)
         self.feedback_line.setGraphicsEffect(effect)
         anim.start()
-
-    # VIEW MANIPULATION ----------------------
-    def move_continuous(self):
-        self.translate(self.shift_x, self.shift_y)
 
     # RESIZE EVENTS ----------------------
     def resizeEvent(self, event):
