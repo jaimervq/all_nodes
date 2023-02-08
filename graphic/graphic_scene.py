@@ -128,19 +128,12 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
             deltaY = disp.y() / transform.m22()
             self.translate(deltaX, deltaY)
 
-        elif self.left_pressed:
-            if new_pos.x() + 500 > self.width():
-                self.setSceneRect(self.sceneRect().translated(10.0, 1))
-
         QtWidgets.QGraphicsView.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.MidButton:
             self.middle_pressed = False
             self.drag_pos = None
-        if event.button() == QtCore.Qt.LeftButton:
-            self.left_pressed = False
-            self.shifter.stop()
 
         QtWidgets.QGraphicsView.mouseReleaseEvent(self, event)
 
