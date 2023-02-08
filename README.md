@@ -173,6 +173,23 @@ However, changing the scene a little bit, makes things  more complex:
 * EmptyNode_1 now launches the execution of its only connected node, IntToStr_1.
 * IntToStr_1 now has all its connected inputs set, it can be executed. It runs successfully
 
+## Create and run node networks on the fly
+For simple setups and tests, node networks can be created and run at the same time in a python script.
+
+Example:
+```python
+from all_nodes.logic.logic_scene import LogicScene
+
+
+l_scene = LogicScene()
+
+n_1 = l_scene.add_node_by_name("EmptyNode")
+n_2 = l_scene.add_node_by_name("EmptyNode")
+n_1["COMPLETED"].connect_to_other(n_2["START"])
+
+l_scene.run_all_nodes()
+```
+
 ## Some library repos
 ### Maya:
 * https://gitlab.com/python-3/maya/maya_all_nodes_lib
