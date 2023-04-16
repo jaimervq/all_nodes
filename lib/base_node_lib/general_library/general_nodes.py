@@ -351,8 +351,10 @@ class GetEntireEnviron(GeneralLogicNode):
 class GetEnvVariable(GeneralLogicNode):
 
     NICE_NAME = "Get env variable"
-    HELP = "Get the value of an environment variable, with possibility of a fallback" \
-           "value if the variable is not defined"
+    HELP = (
+        "Get the value of an environment variable, with possibility of a fallback"
+        "value if the variable is not defined"
+    )
 
     INPUTS_DICT = {
         "env_variable_name": {"type": str},

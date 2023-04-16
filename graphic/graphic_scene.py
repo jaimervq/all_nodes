@@ -62,7 +62,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         Args:
             message (str): message to display
             level (int): level of the message
-
         """
         effect = QtWidgets.QGraphicsOpacityEffect(self.feedback_line)
         anim = QtCore.QPropertyAnimation(effect, b"opacity", parent=self)
@@ -159,6 +158,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 # -------------------------------- CUSTOM SCENE CLASS -------------------------------- #
 class CustomScene(QtWidgets.QGraphicsScene):
 
+    # TODO rethink if these could go in the GLOBAL_SIGNALER
     dropped_node = QtCore.Signal(int, int)
     in_screen_feedback = QtCore.Signal(str, int)
 
@@ -201,6 +201,17 @@ class CustomScene(QtWidgets.QGraphicsScene):
     def add_graphic_node_by_name(
         self, node_classname: str, x: int = 0, y: int = 0
     ) -> GeneralGraphicNode:
+        """
+        Create a new graphic node just by giving the class name
+
+        Args:
+            node_classname (str): class name to be instantiated
+            x (int): optional, coords to place the node at
+            y (int): optional, coords to place the node at
+
+        Returns:
+            GeneralGraphicNode: newly create node
+        """
         for m in sorted(ALL_CLASSES):
             color = ALL_CLASSES[m]["color"]
             for name, cls in ALL_CLASSES[m]["classes"]:
@@ -215,7 +226,20 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     )
                     return new_graph_node
 
-    def add_graphic_node_from_logic_node(self, logic_node, x: int = 0, y: int = 0):
+    def add_graphic_node_from_logic_node(
+        self, logic_node, x: int = 0, y: int = 0
+    ) -> GeneralGraphicNode:
+        """
+        Create a new graphic node from an existing logic node
+
+        Args:
+            logic_node (GeneralLogicNode): logic node to be represented graphically
+            x (int): optional, coords to place the node at
+            y (int): optional, coords to place the node at
+
+        Returns:
+            GeneralGraphicNode: newly created node
+        """
         for m in sorted(ALL_CLASSES):
             color = ALL_CLASSES[m]["color"]
             for name, cls in ALL_CLASSES[m]["classes"]:
@@ -237,7 +261,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             graphic_node (GeneralGraphicNode): node to delete
-
         """
         self.clear_node_lines(graphic_node)
         graphic_node.clear_all_connections()
@@ -255,6 +278,14 @@ class CustomScene(QtWidgets.QGraphicsScene):
         graphic_attr_2: GeneralGraphicAttribute,
         check_logic=True,
     ):
+        """
+        Attempt to connect two graphic attributes.
+
+        Args:
+            graphic_attr_1 (GeneralGraphicAttribute): graphic attribute to be connected
+            graphic_attr_2 (GeneralGraphicAttribute): graphic attribute to be connected
+            check_logic (bool): optional, whether or not the possibility of connecting should be checked
+        """
 
         # Remove previously existing lines between these graphic_attrs
         for item in self.items():
@@ -288,7 +319,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Args:
             graphic_attr_1 (GeneralGraphicAttribute)
             graphic_attr_2 (GeneralGraphicAttribute)
-
         """
         p1, p2 = (
             graphic_attr_1.plug_coords(),
@@ -324,6 +354,12 @@ class CustomScene(QtWidgets.QGraphicsScene):
         self.addItem(new_valid_line)
 
     def redraw_node_lines(self, node: GeneralGraphicNode):
+        """
+        Redraw all input and output lines that arrive to/from a node.
+
+        Args:
+            node (GeneralGraphicNode): node to redraw lines for
+        """
         graphic_attrs = [
             c
             for c in self.items()
@@ -349,10 +385,23 @@ class CustomScene(QtWidgets.QGraphicsScene):
         graphic_attr_1: GeneralGraphicAttribute,
         graphic_attr_2: GeneralGraphicAttribute,
     ):
+        """
+        Disconnect two graphic attributes.
+
+        Args:
+            graphic_attr_1 (GeneralGraphicAttribute)
+            graphic_attr_2 (GeneralGraphicAttribute)
+        """
         graphic_attr_1.disconnect_from(graphic_attr_2)
         GS.attribute_editor_global_refresh_requested.emit()
 
     def clear_node_lines(self, node: GeneralGraphicNode):
+        """
+        Remove all input and output lines that arrive to/from a node.
+
+        Args:
+            node (GeneralGraphicNode): node to remove lines for
+        """
         for line in self.items():
             g_1, g_2 = line.data(1), line.data(2)
             if line.data(0) == constants.CONNECTOR_LINE and node in [
@@ -394,7 +443,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             source_file (str): filepath of scene to load
-
         """
         # Grab the scene dict and create logic nodes
         scene_dict = dict()
@@ -499,7 +547,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             graphic_node (GeneralGraphicNode): node to examine code from
-
         """
         logic_node = graphic_node.logic_node
         try:
@@ -512,6 +559,12 @@ class CustomScene(QtWidgets.QGraphicsScene):
             self.in_screen_feedback.emit(msg, logging.ERROR)
 
     def expand_context(self, graphic_node: GeneralGraphicNode):
+        """
+        Launch signal to expand a selected context node.
+
+        Args:
+            graphic_node (GeneralGraphicNode): node to be expanded
+        """
         GS.attribute_editor_context_expansion_requested.emit(
             graphic_node.logic_node.uuid
         )
@@ -522,7 +575,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             graphic_node (GeneralGraphicNode): node to display info from.
-
         """
         print(
             "\n{}\n{}".format(
@@ -538,7 +590,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             graphic_node (GeneralGraphicNode): node to execute
-
         """
         logic_node = graphic_node.logic_node
         self.in_screen_feedback.emit("Running only selected node(s)", logging.INFO)
@@ -553,7 +604,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             graphic_node (GeneralGraphicNode): node to reset
-
         """
         graphic_node.reset()
         graphic_node.logic_node.reset()
@@ -561,28 +611,40 @@ class CustomScene(QtWidgets.QGraphicsScene):
         GS.attribute_editor_global_refresh_requested.emit()
 
     def deselect_all(self):
-        """Deselect all graphic nodes."""
+        """
+        Deselect all graphic nodes.
+        """
         for n in self.all_nodes:
             n.setSelected(False)
 
     # SCENE EXECUTION ----------------------
     def reset_all_graphic_nodes(self):
-        """Reset all graphic nodes."""
+        """
+        Reset all graphic nodes.
+        """
         utils.print_separator("Resetting all graphic nodes")
         for g_node in self.all_nodes:
             g_node.reset()
 
     def show_result_on_nodes(self):
-        """Display the internal result of each graphic node."""
+        """
+        Display the internal result of each graphic node.
+        """
         for g_node in self.all_nodes:
             g_node.show_result()
 
     def reset_graphic_scene(self):
+        """
+        Reset the appearance of all the nodes in this graphic scene.
+        """
         self.reset_all_graphic_nodes()
         self.logic_scene.reset_all_nodes()
         GS.attribute_editor_global_refresh_requested.emit()
 
     def run_graphic_scene(self):
+        """
+        Run all the nodes in this graphic scene.
+        """
         self.reset_all_graphic_nodes()
         self.logic_scene.run_all_nodes()
         self.show_result_on_nodes()
@@ -593,8 +655,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
         """
         Gather all selected nodes.
 
-        Returns: list, with all selected nodes.
-
+        Returns:
+            list: with all selected nodes.
         """
         sel_nodes = []
         for n in self.all_nodes:
@@ -603,6 +665,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
         return sel_nodes
 
     def fit_in_view(self):
+        """
+        If selected nodes, fit all of them in the view. Otherwise, fit all nodes.
+        """
         self.parent().resetMatrix()
         nodes = list(self.all_nodes)
         if self.selected_nodes():
