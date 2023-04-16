@@ -246,6 +246,12 @@ class GeneralLogicNode:
         self.all_attributes.append(completed_attr)
 
     def get_input_attrs(self):
+        """
+        Get all the input attributes of the node.
+
+        Returns:
+            list: with all the input attributes
+        """
         return [
             attr
             for attr in self.all_attributes
@@ -253,6 +259,12 @@ class GeneralLogicNode:
         ]
 
     def get_output_attrs(self):
+        """
+        Get all the output attributes of the node.
+
+        Returns:
+            list: with all the output attributes
+        """
         return [
             attr
             for attr in self.all_attributes
@@ -260,6 +272,13 @@ class GeneralLogicNode:
         ]
 
     def set_attribute_value(self, attribute_name: str, value):
+        """
+        Set an attribute to a new value.
+
+        Args:
+            attribute_name (str): name of the attribute to set
+            value: new value to set the attribute to
+        """
         if attribute_name not in self.all_attribute_names:
             raise RuntimeError(
                 "Error! No valid attribute {} in the node".format(attribute_name)
@@ -279,6 +298,13 @@ class GeneralLogicNode:
                     )
 
     def set_input(self, attribute_name: str, value):
+        """
+        Set an input attribute to a new value.
+
+        Args:
+            attribute_name (str): name of the input attribute to set
+            value: new value to set the attribute to
+        """
         for attr in self.all_attributes:
             if (
                 attr.attribute_name == attribute_name
@@ -292,6 +318,13 @@ class GeneralLogicNode:
         )
 
     def set_output(self, attribute_name: str, value):
+        """
+        Set an output attribute to a new value.
+
+        Args:
+            attribute_name (str): name of the output attribute to set
+            value: new value to set the attribute to
+        """
         for attr in self.all_attributes:
             if (
                 attr.attribute_name == attribute_name
@@ -368,7 +401,13 @@ class GeneralLogicNode:
         return source_attr.connect_to_other(target_attr)
 
     # CHECKS ----------------------
-    def is_starting_node(self):
+    def is_starting_node(self) -> bool:
+        """
+        Determine whether or not this node can be a starting point for execution.
+
+        Returns:
+            bool
+        """
         # If the node has some inputs connected, it is not a starting point
         for attr in self.all_attributes:
             if attr.has_input_connected():
@@ -474,6 +513,10 @@ class GeneralLogicNode:
             "Starting execution of {} ({})".format(self.full_name, self.class_name)
         )
 
+        # Clear any previous logging
+        self.fail_log = []
+        self.error_log = []
+
         # Run
         if self.IS_CONTEXT:
             self.internal_scene.run_all_nodes()
@@ -545,13 +588,21 @@ class GeneralLogicNode:
                 node._run()
 
     def run_single(self):
+        """
+        Run only this node.
+        """
         self._run(execute_connected=False)
 
     def run_chain(self):
+        """
+        Run this node and then all the nodes connected to its outputs.
+        """
         self._run(execute_connected=True)
 
     def run(self):
-        """To be reimplemented in each subclass"""
+        """
+        To be reimplemented in each subclass.
+        """
         if self.IS_CONTEXT:
             LOGGER.debug("Contexts do not need to implement the 'run' method")
         else:
@@ -598,6 +649,11 @@ class GeneralLogicNode:
             attr.propagate_value()
 
     def reset(self):
+        """
+        Reset this node.
+
+        Clearing as much information as possible that could have been left by a previous execution.
+        """
         LOGGER.info("Resetting node " + self.full_name)
         for attr in self.get_input_attrs():
             if attr.has_connections():
@@ -630,6 +686,12 @@ class GeneralLogicNode:
         return "<{} object>".format(self.full_name, self.class_name)
 
     def get_node_html_help(self):
+        """
+        Get the node's help documentation parsed into an html text.
+
+        Returns:
+            str: with the complete text of the help
+        """
         help_text = " <b><font size = 5>{0}</b>".format(self.class_name)
         help_text += "<br><font size = 2>" + self.__module__
 
@@ -680,7 +742,8 @@ class SpecialInputNode(GeneralLogicNode):
 
     def reset(self):
         """
-        Reset attibutes of the node.
+        Reset attributes of the node.
+
         These nodes are special, we cannot reset their out attributes directly, as they are mainly established
         and manipulated through the GUI.
         """
@@ -766,7 +829,15 @@ class GeneralLogicAttribute:
         return len(self.connected_attributes) > 0
 
     def connect_to_other(self, other_attribute: GeneralLogicAttribute) -> bool:
+        """
+        Connect this attribute to another.
 
+        Args:
+            other_attribute (GeneralLogicAttribute)
+
+        Returns:
+            bool: whether or not the connection could be done
+        """
         if not self.parent_node != other_attribute.parent_node:
             LOGGER.warning(
                 "Cannot connect {} and {}, both same node {}".format(
@@ -818,6 +889,12 @@ class GeneralLogicAttribute:
         return True
 
     def disconnect_from_other(self, other_attribute: GeneralLogicAttribute):
+        """
+        Disconnect this attribute from another.
+
+        Args:
+            other_attribute (GeneralLogicAttribute)
+        """
         self.connected_attributes.remove(other_attribute)
         other_attribute.connected_attributes.remove(self)
         if self.connector_type == constants.OUTPUT:
@@ -830,11 +907,20 @@ class GeneralLogicAttribute:
             )
 
     def disconnect_input(self):
+        """
+        Disconnect incoming inputs to this attribute.
+        """
         if self.connector_type == constants.INPUT and self.connected_attributes:
             self.disconnect_from_other(next(iter(self.connected_attributes)))
 
     # UTILITY ----------------------
     def get_datatype_str(self) -> str:
+        """
+        Get a string representation of the datatype that this attribute can hold.
+
+        Returns:
+            str: with a representation fo the datatype
+        """
         type = str(self.data_type)
         if "." in str(self.data_type):
             return re.search("'.+\.(.+)'", type).group(1)

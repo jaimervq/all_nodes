@@ -86,6 +86,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.show()
 
     def make_connections(self):
+        """
+        Establish all connections between widget signals and methods.
+        """
         # UI elements
         self.ui.reset_current_btn.clicked.connect(self.reset_current_scene)
         self.ui.run_current_btn.clicked.connect(self.run_current_scene)
@@ -112,7 +115,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
     # UI SETUP ----------------------
     def create_menus(self):
-        """Create and populate menu bar."""
+        """
+        Create and populate menu bar.
+        """
 
         def add_scenes_recursive(entries_dict: dict, menu: QtWidgets.QMenu):
             """
@@ -169,7 +174,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock)
 
     def populate_tree(self):
-        """Populate the tree where all nodes are displayed."""
+        """
+        Populate the tree where all nodes are displayed.
+        """
         top_level_items = {}
         for m in sorted(ALL_CLASSES):
             if "debug_nodes" == m and not constants.IN_DEV:
@@ -235,6 +242,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 lib_item.child(i).setExpanded(True)
 
     def filter_nodes_by_name(self):
+        """
+        Set node classes as hidden/visible based on user input.
+        """
         filter = self.ui.filter_le.text().lower()
         for i in range(self.ui.nodes_tree.topLevelItemCount()):
             lib_item = self.ui.nodes_tree.topLevelItem(i)
@@ -260,7 +270,12 @@ class AllNodesWindow(QtWidgets.QMainWindow):
     # TABS ----------------------
     def add_scene(self, context=None):
         """
-        Add a new graphic scene to the widget (in a new tab)
+        Add a new graphic scene to the widget (in a new tab).
+
+        If a context is supplied, build its internals onto the new scene.
+
+        Args:
+            context (GeneralLogicNode): optional, context node from which to build the scene
         """
         scene_name = "ROOT"
         if context:
@@ -282,13 +297,19 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count() - 1)
 
     def expand_context(self, uuid):
+        """
+        Expand the contents of a context node into a new tab.
+
+        Args:
+            uuid (str): of the node to try to expand
+        """
         n = self.get_node_by_uuid(uuid)
 
         # See if the context is already expanded
         for i in range(self.ui.tabWidget.count()):
             gw = self.ui.tabWidget.widget(i)
             logic_scene = gw.scene().logic_scene
-            if logic_scene.context == n:
+            if logic_scene.context and logic_scene.context == n:
                 self.ui.tabWidget.setCurrentIndex(i)
                 return
 
@@ -299,6 +320,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         current_scene.fit_in_view()
 
     def refresh_tab_names(self):
+        """
+        Refresh the names of all tabs, to make sure they show the names they have to.
+        """
         for i in range(self.ui.tabWidget.count()):
             gw = self.ui.tabWidget.widget(i)
             logic_scene = gw.scene().logic_scene
@@ -308,6 +332,16 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
     # NODE UTILITY ----------------------
     def get_node_by_uuid(self, uuid):
+        """
+        Given a uuid, find a logic node.
+
+        Args:
+            uuid (str): of the node to find
+
+        Returns:
+            GeneralLogicNode: logic node associated to the uuid
+
+        """
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_logic_scene = current_gw.scene().logic_scene
         for n in current_logic_scene.all_nodes():
@@ -315,6 +349,13 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 return n
 
     def add_node_to_current(self, x, y):
+        """
+        Add a new node to the current graphic scene.
+
+        Args:
+            x (int): horizontal coord t add the node to
+            y (int): vertical coord t add the node to
+        """
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
         selected = self.ui.nodes_tree.selectedItems()[0]
@@ -323,24 +364,51 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
     # ATTRIBUTE EDITOR ----------------------
     def refresh_node_in_attribute_editor_by_uuid(self, uuid):
+        """
+        Refresh a given node's representation in the attribute editor panel.
+
+        Args:
+            uuid (str): of the node to be refreshed
+        """
         n = self.get_node_by_uuid(uuid)
         self.attr_editor.refresh_node_panel(n)
 
     def remove_node_in_attribute_editor_by_uuid(self, uuid):
+        """
+        Remove a given node's representation from the attribute editor panel.
+
+        Args:
+            uuid (str): of the node to be removed
+        """
         n = self.get_node_by_uuid(uuid)
         self.attr_editor.remove_node_panel(n)
 
     def add_node_to_attribute_editor_by_uuid(self, uuid):
+        """
+        Add a given node's representation to the attribute editor panel.
+
+        Args:
+            uuid (str): of the node to be added
+        """
         n = self.get_node_by_uuid(uuid)
         self.attr_editor.add_node_panel(n)
 
     # SAVE AND LOAD ----------------------
     def save_scene(self):
+        """
+        Launch process of saving current scene to a file.
+        """
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
         current_scene.save_to_file()
 
     def load_scene(self, source_file):
+        """
+        Launch the process of loading a file onto a new tab.
+
+        Args:
+            source_file (str): path of the scene to load
+        """
         # Filepath
         if not source_file:
             dialog = QtWidgets.QFileDialog()
@@ -364,18 +432,27 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
     # SCENE EXECUTION ----------------------
     def run_current_scene(self):
+        """
+        Execute the graphic scene currently selected.
+        """
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
         current_scene.run_graphic_scene()
         self.attr_editor.refresh()
 
     def reset_current_scene(self):
+        """
+        Reset the graphic scene currently selected.
+        """
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
         current_scene.reset_graphic_scene()
         self.attr_editor.refresh()
 
     def show_scene_results(self):
+        """
+        Display execution results on the nodes of the graphic scene currently selected.
+        """
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
         current_scene.show_result_on_nodes()

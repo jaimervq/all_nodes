@@ -306,7 +306,6 @@ class AttributeEditor(QtWidgets.QScrollArea):
 
         Args:
             logic_node (GeneralLogicNode): logic node to be refreshed
-
         """
         for i in range(self.layout.count()):
             w = self.layout.itemAt(i).widget()
@@ -322,7 +321,6 @@ class AttributeEditor(QtWidgets.QScrollArea):
 
         Args:
             logic_node (GeneralLogicNode): logic node to be removed
-
         """
         for i in range(self.layout.count()):
             w = self.layout.itemAt(i).widget()

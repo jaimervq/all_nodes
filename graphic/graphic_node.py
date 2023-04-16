@@ -101,6 +101,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
     # GRAPHICS SETUP ----------------------
     def guess_width_to_use(self):
+        """
+        Calculate width to draw the node with, based on the size of its graphical attributes.
+        """
         longest_in_name = max(
             [
                 attribute.attr_text.boundingRect().width()
@@ -125,9 +128,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         return False
 
     def setup_node(self):
-        # BASIC BORDER
-        self.setPen(QtGui.QPen(QtGui.QColor(self.bright_color_name), 2))
-
+        """
+        Setup some of the subcomponents of the node.
+        """
         # NODE NAME
         self.class_text.setHtml(
             '<p align="left"><font color=white>{0}'.format(self.logic_node.node_name)
@@ -164,6 +167,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.additional_info_text.hide()
 
     def add_graphic_attributes(self):
+        """
+        Create graphic attributes of this node
+        """
         i = 0
         for attr in self.logic_node.get_input_attrs():
             attr = GeneralGraphicAttribute(attr, self, i)
@@ -177,7 +183,11 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             i += 1
 
     def make_shape(self):
+        """
+        Setup the shape and size of the node and its subcomponents.
+        """
         # BASIC SHAPE
+        self.setPen(QtGui.QPen(QtGui.QColor(self.bright_color_name), 2))
         self.guess_width_to_use()
         new_path = QtGui.QPainterPath()
         new_path.addRoundedRect(
@@ -274,11 +284,16 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         )
 
     def place_graphic_attributes(self):
+        """
+        Place the graphic attributes in their correct position.
+        """
         for attr in self.graphic_attributes:
             attr.setup_graphics()
 
     def setup_widget(self):
-        """For special nodes that take input, setup a widget to recieve the input"""
+        """
+        For special nodes that take input, setup a widget to receive the input
+        """
         if not self.input_datatype:
             return
 
@@ -369,6 +384,11 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.proxy_input_widget.moveBy(0.05 * self.node_width, constants.HEADER_HEIGHT)
 
     def setup_extras(self):
+        """
+        Setup the extra labels/icons on the node.
+
+        Mainly oriented to context nodes or context-related nodes.
+        """
         if self.logic_node.IS_CONTEXT:
             ctx_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
             ctx_icon.setSharedRenderer(self.extras_renderer)
@@ -387,7 +407,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
     # EXECUTION ----------------------
     def reset(self):
-        """Reset the appearance of the node, so it shows no execution feedback (badges, marquees...)."""
+        """
+        Reset the appearance of the node, so it shows no execution feedback (badges, marquees...).
+        """
         LOGGER.info("Resetting graphic node {}".format(self.logic_node.node_name))
         self.badge_icon.hide()
         self.error_marquee.hide()
@@ -395,7 +417,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.update_attribute_from_widget()
 
     def show_result(self):
-        """Display visual indications around the node to show the result of its execution."""
+        """
+        Display visual indications around the node to show the result of its execution.
+        """
         self.badge_icon.show()
 
         if self.logic_node.success == constants.NOT_RUN:
@@ -500,7 +524,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
     # VISUAL FEEDBACK ----------------------
     def set_selected_appearance(self):
-
         self.setZValue(10)
 
         if self.isSelected():
@@ -512,7 +535,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.selection_marquee.hide()
 
     def show_help(self):
-        """Show a window with the help/usage of this node class."""
+        """
+        Show a window with the help/usage of this node class.
+        """
         help_text = self.logic_node.get_node_html_help()
         info_window = QtWidgets.QMessageBox()
         info_window.setText(help_text)
@@ -527,7 +552,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
     # UTILITY ----------------------
     def update_name(self):
-        """Update the text shown in the node's name."""
+        """
+        Update the text shown in the node's name.
+        """
         self.class_text.setHtml(
             '<p align="left"><font color=white>{0}'.format(self.logic_node.node_name)
         )
@@ -597,23 +624,20 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
         self.glow = QtWidgets.QGraphicsPathItem(parent=self)
         self.glow.hide()
 
-    def __str__(self):
-        return self.logic_attribute.node_name
-
+    # PROPERTIES ----------------------
     @property
     def x(self):
         return self.scenePos().x()
-
-    def plug_coords(self):
-        return self.plug_polygon.scenePos()
-
-    def has_input_connected(self):
-        return self.logic_attribute.has_input_connected()
 
     @property
     def center_point(self):
         return self.scenePos()
 
+    # GEOMETRY PROPERTIES ----------------------
+    def plug_coords(self):
+        return self.plug_polygon.scenePos()
+
+    # GRAPHICS SETUP ----------------------
     def setup_graphics(self):
 
         self.setPen(QtGui.QPen(QtCore.Qt.NoPen))
@@ -765,6 +789,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
                 constants.STRIPE_HEIGHT / 2,
             )
 
+    # CONNECT/DISCONNECT ----------------------
     def connect_graphic_attr(self, other_graphic_attr, check_logic=True):
         """
         Connect this graphic attribute to another one.
@@ -774,7 +799,6 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             check_logic (bool): check the connection of logic attributes
 
         Returns: bool, whether the attribute could be connected
-
         """
         can_connect = True
         if check_logic:
@@ -820,6 +844,11 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             self.show_connected_status()
             connected_out_graphic_attr.show_connected_status()
 
+    # UTILITY ----------------------
+    def has_input_connected(self):
+        return self.logic_attribute.has_input_connected()
+
+    # VISUAL FEEDBACK ----------------------
     def show_connected_status(self):
         if self.connected_graphic_attrs:
             if constants.GLOW_EFFECTS:
@@ -828,3 +857,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
         else:
             self.glow.hide()
             self.plug_polygon.setPen(constants.CONNECTOR_AVAILABLE_PEN)
+
+    # SPECIAL METHODS ----------------------
+    def __str__(self):
+        return self.logic_attribute.node_name
