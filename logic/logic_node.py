@@ -7,6 +7,7 @@ __credits__ = []
 __license__ = "MIT License"
 
 import ast
+import datetime
 import inspect
 import os
 import pprint
@@ -75,8 +76,11 @@ class GeneralLogicNode:
 
         # Run
         self.success = constants.NOT_RUN
+
         self.fail_log = []
         self.error_log = []
+
+        self.run_date = None
         self.execution_time = 0
 
         # Feedback
@@ -115,7 +119,7 @@ class GeneralLogicNode:
     def get_node_full_dict(self):
         out_dict = dict()
 
-        out_dict["class"] = self.class_name
+        out_dict["class_name"] = self.class_name
         out_dict["node_name"] = self.node_name
         out_dict["full_name"] = self.full_name
         out_dict["uuid"] = self.uuid
@@ -126,21 +130,28 @@ class GeneralLogicNode:
             out_dict["node_attributes"][attr.dot_name][
                 "attribute_name"
             ] = attr.attribute_name
-            out_dict["node_attributes"][attr.dot_name]["value"] = attr.value
+            out_dict["node_attributes"][attr.dot_name]["value"] = str(attr.value)
             out_dict["node_attributes"][attr.dot_name][
                 "connector_type"
             ] = attr.connector_type
             out_dict["node_attributes"][attr.dot_name]["is_optional"] = attr.is_optional
-            out_dict["node_attributes"][attr.dot_name]["data_type"] = attr.data_type
+            out_dict["node_attributes"][attr.dot_name]["data_type"] = attr.get_datatype_str()
             out_dict["node_attributes"][attr.dot_name][
                 "data_type_str"
             ] = attr.get_datatype_str()
             out_dict["node_attributes"][attr.dot_name]["connected_to"] = [
                 c_attr.dot_name for c_attr in attr.connected_attributes
             ]
+
         out_dict["success"] = self.success
+
         out_dict["error_log"] = self.error_log
         out_dict["fail_log"] = self.fail_log
+
+        out_dict["run_date"] = self.run_date
+        out_dict["execution_time"] = self.execution_time
+
+        out_dict["IS_CONTEXT"] = self.IS_CONTEXT
 
         connections = list()
         for attr in self.all_attributes:
@@ -482,7 +493,7 @@ class GeneralLogicNode:
         if os.path.isfile(context_definition_file):
             self.CONTEXT_DEFINITION_FILE = context_definition_file
             self.internal_scene.load_from_file(self.CONTEXT_DEFINITION_FILE)
-            self.internal_scene.set_context_to_nodes(self)
+            self.internal_scene.set_context_to_nodes()
         else:
             raise RuntimeError(
                 "No context definition file found for {}. Expected at: {}".format(
@@ -498,6 +509,7 @@ class GeneralLogicNode:
 
         # Start timer
         t1 = time.time()
+        self.run_date = str(datetime.datetime.now())
 
         # Check inputs
         if not self.check_all_inputs_have_value():

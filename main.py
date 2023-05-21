@@ -11,6 +11,7 @@ import sys
 
 from PySide2.QtWidgets import QApplication
 
+from all_nodes.analytics import analytics
 from all_nodes.graphic.widgets.main_window import AllNodesWindow
 from all_nodes.logic.logic_scene import LogicScene
 from all_nodes import utils
@@ -48,10 +49,18 @@ def main():
     parser.add_argument(
         "-f", "--scene_file", type=str, help="file .yml to run in non-GUI mode"
     )
+    parser.add_argument(
+        "-a", "--analytics", help="Print analytics to screen", action="store_true",
+    )
     args = parser.parse_args()
 
     if not os.getenv("IN_DEV"):
         LOGGER.info("For launching in DEBUG mode, set env variable 'IN_DEV'")
+
+    # Analytics
+    if args.analytics:
+        analytics.print_analytics_to_screen()
+        sys.exit(0)
 
     # GUI mode
     if not args.scene_file:
