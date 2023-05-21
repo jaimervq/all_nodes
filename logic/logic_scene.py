@@ -14,6 +14,7 @@ import yaml
 
 from all_nodes import constants
 from all_nodes import utils
+from all_nodes.analytics import analytics
 from all_nodes.logic import ALL_CLASSES, ALL_SCENES
 from all_nodes.logic.logic_node import GeneralLogicNode
 
@@ -118,9 +119,9 @@ class LogicScene:
 
         return node.force_rename(new_name)
 
-    def set_context_to_nodes(self, context):
+    def set_context_to_nodes(self):
         for node in self.all_logic_nodes:
-            node.set_context(context)
+            node.set_context(self.context)
 
     def connect_attrs_by_name(self, source_attr_name, target_attr_name):
         source_attr, target_attr = None, None
@@ -253,7 +254,10 @@ class LogicScene:
                 scene_path = found_scene_path
 
         # Filepath
-        utils.print_separator("Loading scene " + scene_path)
+        if self.context:
+            utils.print_separator("Loading context " + scene_path)
+        else:
+            utils.print_separator("Loading scene " + scene_path)
         scene_dict = dict()
         with open(scene_path, "r") as file:
             scene_dict = yaml.safe_load(file)
@@ -308,15 +312,27 @@ class LogicScene:
             node.reset()
 
     def run_all_nodes(self):
+        # Feedback
         if self.scene_name:
             utils.print_separator("Running {}".format(self.scene_name))
         else:
             utils.print_separator("Running logic scene")
 
+        # Execution
         for node in self.get_starting_nodes():
             node._run()
         LOGGER.info("Finished running logic scene")
         print("\n", end="")
+
+        # Analytics
+        LOGGER.info("Logging analytics")
+        node_properties_list = []
+        for node in self.all_logic_nodes:
+            node_properties_list.append(node.get_node_full_dict())
+            if node.IS_CONTEXT:
+                for i_node in node.internal_scene.all_logic_nodes:  # TODO make this properly recursive
+                    node_properties_list.append(i_node.get_node_full_dict())
+        analytics.submit_bulk_analytics(node_properties_list)
 
     # FEEDBACK GATHERING ----------------------
     def gather_failed_nodes(self):

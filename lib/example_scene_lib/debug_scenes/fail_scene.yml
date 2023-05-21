@@ -1,0 +1,53 @@
+# CONTEXT fail_scene
+# ------------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- EmptyNode_1:
+    class_name: EmptyNode
+    x_pos: -1201
+    y_pos: -461
+- EmptyNode_2:
+    class_name: EmptyNode
+    x_pos: -566
+    y_pos: -256
+- ErrorNode_1:
+    class_name: ErrorNode
+    x_pos: -350
+    y_pos: -563
+- FailAndErrorNode_1:
+    class_name: FailAndErrorNode
+    x_pos: -672
+    y_pos: -404
+- FailAndErrorNode_2:
+    class_name: FailAndErrorNode
+    x_pos: -257
+    y_pos: -192
+- GetEnvVariable_1:
+    class_name: GetEnvVariable
+    x_pos: -1194
+    y_pos: -242
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      out_str: FAKE
+    x_pos: -1609
+    y_pos: -357
+- TimedNode_1:
+    class_name: TimedNode
+    x_pos: -806
+    y_pos: -600
+
+# Connections section: connections to be done between nodes
+connections:
+- EmptyNode_1.COMPLETED -> EmptyNode_2.START
+- EmptyNode_1.COMPLETED -> FailAndErrorNode_1.START
+- EmptyNode_1.COMPLETED -> TimedNode_1.START
+- EmptyNode_2.COMPLETED -> FailAndErrorNode_2.START
+- StrInput_1.out_str -> GetEnvVariable_1.env_variable_name
+- TimedNode_1.COMPLETED -> ErrorNode_1.START
+
+
+# Context created at: 2023-04-29 19:09:22.095762
+# Created by: jaime.rvq
