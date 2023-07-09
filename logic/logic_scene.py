@@ -311,6 +311,11 @@ class LogicScene:
         for node in self.all_logic_nodes:
             node.reset()
 
+    def soft_reset_all_nodes(self):
+        LOGGER.debug("Soft-resetting all logic nodes of scene {}".format(self.scene_name))
+        for node in self.all_logic_nodes:
+            node.soft_reset()
+
     def run_all_nodes(self):
         # Feedback
         if self.scene_name:

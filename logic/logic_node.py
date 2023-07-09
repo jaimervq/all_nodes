@@ -507,6 +507,15 @@ class GeneralLogicNode:
     # RUN ----------------------
     def _run(self, execute_connected=True):
 
+        # Status
+        if self.success != constants.NOT_RUN:
+            LOGGER.warning(
+                "Cannot execute node {} it has already been executed!".format(
+                    self.full_name
+                )
+            )
+            return
+
         # Start timer
         t1 = time.time()
         self.run_date = str(datetime.datetime.now())
@@ -664,7 +673,8 @@ class GeneralLogicNode:
         """
         Reset this node.
 
-        Clearing as much information as possible that could have been left by a previous execution.
+        Marks the node as not-executed, and all information that could have been left by a
+        previous execution (input values, logs...).
         """
         LOGGER.info("Resetting node " + self.full_name)
         for attr in self.get_input_attrs():
@@ -680,6 +690,23 @@ class GeneralLogicNode:
 
         if self.IS_CONTEXT:
             self.internal_scene.reset_all_nodes()
+
+    def soft_reset(self):
+        """
+        Perform a 'soft reset'
+
+        Mainly for debugging purposes. Will reset the status of the node so it can be run, but without
+        deleting the input values of it.
+        """
+        LOGGER.info("Soft-resetting node " + self.full_name)
+
+        self.success = constants.NOT_RUN
+        self.fail_log = []
+        self.error_log = []
+        self.execution_time = 0
+
+        if self.IS_CONTEXT:
+            self.internal_scene.soft_reset_all_nodes()
 
     # SPECIAL METHODS ----------------------
     def __getitem__(self, item: str):
