@@ -342,7 +342,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             )
 
             if self.logic_node.get_attribute_value("out_bool"):
-                input_widget.setText(self.logic_node.get_attribute_value("out_bool"))
+                input_widget.setChecked(self.logic_node.get_attribute_value("out_bool"))
 
             input_widget.stateChanged.connect(self.update_attribute_from_widget)
 

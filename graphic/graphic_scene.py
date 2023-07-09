@@ -610,6 +610,19 @@ class CustomScene(QtWidgets.QGraphicsScene):
         self.in_screen_feedback.emit("Resetting selected node(s)", logging.INFO)
         GS.attribute_editor_global_refresh_requested.emit()
 
+    def soft_reset_single_node(self, graphic_node: GeneralGraphicNode):
+        """
+        Reset appearance of a graphic node and then also soft-reset its
+        internal logic node.
+
+        Args:
+            graphic_node (GeneralGraphicNode): node to soft-reset
+        """
+        graphic_node.reset()
+        graphic_node.logic_node.soft_reset()
+        self.in_screen_feedback.emit("Soft-resetting selected node(s)", logging.INFO)
+        GS.attribute_editor_global_refresh_requested.emit()
+
     def deselect_all(self):
         """
         Deselect all graphic nodes.
@@ -708,6 +721,11 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 reset_single_node_action.triggered.connect(
                     lambda: self.reset_single_node(item)
                 )
+                soft_reset_single_node_action = menu.addAction("Soft-reset only this node (S)")
+                soft_reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
+                soft_reset_single_node_action.triggered.connect(
+                    lambda: self.soft_reset_single_node(item)
+                )
                 if item.logic_node.IS_CONTEXT:
                     menu.addSeparator()
                     expand_context_action = menu.addAction(
@@ -753,6 +771,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
         elif event.key() == QtCore.Qt.Key_R:
             for n in self.selected_nodes():
                 self.reset_single_node(n)
+        elif event.key() == QtCore.Qt.Key_S:
+            for n in self.selected_nodes():
+                self.soft_reset_single_node(n)
         elif event.key() == QtCore.Qt.Key_E:
             for n in self.selected_nodes():
                 self.examine_code(n)

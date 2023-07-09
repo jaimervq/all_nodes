@@ -134,7 +134,7 @@ def register_node_lib(full_path, all_classes_dict):
 
 
 def get_all_node_classes():
-    libraries_path = os.getenv("ALL_NODES_LIB_PATH", "").split(";")
+    libraries_path = os.getenv("ALL_NODES_LIB_PATH", "").split(os.pathsep)
     if not os.getenv("ALL_NODES_LIB_PATH"):
         root = os.path.abspath(__file__)
         root_dir_path = os.path.dirname(root)
@@ -147,6 +147,7 @@ def get_all_node_classes():
 
     all_py = list()
     for path in libraries_path:
+        path = path.strip()
         if not path:
             continue
         elif not os.path.isdir(path):
@@ -177,12 +178,13 @@ def get_all_scenes_recursive(libraries_path=None, scenes_dict=None):
             libraries_path.append(default_lib_path)
             LOGGER.warning(
                 "Env variable 'ALL_NODES_LIB_PATH' is not defined, "
-                "will just scan for node libraries at default location: "
+                "will just scan for scene libraries at default location: "
                 + default_lib_path
             )
         else:
-            all_paths = os.getenv("ALL_NODES_LIB_PATH").split(";")
+            all_paths = os.getenv("ALL_NODES_LIB_PATH").split(os.pathsep)
             for path in all_paths:
+                path = path.strip()
                 if path:
                     for elem in os.listdir(path):
                         full_path = os.path.join(path, elem)

@@ -314,13 +314,24 @@ class StartFile(GeneralLogicNode):
 
     def run(self):
         import os
+        import platform
+        import subprocess
 
         file_path = self.get_attribute_value("file_path")
         if not os.path.exists(file_path):
             self.fail("File {} does not exist!".format(file_path))
             return
 
-        os.startfile(file_path)
+        platform_name = platform.system().lower()
+        if "windows" in platform_name:
+            os.startfile(file_path)
+        elif platform_name in ["linux", "ubuntu"]:
+            subprocess.call(["xdg-open", file_path])
+        elif platform_name in ["dawrin"]:
+            subprocess.call(["open", file_path])
+        else:
+            self.fail("Not sure how to open a file in {}...".format(platform_name))
+            return
 
 
 class LaunchSubprocess(GeneralLogicNode):
@@ -352,7 +363,7 @@ class GetEnvVariable(GeneralLogicNode):
 
     NICE_NAME = "Get env variable"
     HELP = (
-        "Get the value of an environment variable, with possibility of a fallback"
+        "Get the value of an environment variable, with possibility of a fallback "
         "value if the variable is not defined"
     )
 
