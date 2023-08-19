@@ -30,7 +30,7 @@ def launch_gui():
     app.exec_()
 
 
-def launch_batch(scene_file: str):
+def launch_batch(scene_file: str, set_parameters:list):
     """
     Run a scene in batch mode, no GUI.
 
@@ -39,6 +39,15 @@ def launch_batch(scene_file: str):
     """
     scene = LogicScene()
     scene.load_from_file(scene_file)
+    if set_parameters:
+        for i in range(0, len(set_parameters) -1, 2):
+            node_name = set_parameters[i].rsplit('.', 1)[0]
+            attr_name = set_parameters[i].rsplit('.', 1)[1]
+            attr_str_value = set_parameters[i+1] 
+
+            node = scene.to_node(node_name)
+            if node:
+                node.set_attribute_from_str(attr_name, attr_str_value)
     scene.run_all_nodes()
 
 
@@ -48,6 +57,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-f", "--scene_file", type=str, help="file .yml to run in non-GUI mode"
+    )
+    parser.add_argument(
+        "-s", "--set_parameters", help="Arguments to set in batch execution of scene", type=str, nargs='+'
     )
     parser.add_argument(
         "-a", "--analytics", help="Print analytics to screen", action="store_true",
@@ -68,7 +80,7 @@ def main():
 
     # Non-GUI batch mode
     else:
-        launch_batch(args.scene_file)
+        launch_batch(args.scene_file, args.set_parameters)
 
 
 if __name__ == "__main__":

@@ -27,6 +27,7 @@ ALL_NODES_TABLE=f"node_usage_{ENVIRONMENT}"
 
 def submit_bulk_analytics(node_attrs_list):
     if not HARPERDB_READ_AND_WRITE_PASSWORD:
+        LOGGER.info("Cannot submit the stats of this run to the DB")
         return
 
     LOGGER.info("Submitting stats...")
@@ -36,6 +37,7 @@ def submit_bulk_analytics(node_attrs_list):
         password=HARPERDB_READ_AND_WRITE_PASSWORD)
 
     db.insert(ALL_NODES_SCHEMA, ALL_NODES_TABLE, node_attrs_list)
+    LOGGER.info(f"Submitted {len(node_attrs_list)} entries to {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE}")
 
 def print_analytics_to_screen():
     db = harperdb.HarperDB(
@@ -43,72 +45,82 @@ def print_analytics_to_screen():
         username=HARPERDB_READ_USERNAME,
         password=HARPERDB_READ_PASSWORD)
 
+    # Most used
     res = db.sql(f"SELECT COUNT(id) AS total, class_name "
-                 f"FROM all_nodes.{ALL_NODES_TABLE} "
+                 f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
                  f"WHERE class_name NOT LIKE '%Input' AND NOT IS_CONTEXT "
                  f"GROUP BY class_name "
                  f"ORDER BY total DESC "
                  f"LIMIT 25")
 
-    top_used_table = PrettyTable()
-    top_used_table.field_names = list(res[0].keys())
-    for r in res:
-        top_used_table.add_row(r.values())
-    print("\nTOP 25 MOST USED CLASSES")
-    print(top_used_table)
+    if res:
+        top_used_table = PrettyTable()
+        top_used_table.field_names = list(res[0].keys())
+        for r in res:
+            top_used_table.add_row(r.values())
+        print("\nTOP 25 MOST USED CLASSES")
+        print(top_used_table)
 
+    # Exec times
     res = db.sql(f"SELECT AVG(execution_time) AS average_time, class_name "
-                 f"FROM all_nodes.{ALL_NODES_TABLE} "
+                 f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
                  f"WHERE NOT IS_CONTEXT "
                  f"GROUP BY class_name "
                  f"ORDER BY average_time DESC "
                  f"LIMIT 10")
 
-    slowest_table = PrettyTable()
-    slowest_table.field_names = list(res[0].keys())
-    for r in res:
-        slowest_table.add_row(r.values())
-    print("\nTOP 10 SLOWEST NODES")
-    print(slowest_table)
+    if res:
+        slowest_table = PrettyTable()
+        slowest_table.field_names = list(res[0].keys())
+        for r in res:
+            slowest_table.add_row(r.values())
+        print("\nTOP 10 SLOWEST NODES")
+        print(slowest_table)
 
+    # Most failed
     res = db.sql(f"SELECT COUNT(id) AS total_failures, class_name "
-                 f"FROM all_nodes.{ALL_NODES_TABLE} "
+                 f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
                  f"WHERE success='FAILED' "
                  f"GROUP BY class_name "
                  f"ORDER BY total_failures DESC "
                  f"LIMIT 10")
 
-    failed_table = PrettyTable()
-    failed_table.field_names = list(res[0].keys())
-    for r in res:
-        failed_table.add_row(r.values())
-    print("\nTOP 10 FAILED NODES")
-    print(failed_table)
+    if res:
+        failed_table = PrettyTable()
+        failed_table.field_names = list(res[0].keys())
+        for r in res:
+            failed_table.add_row(r.values())
+        print("\nTOP 10 FAILED NODES")
+        print(failed_table)
 
+    # Most errored
     res = db.sql(f"SELECT COUNT(id) AS total_failures, class_name "
-                 f"FROM all_nodes.{ALL_NODES_TABLE} "
+                 f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
                  f"WHERE success='ERROR' "
                  f"GROUP BY class_name "
                  f"ORDER BY total_failures DESC "
                  f"LIMIT 10")
 
-    errored_table = PrettyTable()
-    errored_table.field_names = list(res[0].keys())
-    for r in res:
-        errored_table.add_row(r.values())
-    print("\nTOP 10 ERRORED NODES")
-    print(errored_table)
+    if res:
+        errored_table = PrettyTable()
+        errored_table.field_names = list(res[0].keys())
+        for r in res:
+            errored_table.add_row(r.values())
+        print("\nTOP 10 ERRORED NODES")
+        print(errored_table)
 
+    # Top contexts
     res = db.sql(f"SELECT COUNT(id) AS total, class_name "
-                 f"FROM all_nodes.{ALL_NODES_TABLE} "
+                 f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
                  f"WHERE IS_CONTEXT "
                  f"GROUP BY class_name "
                  f"ORDER BY total DESC "
                  f"LIMIT 10")
 
-    top_used_context_table = PrettyTable()
-    top_used_context_table.field_names = list(res[0].keys())
-    for r in res:
-        top_used_context_table.add_row(r.values())
-    print("\nTOP 10 MOST USED CONTEXTS")
-    print(top_used_context_table)
+    if res:
+        top_used_context_table = PrettyTable()
+        top_used_context_table.field_names = list(res[0].keys())
+        for r in res:
+            top_used_context_table.add_row(r.values())
+        print("\nTOP 10 MOST USED CONTEXTS")
+        print(top_used_context_table)
