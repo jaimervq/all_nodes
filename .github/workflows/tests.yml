@@ -1,0 +1,54 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  tests:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11"]
+        os: [ubuntu-latest, windows-latest]
+        exclude:
+          - os: windows-latest
+            python-version: "3.11"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Env vars LINUX
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          parentdir="$(dirname `pwd`)";
+          echo "PYTHONPATH=$parentdir:$PYTHONPATH" >> $GITHUB_ENV
+
+      - name: Env vars WINDOWS
+        if: matrix.os == 'windows-latest'
+        run: |
+          $parentdir=(get-item (pwd) ).parent.FullName
+          echo "PYTHONPATH=$parentdir" >> $env:GITHUB_ENV
+
+      - name: Run unittests
+        env:
+          HARPERDB_READ_AND_WRITE_PASSWORD: ${{ secrets.HARPERDB_READ_AND_WRITE_PASSWORD }}
+          HARPERDB_ENV: TEST
+        run: |
+          python -m unittest discover ./test
+
+      - name: Run black test
+        run: |
+          black --check .

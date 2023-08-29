@@ -8,6 +8,7 @@ __license__ = "MIT License"
 
 import ast
 import datetime
+import getpass
 import inspect
 import os
 import pprint
@@ -56,7 +57,6 @@ class GeneralLogicNode:
     VALID_NAMING_PATTERN = "^[A-Z]+[a-zA-Z0-9_]*$"
 
     def __init__(self):
-
         # General properties
         self.class_name = type(self).__name__
         self.node_name = self.class_name + "_1"
@@ -82,6 +82,7 @@ class GeneralLogicNode:
 
         self.run_date = None
         self.execution_time = 0
+        self.user = getpass.getuser()
 
         # Feedback
         LOGGER.debug("Initialized node! {}".format(self.class_name))
@@ -119,11 +120,13 @@ class GeneralLogicNode:
     def get_node_full_dict(self):
         out_dict = dict()
 
+        # Class namde, node name...
         out_dict["class_name"] = self.class_name
         out_dict["node_name"] = self.node_name
         out_dict["full_name"] = self.full_name
         out_dict["uuid"] = self.uuid
 
+        # Attributes
         out_dict["node_attributes"] = dict()
         for attr in self.all_attributes:
             out_dict["node_attributes"][attr.dot_name] = dict()
@@ -135,7 +138,9 @@ class GeneralLogicNode:
                 "connector_type"
             ] = attr.connector_type
             out_dict["node_attributes"][attr.dot_name]["is_optional"] = attr.is_optional
-            out_dict["node_attributes"][attr.dot_name]["data_type"] = attr.get_datatype_str()
+            out_dict["node_attributes"][attr.dot_name][
+                "data_type"
+            ] = attr.get_datatype_str()
             out_dict["node_attributes"][attr.dot_name][
                 "data_type_str"
             ] = attr.get_datatype_str()
@@ -143,20 +148,25 @@ class GeneralLogicNode:
                 c_attr.dot_name for c_attr in attr.connected_attributes
             ]
 
+        # Connections
+        connections = list()
+        for attr in self.all_attributes:
+            connections += attr.get_connections_list()
+        out_dict["connections"] = connections
+
+        # Success and logs
         out_dict["success"] = self.success
 
         out_dict["error_log"] = self.error_log
         out_dict["fail_log"] = self.fail_log
 
+        # Execution info
         out_dict["run_date"] = self.run_date
         out_dict["execution_time"] = self.execution_time
+        out_dict["user"] = self.user
 
+        # Extra
         out_dict["IS_CONTEXT"] = self.IS_CONTEXT
-
-        connections = list()
-        for attr in self.all_attributes:
-            connections += attr.get_connections_list()
-        out_dict["connections"] = connections
 
         return out_dict
 
@@ -506,7 +516,6 @@ class GeneralLogicNode:
 
     # RUN ----------------------
     def _run(self, execute_connected=True):
-
         # Status
         if self.success != constants.NOT_RUN:
             LOGGER.warning(
@@ -812,7 +821,6 @@ class GeneralLogicAttribute:
         value=None,
         is_optional=False,
     ):
-
         self.parent_node = parent_node
 
         self.attribute_name = attribute_name

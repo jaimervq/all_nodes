@@ -79,3 +79,8 @@ if IN_DEV:
     CONSOLE_LOG_FORMATTER = logging.Formatter(
         "%(levelname)8s- %(message)s (%(funcName)s) %(filename)s:%(lineno)d"
     )
+
+# -------------------------------- ANALYTICS -------------------------------- #
+HARPERDB_ENV = os.getenv("HARPERDB_ENV", "PROD")
+if IN_DEV:
+    HARPERDB_ENV = "DEV"

@@ -12,7 +12,6 @@ LOGGER = utils.get_logger(__name__)
 
 
 class ListToStr(GeneralLogicNode):
-
     INPUTS_DICT = {
         "in_list": {"type": list},
         "join_character": {"type": str, "optional": True},
@@ -27,7 +26,6 @@ class ListToStr(GeneralLogicNode):
 
 
 class IntToStr(GeneralLogicNode):
-
     INPUTS_DICT = {
         "in_int": {"type": int},
     }
@@ -40,7 +38,6 @@ class IntToStr(GeneralLogicNode):
 
 
 class ConcatStr(GeneralLogicNode):
-
     INPUTS_DICT = {
         "in_str_0": {"type": str},
         "in_str_1": {"type": str},
@@ -62,7 +59,6 @@ class ConcatStr(GeneralLogicNode):
 
 
 class MultiToStr(GeneralLogicNode):
-
     INPUTS_DICT = {
         "in_int": {"type": int, "optional": True},
         "in_float": {"type": float, "optional": True},

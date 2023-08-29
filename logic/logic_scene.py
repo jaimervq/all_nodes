@@ -24,7 +24,6 @@ LOGGER = utils.get_logger(__name__)
 
 class LogicScene:
     def __init__(self):
-
         self.scene_name = None
 
         self.context = None
@@ -98,7 +97,7 @@ class LogicScene:
         for node in self.all_logic_nodes:
             if node.node_name == node_full_name:
                 return node
-    
+
     def to_attr(self, attr_full_name):
         for node in self.all_logic_nodes:
             for attr in node.all_attributes:
@@ -230,7 +229,6 @@ class LogicScene:
         LOGGER.info("Wrote scene to file: {}".format(filepath))
 
     def load_from_file(self, scene_path: str, namespace: str = None) -> list:
-
         # See if we need namespace
         if self.all_nodes():
             if namespace is None:
@@ -318,7 +316,9 @@ class LogicScene:
             node.reset()
 
     def soft_reset_all_nodes(self):
-        LOGGER.debug("Soft-resetting all logic nodes of scene {}".format(self.scene_name))
+        LOGGER.debug(
+            "Soft-resetting all logic nodes of scene {}".format(self.scene_name)
+        )
         for node in self.all_logic_nodes:
             node.soft_reset()
 
@@ -341,7 +341,11 @@ class LogicScene:
         for node in self.all_logic_nodes:
             node_properties_list.append(node.get_node_full_dict())
             if node.IS_CONTEXT:
-                for i_node in node.internal_scene.all_logic_nodes:  # TODO make this properly recursive
+                for (
+                    i_node
+                ) in (
+                    node.internal_scene.all_logic_nodes
+                ):  # TODO make this properly recursive
                     node_properties_list.append(i_node.get_node_full_dict())
         analytics.submit_bulk_analytics(node_properties_list)
 

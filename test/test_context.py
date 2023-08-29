@@ -12,7 +12,7 @@ class NodeTesting(unittest.TestCase):
         """
         Create a context.
         """
-        utils.print_separator("TEST STARTED - " + "test_context_creation")
+        utils.print_test_header("test_context_creation")
 
         l = LogicScene()
         n_1 = l.add_node_by_name("EnvironToYmlCtx")
@@ -22,7 +22,7 @@ class NodeTesting(unittest.TestCase):
         """
         Try to create a context that does not exist.
         """
-        utils.print_separator("TEST STARTED - " + "test_fake_context_creation")
+        utils.print_test_header("test_fake_context_creation")
 
         l = LogicScene()
         with self.assertRaises(LogicSceneError) as e:
@@ -33,7 +33,7 @@ class NodeTesting(unittest.TestCase):
         """
         Create and run a context.
         """
-        utils.print_separator("TEST STARTED - " + "test_context_run")
+        utils.print_test_header("test_context_run")
 
         l = LogicScene()
         n_1 = l.add_node_by_name("EnvironToYmlCtx")
@@ -44,7 +44,7 @@ class NodeTesting(unittest.TestCase):
         """
         Run a chain of nodes starting at a context.
         """
-        utils.print_separator("TEST STARTED - " + "test_run_chain_from_ctx")
+        utils.print_test_header("test_run_chain_from_ctx")
 
         logic_scene = LogicScene()
 

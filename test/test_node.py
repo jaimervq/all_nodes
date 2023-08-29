@@ -12,7 +12,6 @@ from all_nodes import utils
 
 # -------------------------------- TESTS -------------------------------- #
 class NodeTesting(unittest.TestCase):
-
     DICT_EXAMPLE = {
         "test_people": {"names": ["Fred", "Joe", "Sally"], "surnames": None}
     }
@@ -21,7 +20,7 @@ class NodeTesting(unittest.TestCase):
         """
         Create a few nodes, directly from their modules.
         """
-        utils.print_separator("TEST STARTED - " + "test_creation")
+        utils.print_test_header("test_creation")
 
         n_1 = debug_nodes.EmptyNode()
         self.assertIsNotNone(n_1)
@@ -34,7 +33,7 @@ class NodeTesting(unittest.TestCase):
         """
         Test the attributes of a node get created with a proper name.
         """
-        utils.print_separator("TEST STARTED - " + "test_attribute_name")
+        utils.print_test_header("test_attribute_name")
 
         n_1 = general_nodes.GetDictKey()
         in_dict_attr = n_1["in_dict"]
@@ -44,7 +43,7 @@ class NodeTesting(unittest.TestCase):
         """
         Test connecting some node attributes.
         """
-        utils.print_separator("TEST STARTED - " + "test_connection")
+        utils.print_test_header("test_connection")
 
         n_1 = general_nodes.JsonToDict()
         n_2 = general_nodes.GetDictKey()
@@ -57,7 +56,7 @@ class NodeTesting(unittest.TestCase):
         """
         Test displaying the internal debug dict of a node
         """
-        utils.print_separator("TEST STARTED - " + "test_getting_internal_dict")
+        utils.print_test_header("test_getting_internal_dict")
 
         n_1 = special_input_nodes.StrInput()
         n_2 = general_nodes.GetDictKey()
@@ -69,7 +68,7 @@ class NodeTesting(unittest.TestCase):
         """
         Check all inputs of a node are properly set before starting to execute.
         """
-        utils.print_separator("TEST STARTED - " + "test_inputs_checked_run")
+        utils.print_test_header("test_inputs_checked_run")
 
         n_1 = debug_nodes.EmptyNode()
         n_1.run_single()
@@ -92,7 +91,7 @@ class NodeTesting(unittest.TestCase):
         """
         Test the DictToYaml node
         """
-        utils.print_separator("TEST STARTED - " + "test_run_node_1")
+        utils.print_test_header("test_run_node_1")
 
         temp = tempfile.NamedTemporaryFile(suffix=".yaml", delete=False)
         temp.close()
@@ -108,7 +107,7 @@ class NodeTesting(unittest.TestCase):
         """
         Test the CreateTempFile node
         """
-        utils.print_separator("TEST STARTED - " + "test_run_node_2")
+        utils.print_test_header("test_run_node_2")
 
         n_1 = general_nodes.CreateTempFile()
         n_1._run()
@@ -121,7 +120,7 @@ class NodeTesting(unittest.TestCase):
         """
         Test a case where a node should fail
         """
-        utils.print_separator("TEST STARTED - " + "test_node_fails")
+        utils.print_test_header("test_node_fails")
 
         n_1 = general_nodes.GetDictKey()
         n_1.set_attribute_value("in_dict", NodeTesting.DICT_EXAMPLE)
@@ -134,7 +133,7 @@ class NodeTesting(unittest.TestCase):
         """
         Test a case where a node should error and display the error
         """
-        utils.print_separator("TEST STARTED - " + "test_node_exception")
+        utils.print_test_header("test_node_exception")
 
         n_1 = debug_nodes.ErrorNode()
         n_1._run()
@@ -145,7 +144,7 @@ class NodeTesting(unittest.TestCase):
         """
         Test the execution time of nodes is being measured
         """
-        utils.print_separator("TEST STARTED - " + "test_node_execution_time")
+        utils.print_test_header("test_node_execution_time")
 
         n_1 = debug_nodes.TimedNode()
         n_1.run_single()

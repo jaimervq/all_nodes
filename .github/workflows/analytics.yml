@@ -1,0 +1,50 @@
+name: Weekly analytics
+
+on:
+  schedule:
+    - cron: '23 0 * * 1'
+
+jobs:
+  publish_analytics:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    permissions:
+      contents: write
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{  matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{  matrix.python-version }}
+
+      - name: Install python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Env vars LINUX
+        run: |
+          parentdir="$(dirname `pwd`)";
+          echo "PYTHONPATH=$parentdir:$PYTHONPATH" >> $GITHUB_ENV
+
+      - name: Run analytics
+        run: |
+          python main.py -a
+
+      - name: Set DATE env variable
+        run: echo "DATE=`date`" >> $GITHUB_ENV
+
+      - name: Commit analytics
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Automatic analytics ${{ env.DATE }}
+          add_options: '--all'
+          file_pattern: 'docs/analytics/*.png'
+          commit_user_name: GitHub Actions Bot

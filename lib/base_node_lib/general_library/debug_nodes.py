@@ -14,7 +14,6 @@ LOGGER = utils.get_logger(__name__)
 
 
 class EmptyNode(GeneralLogicNode):
-
     NICE_NAME = "Empty node"
     HELP = "Does not do anything (just debugging purposes)"
 
