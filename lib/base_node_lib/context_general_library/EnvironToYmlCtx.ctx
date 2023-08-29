@@ -1,6 +1,6 @@
 # CONTEXT EnvironToYmlCtx
 # ---------------------
-# Description: 
+# Description: Example context node
 
 # Nodes section: overall list of nodes to be created
 nodes:

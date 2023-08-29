@@ -826,6 +826,7 @@ class GeneralLogicAttribute:
     # PROPERTIES ----------------------
     @property
     def dot_name(self):
+        # TODO remove this and just use full name?
         return self.parent_node.node_name + "." + self.attribute_name
 
     @property

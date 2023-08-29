@@ -98,6 +98,12 @@ class LogicScene:
         for node in self.all_logic_nodes:
             if node.node_name == node_full_name:
                 return node
+    
+    def to_attr(self, attr_full_name):
+        for node in self.all_logic_nodes:
+            for attr in node.all_attributes:
+                if attr.full_name == attr_full_name:
+                    return attr
 
     # NODE MANIPULATION ----------------------
     def rename_node(self, node, new_name: str) -> bool:
@@ -330,7 +336,7 @@ class LogicScene:
         print("\n", end="")
 
         # Analytics
-        LOGGER.info("Logging analytics")
+        LOGGER.info("Gathering analytics")
         node_properties_list = []
         for node in self.all_logic_nodes:
             node_properties_list.append(node.get_node_full_dict())
