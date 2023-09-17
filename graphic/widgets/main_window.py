@@ -26,7 +26,6 @@ LOGGER = utils.get_logger(__name__)
 
 class AllNodesWindow(QtWidgets.QMainWindow):
     def __init__(self):
-
         QtWidgets.QMainWindow.__init__(self)
 
         # Load UI

@@ -1,4 +1,7 @@
-PySide2==5.15.2.1
-PyYAML==6.0
-harperdb==0.4.2
-prettytable==3.7.0
+PySide2
+PyYAML
+harperdb
+prettytable
+colorama
+black
+matplotlib

@@ -14,7 +14,6 @@ LOGGER = utils.get_logger(__name__)
 
 
 class BasicIf(GeneralLogicNode):
-
     NICE_NAME = "Basic IF conditional"
 
     INPUTS_DICT = {
@@ -36,7 +35,6 @@ class BasicIf(GeneralLogicNode):
 
 
 class Basicbreaker(GeneralLogicNode):
-
     NICE_NAME = "Basic breaker"
     HELP = "If the input condition is met, break the whole execution after this node"
 

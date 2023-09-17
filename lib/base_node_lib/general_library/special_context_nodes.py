@@ -11,6 +11,7 @@ from all_nodes import utils
 
 LOGGER = utils.get_logger(__name__)
 
+
 # Nodes to grab input values from context ------------------------------------------
 class GrabInputFromCtx(GeneralLogicNode):
     NICE_NAME = "CTX Input"

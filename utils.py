@@ -12,10 +12,10 @@ import importlib
 import inspect
 import sys
 
-import yaml
-
+from colorama import Fore, Back, Style
 from PySide2 import QtCore
 from PySide2 import QtGui
+import yaml
 
 from all_nodes import constants
 
@@ -39,6 +39,14 @@ def print_separator(message):
     print("\n", end="")
     print(message.upper())
     print("-" * len(message))
+
+
+def print_test_header(message):
+    message = "TEST STARTED - " + message
+    print("\n", end="")
+    print(f"{Fore.GREEN}+-{'-' * len(message)}-+")
+    print(f"{Fore.GREEN}| {message} | ")
+    print(f"{Fore.GREEN}+-{'-' * len(message)}-+ {Style.RESET_ALL}")
 
 
 # -------------------------------- CONFIGS -------------------------------- #
@@ -138,7 +146,7 @@ def get_all_node_classes():
     if not os.getenv("ALL_NODES_LIB_PATH"):
         root = os.path.abspath(__file__)
         root_dir_path = os.path.dirname(root)
-        default_lib_path = os.path.join(root_dir_path, "lib/base_node_lib")
+        default_lib_path = os.path.join(root_dir_path, "lib", "base_node_lib")
         libraries_path = [default_lib_path]
         LOGGER.warning(
             "Env variable 'ALL_NODES_LIB_PATH' is not defined, "
@@ -152,7 +160,7 @@ def get_all_node_classes():
             continue
         elif not os.path.isdir(path):
             LOGGER.warning("Folder {} does not exist".format(path))
-        for (root, dirs, files) in os.walk(path, topdown=True):
+        for root, dirs, files in os.walk(path, topdown=True):
             for file in files:
                 p = os.path.join(root, file)
                 if p.endswith(".py") and "__init__" not in p:
@@ -174,7 +182,7 @@ def get_all_scenes_recursive(libraries_path=None, scenes_dict=None):
         if not os.getenv("ALL_NODES_LIB_PATH"):
             root = os.path.abspath(__file__)
             root_dir_path = os.path.dirname(root)
-            default_lib_path = os.path.join(root_dir_path, "lib/example_scene_lib")
+            default_lib_path = os.path.join(root_dir_path, "lib", "example_scene_lib")
             libraries_path.append(default_lib_path)
             LOGGER.warning(
                 "Env variable 'ALL_NODES_LIB_PATH' is not defined, "

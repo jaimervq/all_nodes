@@ -13,7 +13,6 @@ LOGGER = utils.get_logger(__name__)
 
 
 class GetDictKey(GeneralLogicNode):
-
     NICE_NAME = "Get dict key"
     HELP = "Get given key from a dictionary"
 
@@ -34,7 +33,6 @@ class GetDictKey(GeneralLogicNode):
 
 
 class RegexMatch(GeneralLogicNode):
-
     INPUTS_DICT = {
         "in_str": {"type": str},
         "pattern": {"type": str},
@@ -53,7 +51,6 @@ class RegexMatch(GeneralLogicNode):
 
 
 class SetDictKey(GeneralLogicNode):
-
     NICE_NAME = "Set dict key"
     HELP = "Set a key in a dictionary"
 
@@ -75,7 +72,6 @@ class SetDictKey(GeneralLogicNode):
 
 
 class GetFolderFromFilepath(GeneralLogicNode):
-
     INPUTS_DICT = {
         "filepath": {"type": str},
     }
@@ -94,7 +90,6 @@ class GetFolderFromFilepath(GeneralLogicNode):
 
 
 class PathJoin(GeneralLogicNode):
-
     INPUTS_DICT = {
         "token_0": {"type": str},
         "token_1": {"type": str},
@@ -111,7 +106,6 @@ class PathJoin(GeneralLogicNode):
 
 
 class CopyFile(GeneralLogicNode):
-
     INPUTS_DICT = {
         "source_file": {"type": str},
         "destination_file": {"type": str},
@@ -131,7 +125,6 @@ class CopyFile(GeneralLogicNode):
 
 
 class CopyFoldersRecursive(GeneralLogicNode):
-
     NICE_NAME = "Copy folders recursive"
 
     INPUTS_DICT = {
@@ -141,7 +134,6 @@ class CopyFoldersRecursive(GeneralLogicNode):
 
 
 class PrintToConsole(GeneralLogicNode):
-
     NICE_NAME = "Print to console"
     HELP = "Print something to console"
 
@@ -162,7 +154,6 @@ class PrintToConsole(GeneralLogicNode):
 
 
 class JsonToDict(GeneralLogicNode):
-
     NICE_NAME = "Json to dict"
     HELP = "Load a JSON file"
 
@@ -190,7 +181,6 @@ class JsonToDict(GeneralLogicNode):
 
 
 class DictToJson(GeneralLogicNode):
-
     NICE_NAME = "Dict to json"
     HELP = "Write dict to JSON file"
 
@@ -210,7 +200,6 @@ class DictToJson(GeneralLogicNode):
 
 
 class YamlToDict(GeneralLogicNode):
-
     INPUTS_DICT = {
         "yaml_filepath": {"type": str},
     }
@@ -234,7 +223,6 @@ class YamlToDict(GeneralLogicNode):
 
 
 class DictToYaml(GeneralLogicNode):
-
     NICE_NAME = "Dict to yaml"
     HELP = "Write dict to YAML file"
 
@@ -253,7 +241,6 @@ class DictToYaml(GeneralLogicNode):
 
 
 class ListToTxt(GeneralLogicNode):
-
     INPUTS_DICT = {
         "in_list": {"type": list},
         "txt_filepath_to_write": {"type": str},
@@ -268,7 +255,6 @@ class ListToTxt(GeneralLogicNode):
 
 
 class TxtToList(GeneralLogicNode):
-
     INPUTS_DICT = {
         "in_txt": {"type": str},
     }
@@ -281,7 +267,6 @@ class TxtToList(GeneralLogicNode):
 
 
 class CreateTempFile(GeneralLogicNode):
-
     NICE_NAME = "Create temp file"
 
     INPUTS_DICT = {"suffix": {"type": str, "optional": True}}
@@ -307,7 +292,6 @@ class CreateTempFile(GeneralLogicNode):
 
 
 class StartFile(GeneralLogicNode):
-
     INPUTS_DICT = {
         "file_path": {"type": str},
     }
@@ -335,7 +319,6 @@ class StartFile(GeneralLogicNode):
 
 
 class LaunchSubprocess(GeneralLogicNode):
-
     INPUTS_DICT = {
         "subprocess_str": {"type": str},
     }
@@ -348,7 +331,6 @@ class LaunchSubprocess(GeneralLogicNode):
 
 
 class GetEntireEnviron(GeneralLogicNode):
-
     NICE_NAME = "Get entire environment"
 
     OUTPUTS_DICT = {"environ_dict": {"type": dict}}
@@ -360,7 +342,6 @@ class GetEntireEnviron(GeneralLogicNode):
 
 
 class GetEnvVariable(GeneralLogicNode):
-
     NICE_NAME = "Get env variable"
     HELP = (
         "Get the value of an environment variable, with possibility of a fallback "
@@ -393,7 +374,6 @@ class GetEnvVariable(GeneralLogicNode):
 
 
 class SetEnvVariable(GeneralLogicNode):
-
     INPUTS_DICT = {
         "env_variable_name": {"type": str},
         "new_value": {"type": str},

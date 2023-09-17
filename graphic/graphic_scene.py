@@ -157,7 +157,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 
 # -------------------------------- CUSTOM SCENE CLASS -------------------------------- #
 class CustomScene(QtWidgets.QGraphicsScene):
-
     # TODO rethink if these could go in the GLOBAL_SIGNALER
     dropped_node = QtCore.Signal(int, int)
     in_screen_feedback = QtCore.Signal(str, int)
@@ -721,7 +720,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 reset_single_node_action.triggered.connect(
                     lambda: self.reset_single_node(item)
                 )
-                soft_reset_single_node_action = menu.addAction("Soft-reset only this node (S)")
+                soft_reset_single_node_action = menu.addAction(
+                    "Soft-reset only this node (S)"
+                )
                 soft_reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
                 soft_reset_single_node_action.triggered.connect(
                     lambda: self.soft_reset_single_node(item)

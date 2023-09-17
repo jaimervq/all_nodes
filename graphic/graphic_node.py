@@ -23,7 +23,6 @@ LOGGER = utils.get_logger(__name__)
 # -------------------------------- NODE CLASS -------------------------------- #
 class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
     def __init__(self, logic_node, color_name):
-
         # LOGIC NODE
         self.logic_node = logic_node
 
@@ -436,7 +435,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.error_marquee.hide()
 
         elif self.logic_node.success in [constants.FAILED, constants.ERROR]:
-
             if self.logic_node.success == constants.FAILED:
                 self.badge_icon.setElementId("failed")
                 self.error_marquee.setPen(constants.NODE_FAILED_PEN)
@@ -639,7 +637,6 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
 
     # GRAPHICS SETUP ----------------------
     def setup_graphics(self):
-
         self.setPen(QtGui.QPen(QtCore.Qt.NoPen))
 
         # Plug shape (will be different shape depending on data type)

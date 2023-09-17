@@ -1,4 +1,8 @@
 # all_nodes
+![tests](https://github.com/JaimeRVQ/all_nodes/actions/workflows/tests.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![code style](https://img.shields.io/badge/code%20style-black-black)
+
 **all_nodes** is a node editor designed to be used in the most flexible way possible.
 
 Some of its main goals are:
@@ -6,7 +10,7 @@ Some of its main goals are:
 * Make debugging tasks easier, by using a one-node-at-a-time process
 * Provide a nice graphic scene where node networks can be examined, modified, etc
 
-![](documentation/preview_1.png)
+![](docs/preview_1.png)
 
 ## Adding more classes/nodes
 The places where all_nodes will search for node classes, scenes, etc is defined by the environment variable **ALL_NODES_LIB_PATH**
@@ -16,7 +20,7 @@ Example of organization of a folder, that contains two libraries
 
 | Folder structure                      | Classes representation                   | Scenes                                |
 |---------------------------------------|------------------------------------------|---------------------------------------|
-| ![](documentation/folder_example.png) | ![](documentation/structure_example.png) | ![](documentation/scenes_example.png) |                              
+| ![](docs/folder_example.png) | ![](docs/structure_example.png) | ![](docs/scenes_example.png) |                              
 
 Each library can have as many modules as needed, and can have an 'icons' folder to provide icons for the classes contained in the modules.
 
@@ -69,14 +73,14 @@ Other considerations:
 * The `import` statements are kept inside the run method, so no ImportError is met when editing DCC-specific nodes outside the DCC they are meant for.
 
 ## Defining a context
-![](documentation/context.png)
+![](docs/context.png)
 
 A context is a "node of nodes", or a node that contains a scene inside itself. To define it, just two ingredients are needed:
 * As usual, a class in a .py file, with the **IS_CONTEXT** attribute set
 * In the same folder as the .py file, a .ctx file (just a yaml file but with that extension instead) with the inner scene of the node
 
 Once "inside" the context, its input attributes can be "grabbed" and its output attributes set by making use of the special ctx nodes:
-![](documentation/ctx_grab.png)
+![](docs/ctx_grab.png)
 
 ## Defining a scene
 Defining a scene is very easy, it is a simple and readable yaml file.
@@ -135,13 +139,13 @@ Those are nodes that:
 * Have no dependency/inputs/connetions from others.
 * Don't have any non-optional attributes not set
 
-![](documentation/start_nodes.png)
+![](docs/start_nodes.png)
 
 In these example nodes, none of them have any incoming connections. Also, the only input attribute they all have is the START attribute, but since it is an optional attribute, the node can start executing even if it is not set.
   
 Another example:
 
-![](documentation/start_node_manual.png)
+![](docs/start_node_manual.png)
 
 The node has a non-optional input. It is not connected, but a value has been defined to it, so the node can start executing.
 
@@ -149,7 +153,7 @@ The node has a non-optional input. It is not connected, but a value has been def
 When a start node is executed, and it is successful, the nodes connected to its outputs will try to execute as well.
 Have a look at this example:
 
-![](documentation/exec_1.png)
+![](docs/exec_1.png)
 
 What will happen is:
 * IntInput_1 is executed
@@ -161,7 +165,7 @@ What will happen is:
 
 However, changing the scene a little bit, makes things  more complex:
 
-![](documentation/exec_2.png)
+![](docs/exec_2.png)
 
 * IntInput_1 is executed
 * It is successful, so its output value "out_int" is propagated to the connected nodes. Also, this time the "COMPLETED" attribute is propagated to the EmptyNode_1 connected node.
@@ -184,16 +188,14 @@ from all_nodes.logic.logic_scene import LogicScene
 l_scene = LogicScene()
 
 n_1 = l_scene.add_node_by_name("EmptyNode")
-n_2 = l_scene.add_node_by_name("EmptyNode")
+n_2 = l_scene.add_node_by_name("EmptyNode")k
 n_1["COMPLETED"].connect_to_other(n_2["START"])
 
 l_scene.run_all_nodes()
 ```
 
-## Some library repos
-### Maya:
-* https://gitlab.com/python-3/maya/maya_all_nodes_lib
-### Nuke:
-* https://gitlab.com/python-3/nuke/nuke_all_nodes_lib
-### Houdini
-* https://gitlab.com/python-3/houdini/houdini_all_nodes_lib
+# Analytics
+![](docs/analytics/most_used.png)
+![](docs/analytics/errored.png)
+![](docs/analytics/failed.png)
+![](docs/analytics/slowest.png)

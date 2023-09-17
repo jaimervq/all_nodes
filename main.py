@@ -30,7 +30,7 @@ def launch_gui():
     app.exec_()
 
 
-def launch_batch(scene_file: str, set_parameters:list):
+def launch_batch(scene_file: str, set_parameters: list):
     """
     Run a scene in batch mode, no GUI.
 
@@ -40,10 +40,10 @@ def launch_batch(scene_file: str, set_parameters:list):
     scene = LogicScene()
     scene.load_from_file(scene_file)
     if set_parameters:
-        for i in range(0, len(set_parameters) -1, 2):
-            node_name = set_parameters[i].rsplit('.', 1)[0]
-            attr_name = set_parameters[i].rsplit('.', 1)[1]
-            attr_str_value = set_parameters[i+1] 
+        for i in range(0, len(set_parameters) - 1, 2):
+            node_name = set_parameters[i].rsplit(".", 1)[0]
+            attr_name = set_parameters[i].rsplit(".", 1)[1]
+            attr_str_value = set_parameters[i + 1]
 
             node = scene.to_node(node_name)
             if node:
@@ -59,10 +59,17 @@ def main():
         "-f", "--scene_file", type=str, help="file .yml to run in non-GUI mode"
     )
     parser.add_argument(
-        "-s", "--set_parameters", help="Arguments to set in batch execution of scene", type=str, nargs='+'
+        "-s",
+        "--set_parameters",
+        help="Arguments to set in batch execution of scene",
+        type=str,
+        nargs="+",
     )
     parser.add_argument(
-        "-a", "--analytics", help="Print analytics to screen", action="store_true",
+        "-a",
+        "--analytics",
+        help="Print analytics to screen",
+        action="store_true",
     )
     args = parser.parse_args()
 
@@ -71,7 +78,7 @@ def main():
 
     # Analytics
     if args.analytics:
-        analytics.print_analytics_to_screen()
+        analytics.process_analytics()
         sys.exit(0)
 
     # GUI mode

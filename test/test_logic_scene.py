@@ -7,9 +7,9 @@ from all_nodes.logic.logic_scene import LogicScene
 from all_nodes.logic.logic_scene import LogicSceneError
 from all_nodes import utils
 
+
 # -------------------------------- TESTS -------------------------------- #
 class LogicSceneTesting(unittest.TestCase):
-
     DICT_EXAMPLE = {
         "test_people": {"names": ["Fred", "Joe", "Sally"], "surnames": None}
     }
@@ -22,7 +22,7 @@ class LogicSceneTesting(unittest.TestCase):
         """
         Create nodes in a logic scene
         """
-        utils.print_separator("TEST STARTED - " + "test_logic_scene")
+        utils.print_test_header("test_logic_scene")
 
         logic_scene = LogicScene()
         logic_scene.add_node_by_name("JsonToDict")
@@ -50,7 +50,7 @@ class LogicSceneTesting(unittest.TestCase):
         self.assertTrue(n_3.success)
 
     def test_locate_starting_nodes(self):
-        utils.print_separator("TEST STARTED - " + "test_locate_starting_nodes")
+        utils.print_test_header("test_locate_starting_nodes")
 
         logic_scene = LogicScene()
         logic_scene.add_node_by_name("StrInput")
@@ -63,7 +63,7 @@ class LogicSceneTesting(unittest.TestCase):
         self.assertEqual(len(starting_nodes), 3)
 
     def test_capture_node(self):
-        utils.print_separator("TEST STARTED - " + "test_capture_node")
+        utils.print_test_header("test_capture_node")
 
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("StrInput")
@@ -72,7 +72,7 @@ class LogicSceneTesting(unittest.TestCase):
         self.assertEqual(n_1, n_2)
 
     def test_write_scene_to_file(self):
-        utils.print_separator("TEST STARTED - " + "test_write_scene_to_file")
+        utils.print_test_header("test_write_scene_to_file")
 
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("StrInput")
@@ -88,7 +88,7 @@ class LogicSceneTesting(unittest.TestCase):
         self.assertTrue(os.path.isfile(temp.name))
 
     def test_load_scene_from_file(self):
-        utils.print_separator("TEST STARTED - " + "test_load_scene_from_file")
+        utils.print_test_header("test_load_scene_from_file")
 
         logic_scene = LogicScene()
         logic_scene.load_from_file(
@@ -97,7 +97,7 @@ class LogicSceneTesting(unittest.TestCase):
         self.assertEqual(logic_scene.node_count(), 9)
 
     def test_load_scene_from_file_2(self):
-        utils.print_separator("TEST STARTED - " + "test_load_scene_from_file_2")
+        utils.print_test_header("test_load_scene_from_file_2")
 
         logic_scene = LogicScene()
         with self.assertRaises(LogicSceneError) as e:
@@ -107,7 +107,7 @@ class LogicSceneTesting(unittest.TestCase):
         print(e.exception)
 
     def test_load_scene_from_file_3(self):
-        utils.print_separator("TEST STARTED - " + "test_load_scene_from_file_3")
+        utils.print_test_header("test_load_scene_from_file_3")
 
         logic_scene = LogicScene()
         with self.assertRaises(LogicSceneError) as e:
@@ -117,13 +117,13 @@ class LogicSceneTesting(unittest.TestCase):
         print(e.exception)
 
     def test_load_scene_from_alias(self):
-        utils.print_separator("TEST STARTED - " + "test_load_scene_from_alias")
+        utils.print_test_header("test_load_scene_from_alias")
 
         logic_scene = LogicScene()
         logic_scene.load_from_file("simple_regex")
 
     def test_load_scene_from_alias_faulty(self):
-        utils.print_separator("TEST STARTED - " + "test_load_scene_from_alias_faulty")
+        utils.print_test_header("test_load_scene_from_alias_faulty")
 
         logic_scene = LogicScene()
         with self.assertRaises(LogicSceneError) as e:
@@ -131,7 +131,7 @@ class LogicSceneTesting(unittest.TestCase):
         print(e.exception)
 
     def test_rename_node_incorrect(self):
-        utils.print_separator("TEST STARTED - " + "test_rename_node_incorrect")
+        utils.print_test_header("test_rename_node_incorrect")
 
         logic_scene = LogicScene()
         n = logic_scene.add_node_by_name("PrintToConsole")
@@ -139,7 +139,7 @@ class LogicSceneTesting(unittest.TestCase):
         self.assertFalse(result)
 
     def test_rename_node_already_present(self):
-        utils.print_separator("TEST STARTED - " + "test_rename_node_already_present")
+        utils.print_test_header("test_rename_node_already_present")
 
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("PrintToConsole")
