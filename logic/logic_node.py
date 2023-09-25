@@ -125,6 +125,7 @@ class GeneralLogicNode:
         out_dict["node_name"] = self.node_name
         out_dict["full_name"] = self.full_name
         out_dict["uuid"] = self.uuid
+        out_dict["origin_file"] = os.path.basename(os.path.abspath(self.FILEPATH))
 
         # Attributes
         out_dict["node_attributes"] = dict()
@@ -161,7 +162,9 @@ class GeneralLogicNode:
         out_dict["fail_log"] = self.fail_log
 
         # Execution info
-        out_dict["run_date"] = self.run_date
+        out_dict["run_date"] = (
+            self.run_date.strftime("%Y-%m-%d") if self.run_date else None
+        )
         out_dict["execution_time"] = self.execution_time
         out_dict["user"] = self.user
 
@@ -527,7 +530,7 @@ class GeneralLogicNode:
 
         # Start timer
         t1 = time.time()
-        self.run_date = str(datetime.datetime.now())
+        self.run_date = datetime.datetime.now()
 
         # Check inputs
         if not self.check_all_inputs_have_value():
@@ -810,6 +813,13 @@ class SpecialInputNode(GeneralLogicNode):
         self.error_log = []
 
 
+class OptionInput(SpecialInputNode):
+    INPUT_TYPE = "option"
+    INPUT_OPTIONS = ["A", "B", "C"]
+
+    OUTPUTS_DICT = {"out_str": {"type": str}}
+
+
 # -------------------------------- ATTRIBUTES -------------------------------- #
 class GeneralLogicAttribute:
     def __init__(
@@ -868,12 +878,22 @@ class GeneralLogicAttribute:
         return connections
 
     def has_input_connected(self) -> bool:
+        """Determine whether or not this attribute has incoming connections.
+
+        Returns:
+            bool: whether or not the attribute has any incoming connection
+        """
         return (
             self.connector_type == constants.INPUT
             and len(self.connected_attributes) > 0
         )
 
     def has_connections(self) -> bool:
+        """Determine whether or not this attribute is connected to another.
+
+        Returns:
+            bool: whether or not the attribute has any connection
+        """
         return len(self.connected_attributes) > 0
 
     def connect_to_other(self, other_attribute: GeneralLogicAttribute) -> bool:

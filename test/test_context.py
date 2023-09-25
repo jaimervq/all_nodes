@@ -7,7 +7,7 @@ from all_nodes import utils
 
 
 # -------------------------------- TESTS -------------------------------- #
-class NodeTesting(unittest.TestCase):
+class ContextTesting(unittest.TestCase):
     def test_context_creation(self):
         """
         Create a context.
@@ -53,8 +53,3 @@ class NodeTesting(unittest.TestCase):
         n_1["COMPLETED"].connect_to_other(n_2["START"])
 
         n_1.run_chain()
-
-
-# -------------------------------- MAIN -------------------------------- #
-if __name__ == "__main__":
-    unittest.main()

@@ -1,22 +1,38 @@
 # SCENE environ_to_yaml
 # ---------------------
-# Description: Simple scene to write the environ out to a yaml file
+# Description: Simple example scene about how to write the environment to a yaml file
 
 # Nodes section: overall list of nodes to be created
 nodes:
+- BasicIf_1:
+    class_name: BasicIf
+    x_pos: -679
+    y_pos: -38
 - EnvironToYmlCtx_1:
     class_name: EnvironToYmlCtx
     x_pos: -904
     y_pos: -284
+- OPEN_FILE:
+    class_name: BoolInput
+    x_pos: -914
+    y_pos: -28
+- PrintToConsole_1:
+    class_name: PrintToConsole
+    x_pos: -277
+    y_pos: -120
 - StartFile_1:
     class_name: StartFile
-    x_pos: -611
-    y_pos: -304
+    x_pos: -299
+    y_pos: -303
 
 # Connections section: connections to be done between nodes
 connections:
+- BasicIf_1.path_1 -> StartFile_1.START
+- BasicIf_1.path_2 -> PrintToConsole_1.START
+- EnvironToYmlCtx_1.yaml_filepath -> PrintToConsole_1.in_object_0
 - EnvironToYmlCtx_1.yaml_filepath -> StartFile_1.file_path
+- OPEN_FILE.out_bool -> BasicIf_1.in_bool
 
 
-# Scene created at: 2023-01-24 23:13:10.371378
+# Scene created at: 2023-09-26 11:33:50.118111
 # Created by: jaime.rvq
