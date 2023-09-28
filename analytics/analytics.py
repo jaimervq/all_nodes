@@ -93,6 +93,7 @@ def process_analytics():
     res = db.sql(
         f"SELECT run_date, COUNT(*) as total "
         f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
+        f"WHERE run_date IS NOT NULL "
         f"GROUP BY run_date "
         f"ORDER BY run_date ASC "
         f"LIMIT 50"
@@ -241,3 +242,5 @@ def process_analytics():
         graph_file = os.path.join(root_dir_path, "../docs/analytics", "failed.png")
         fig.tight_layout()
         fig.savefig(graph_file)
+
+    LOGGER.info(f"Processed statistics from {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE}")

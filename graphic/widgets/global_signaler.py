@@ -19,7 +19,7 @@ class GlobalSignaler(QtCore.QObject):
     attribute_editor_remove_node_requested = QtCore.Signal(str)
 
     # CONTEXTS ----------------------
-    attribute_editor_context_expansion_requested = QtCore.Signal(str)
+    context_expansion_requested = QtCore.Signal(str)
 
     # GLOBAL ----------------------
     attribute_editor_global_refresh_requested = QtCore.Signal()

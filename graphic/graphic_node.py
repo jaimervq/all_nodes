@@ -6,6 +6,7 @@ __license__ = "MIT License"
 
 
 import ast
+import math
 
 from PySide2 import QtWidgets
 from PySide2 import QtCore
@@ -501,8 +502,17 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             if text:
                 try:
                     eval_list = ast.literal_eval(text)
-                    if eval_list and type(eval_list) == "list":
+                    if eval_list and type(eval_list) == list:
                         self.logic_node.set_special_attr_value("out_list", eval_list)
+                except (ValueError, SyntaxError):
+                    pass
+        elif self.input_datatype == "tuple":
+            text = self.proxy_input_widget.widget().text()
+            if text:
+                try:
+                    eval_list = ast.literal_eval(text)
+                    if eval_list and type(eval_list) == tuple:
+                        self.logic_node.set_special_attr_value("out_tuple", eval_list)
                 except (ValueError, SyntaxError):
                     pass
         elif self.input_datatype == "bool":
@@ -734,9 +744,14 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             plug_path.addPolygon(plug_polygon)
 
         elif self.logic_attribute.get_datatype_str() == "object":
-            plug_path.addEllipse(
-                QtCore.QPoint(0, 0), constants.PLUG_RADIUS, constants.PLUG_RADIUS * 0.6
-            )
+            plug_polygon = QtGui.QPolygon()
+            w = 360 / 5
+            for i in range(5):
+                t = w * i - 90
+                x = constants.PLUG_RADIUS * math.cos(math.radians(t))
+                y = constants.PLUG_RADIUS * math.sin(math.radians(t))
+                plug_polygon.append(QtCore.QPoint(x, y))
+            plug_path.addPolygon(plug_polygon)
 
         else:
             plug_polygon = QtGui.QPolygon(

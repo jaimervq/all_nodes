@@ -48,6 +48,15 @@ class ListInput(SpecialInputNode):
     OUTPUTS_DICT = {"out_list": {"type": list}}
 
 
+class TupleInput(SpecialInputNode):
+    INPUT_TYPE = "tuple"
+
+    NICE_NAME = "Tuple input"
+    HELP = ""
+
+    OUTPUTS_DICT = {"out_tuple": {"type": tuple}}
+
+
 class IntInput(SpecialInputNode):
     INPUT_TYPE = "int"
 

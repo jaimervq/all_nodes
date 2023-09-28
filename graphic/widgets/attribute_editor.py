@@ -221,12 +221,10 @@ class NodePanel(QtWidgets.QWidget):
             ]
             or conns
         ):
-            attrib_value_le.setToolTip("Does not accept manual input 🛇")
+            attrib_value_le.setToolTip("Does not accept manual input")
             attrib_value_le.setReadOnly(True)
             if conns:
-                attrib_value_le.setToolTip(
-                    "Is connected, does not accept manual input 🛇"
-                )
+                attrib_value_le.setToolTip("Is connected, does not accept manual input")
             attrib_value_le.setStyleSheet("border: 1px solid white")
         else:
             attrib_value_le.setStyleSheet(
