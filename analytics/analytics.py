@@ -27,6 +27,24 @@ ENVIRONMENT = constants.HARPERDB_ENV
 ALL_NODES_TABLE = f"node_usage_{ENVIRONMENT}"
 
 
+def make_query(query_str: str):
+    """Make a query to the DB
+
+    Args:
+        query_str (str): SQL query to be made
+
+    Returns:
+        list: list of entries
+    """
+    db = harperdb.HarperDB(
+        url=HARPERDB_URL,
+        username=HARPERDB_READ_USERNAME,
+        password=HARPERDB_READ_PASSWORD,
+    )
+
+    return db.sql(query_str)
+
+
 def submit_bulk_analytics(node_attrs_list):
     """Submit a series of records to DB
 
@@ -68,14 +86,48 @@ def process_analytics():
     root_dir_path = os.path.dirname(root)
     os.makedirs(os.path.join(root_dir_path, "../docs/analytics"), exist_ok=True)
 
+    # Style for plots
+    plt.style.use("seaborn-v0_8-dark")
+
+    # Overall usage
+    res = db.sql(
+        f"SELECT run_date, COUNT(*) as total "
+        f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
+        f"GROUP BY run_date "
+        f"ORDER BY run_date ASC "
+        f"LIMIT 50"
+    )
+
+    if res:
+        dates = list()
+        uses = list()
+
+        for r in res:
+            dates.append(r.get("run_date"))
+            uses.append(r.get("total"))
+
+        fig, ax = plt.subplots(figsize=(10, 7))
+        ax.plot(dates, uses)
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(45)
+            tick.set_horizontalalignment("right")
+        ax.set_ylabel("Amount of nodes run")
+        ax.set_title(f"Recent usage")
+
+        graph_file = os.path.join(
+            root_dir_path, "../docs/analytics", "recent_usage.png"
+        )
+        fig.tight_layout()
+        fig.savefig(graph_file)
+
     # Most used
     res = db.sql(
         f"SELECT COUNT(id) AS total, class_name "
         f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
-        f"WHERE class_name NOT LIKE '%Input' AND NOT IS_CONTEXT "
+        f"WHERE class_name NOT LIKE '%Input' AND class_name NOT LIKE '%Ctx' AND NOT IS_CONTEXT "
         f"GROUP BY class_name "
         f"ORDER BY total DESC "
-        f"LIMIT 25"
+        f"LIMIT 30"
     )
 
     if res:
@@ -91,7 +143,7 @@ def process_analytics():
         ax.set_xlabel("Number of usages")
         ax.set_ylabel("Node class")
         ax.invert_yaxis()
-        ax.set_title(f"Top 25 most used nodes")
+        ax.set_title(f"Top 30 most used nodes")
 
         graph_file = os.path.join(root_dir_path, "../docs/analytics", "most_used.png")
         fig.tight_layout()
@@ -144,7 +196,7 @@ def process_analytics():
             error_date.append(r.get("run_date")[:10])
 
         fig, ax = plt.subplots(figsize=(10, 7))
-        ax.scatter(error_date, node_names, c="red", alpha=0.2, s=60)
+        ax.scatter(error_date, node_names, c="red", alpha=0.3, s=60, edgecolors="black")
         ax.set_xlabel("Error date")
         for tick in ax.get_xticklabels():
             tick.set_rotation(45)
@@ -175,7 +227,9 @@ def process_analytics():
             failed_date.append(r.get("run_date")[:10])
 
         fig, ax = plt.subplots(figsize=(10, 7))
-        ax.scatter(failed_date, node_names, c="orange", alpha=0.2, s=60)
+        ax.scatter(
+            failed_date, node_names, c="orange", alpha=0.3, s=60, edgecolors="black"
+        )
         ax.set_xlabel("Failure date")
         for tick in ax.get_xticklabels():
             tick.set_rotation(45)

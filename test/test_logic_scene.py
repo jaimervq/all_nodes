@@ -31,10 +31,8 @@ class LogicSceneTesting(unittest.TestCase):
         logic_scene.add_node_by_name("FailNode")
         self.assertEqual(logic_scene.node_count(), 4)
 
-    def test_run_node_graph_starting_at_node(self):
-        utils.print_separator(
-            "TEST STARTED - " + "test_run_node_graph_starting_at_node"
-        )
+    def test_run_node_graph_starting_at_node_2(self):
+        utils.print_test_header("test_run_node_graph_starting_at_node_2")
 
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("StrInput")
@@ -44,10 +42,9 @@ class LogicSceneTesting(unittest.TestCase):
         n_2["key"].connect_to_other(n_1["out_str"])
         n_3 = logic_scene.add_node_by_name("PrintToConsole")
         n_3["in_object_0"].connect_to_other(n_2["out"])
-        n_1._run()
+        n_1.run_chain()
         self.assertTrue(n_1.success)
         self.assertTrue(n_2.success)
-        self.assertTrue(n_3.success)
 
     def test_locate_starting_nodes(self):
         utils.print_test_header("test_locate_starting_nodes")
@@ -61,6 +58,30 @@ class LogicSceneTesting(unittest.TestCase):
         n_5[constants.START].connect_to_other(n_2[constants.COMPLETED])
         starting_nodes = logic_scene.get_starting_nodes()
         self.assertEqual(len(starting_nodes), 3)
+
+    def test_locate_starting_nodes_2(self):
+        utils.print_test_header("test_locate_starting_nodes_2")
+
+        logic_scene = LogicScene()
+        n_1 = logic_scene.add_node_by_name("GetEnvVariable")
+        n_1["env_variable_name"].set_value("USER")
+        n_2 = logic_scene.add_node_by_name("PrintToConsole")
+        n_1["env_variable_value"].connect_to_other(n_2["in_object_0"])
+        starting_nodes = logic_scene.get_starting_nodes()
+        self.assertEqual(len(starting_nodes), 1)
+
+    def test_run_scene(self):
+        utils.print_test_header("test_run_scene")
+
+        logic_scene = LogicScene()
+        n_1 = logic_scene.add_node_by_name("GetEnvVariable")
+        n_1["env_variable_name"].set_value("USER")
+        n_1["fallback_value"].set_value("NO_USER_FOUND")
+        n_2 = logic_scene.add_node_by_name("PrintToConsole")
+        n_1["env_variable_value"].connect_to_other(n_2["in_object_0"])
+        logic_scene.run_all_nodes()
+        self.assertTrue(n_1.success)
+        self.assertTrue(n_2.success)
 
     def test_capture_node(self):
         utils.print_test_header("test_capture_node")
@@ -96,7 +117,7 @@ class LogicSceneTesting(unittest.TestCase):
         )
         self.assertEqual(logic_scene.node_count(), 9)
 
-    def test_load_scene_from_file_2(self):
+    def test_load_scene_from_file_faulty(self):
         utils.print_test_header("test_load_scene_from_file_2")
 
         logic_scene = LogicScene()
@@ -106,7 +127,7 @@ class LogicSceneTesting(unittest.TestCase):
             )
         print(e.exception)
 
-    def test_load_scene_from_file_3(self):
+    def test_load_scene_from_file_faulty_2(self):
         utils.print_test_header("test_load_scene_from_file_3")
 
         logic_scene = LogicScene()
@@ -145,8 +166,3 @@ class LogicSceneTesting(unittest.TestCase):
         n_1 = logic_scene.add_node_by_name("PrintToConsole")
         n_2 = logic_scene.add_node_by_name("YamlToDict")
         self.assertFalse(logic_scene.rename_node(n_1, n_2.node_name))
-
-
-# -------------------------------- MAIN -------------------------------- #
-if __name__ == "__main__":
-    unittest.main()

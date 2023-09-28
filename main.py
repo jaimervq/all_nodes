@@ -36,6 +36,7 @@ def launch_batch(scene_file: str, set_parameters: list):
 
     Args:
         scene_file (str): Filepath or alias of the scene to run
+        scene_file (list): List eith parameters and values to be set
     """
     scene = LogicScene()
     scene.load_from_file(scene_file)
@@ -68,7 +69,7 @@ def main():
     parser.add_argument(
         "-a",
         "--analytics",
-        help="Print analytics to screen",
+        help="Perform analytics and generate graphs",
         action="store_true",
     )
     args = parser.parse_args()

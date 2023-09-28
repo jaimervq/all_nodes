@@ -183,18 +183,27 @@ For simple setups and tests, node networks can be created and run at the same ti
 Example:
 ```python
 from all_nodes.logic.logic_scene import LogicScene
+ 
+# Create a scene
+logic_scene = LogicScene()
 
+# Create a node and set one of its attributes
+n_1 = logic_scene.add_node_by_name("GetEnvVariable")
+n_1["env_variable_name"].set_value("USER")
 
-l_scene = LogicScene()
+# Create another node
+n_2 = logic_scene.add_node_by_name("PrintToConsole")
 
-n_1 = l_scene.add_node_by_name("EmptyNode")
-n_2 = l_scene.add_node_by_name("EmptyNode")k
-n_1["COMPLETED"].connect_to_other(n_2["START"])
+# Connect the nodes
+n_1["env_variable_value"].connect_to_other(n_2["in_object_0"])
 
-l_scene.run_all_nodes()
+# Run!
+logic_scene.run_all_nodes()
 ```
 
 # Analytics
+Automatically generated once a week
+![](docs/analytics/recent_usage.png)
 ![](docs/analytics/most_used.png)
 ![](docs/analytics/errored.png)
 ![](docs/analytics/failed.png)

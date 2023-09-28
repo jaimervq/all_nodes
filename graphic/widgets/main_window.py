@@ -178,10 +178,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         """
         top_level_items = {}
         for m in sorted(ALL_CLASSES):
-            if "debug_nodes" == m and not constants.IN_DEV:
-                LOGGER.warning("Debug nodes will not be showed")
-                continue
-
             node_lib_path = ALL_CLASSES[m]["node_lib_path"]
             node_lib_name = ALL_CLASSES[m]["node_lib_name"]
             node_lib_nice_name = node_lib_name.capitalize().replace("_", " ")
@@ -211,7 +207,11 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 class_item.setData(0, QtCore.Qt.UserRole, name)
                 if cls.NICE_NAME:
                     class_item.setText(0, cls.NICE_NAME)
-                icon = QtGui.QIcon("icons:nodes.png")
+                icon = (
+                    QtGui.QIcon("icons:nodes.png")
+                    if not cls.IS_CONTEXT
+                    else QtGui.QIcon("icons:cubes.png")
+                )
                 if QtCore.QFile.exists("icons:{}.png".format(name)):
                     icon = QtGui.QIcon("icons:{}.png".format(name))
                 elif QtCore.QFile.exists("icons:{}.svg".format(name)):
@@ -237,8 +237,14 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             lib_item = top_level_items[t]
             self.ui.nodes_tree.addTopLevelItem(lib_item)
             lib_item.setExpanded(True)
+            lib_item.setFont(0, QtGui.QFont("arial", 16))
             for i in range(lib_item.childCount()):
-                lib_item.child(i).setExpanded(True)
+                node_file_item = lib_item.child(i)
+                node_file_item.setExpanded(True)
+                node_file_item.setFont(0, QtGui.QFont("arial", 14))
+                for i in range(node_file_item.childCount()):
+                    node_class = node_file_item.child(i)
+                    node_class.setFont(0, QtGui.QFont("arial", 14))
 
     def filter_nodes_by_name(self):
         """

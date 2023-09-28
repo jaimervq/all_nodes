@@ -13,7 +13,7 @@ LOGGER = utils.get_logger(__name__)
 
 
 class StrInput(SpecialInputNode):
-    INPUT_TYPE = str
+    INPUT_TYPE = "str"
 
     NICE_NAME = "String input"
     HELP = ""
@@ -22,7 +22,7 @@ class StrInput(SpecialInputNode):
 
 
 class BoolInput(SpecialInputNode):
-    INPUT_TYPE = bool
+    INPUT_TYPE = "bool"
 
     NICE_NAME = "Boolean input"
     HELP = ""
@@ -31,7 +31,7 @@ class BoolInput(SpecialInputNode):
 
 
 class DictInput(SpecialInputNode):
-    INPUT_TYPE = dict
+    INPUT_TYPE = "dict"
 
     NICE_NAME = "Dictionary input"
     HELP = ""
@@ -40,7 +40,7 @@ class DictInput(SpecialInputNode):
 
 
 class ListInput(SpecialInputNode):
-    INPUT_TYPE = list
+    INPUT_TYPE = "list"
 
     NICE_NAME = "List input"
     HELP = ""
@@ -49,7 +49,7 @@ class ListInput(SpecialInputNode):
 
 
 class IntInput(SpecialInputNode):
-    INPUT_TYPE = int
+    INPUT_TYPE = "int"
 
     NICE_NAME = "Integer input"
     HELP = ""
@@ -58,7 +58,7 @@ class IntInput(SpecialInputNode):
 
 
 class FloatInput(SpecialInputNode):
-    INPUT_TYPE = float
+    INPUT_TYPE = "float"
 
     NICE_NAME = "Float input"
     HELP = ""

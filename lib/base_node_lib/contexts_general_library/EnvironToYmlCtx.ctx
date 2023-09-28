@@ -1,13 +1,13 @@
 # CONTEXT EnvironToYmlCtx
-# ---------------------
-# Description: Example context node
+# -----------------------
+# Description: 
 
 # Nodes section: overall list of nodes to be created
 nodes:
 - CreateTempFile_1:
     class_name: CreateTempFile
-    x_pos: -969
-    y_pos: -143
+    x_pos: -979
+    y_pos: -150
 - DictToYaml_1:
     class_name: DictToYaml
     x_pos: -637
@@ -20,18 +20,18 @@ nodes:
     class_name: SetStrOutputToCtx
     x_pos: -176
     y_pos: -27
-- StrInput_1:
-    class_name: StrInput
-    node_attributes:
-      out_str: .yml
-    x_pos: -1218
-    y_pos: -87
 - StrInput_3:
     class_name: StrInput
     node_attributes:
       out_str: yaml_filepath
     x_pos: -532
     y_pos: -152
+- TextFileExtensionSelect_1:
+    class_name: TextFileExtensionSelect
+    node_attributes:
+      out_str: .yml
+    x_pos: -1256
+    y_pos: -95
 
 # Connections section: connections to be done between nodes
 connections:
@@ -39,8 +39,8 @@ connections:
 - CreateTempFile_1.tempfile_path -> SetStrOutputToCtx_1.out_parent_attr_value
 - DictToYaml_1.COMPLETED -> SetStrOutputToCtx_1.START
 - GetEntireEnviron_1.environ_dict -> DictToYaml_1.in_dict
-- StrInput_1.out_str -> CreateTempFile_1.suffix
 - StrInput_3.out_str -> SetStrOutputToCtx_1.out_parent_attr_name
+- TextFileExtensionSelect_1.out_str -> CreateTempFile_1.suffix
 
 
 # Context created at: 2023-01-24 15:18:22.210039

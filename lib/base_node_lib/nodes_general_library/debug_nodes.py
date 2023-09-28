@@ -41,3 +41,27 @@ class FailAndErrorNode(GeneralLogicNode):
 class TimedNode(GeneralLogicNode):
     def run(self):
         time.sleep(1.5)
+
+
+class PrintToConsole(GeneralLogicNode):
+    NICE_NAME = "Print to console"
+    HELP = "Print something to console"
+
+    INPUTS_DICT = {
+        "in_object_0": {"type": object, "optional": True},
+        "in_object_1": {"type": object, "optional": True},
+        "in_object_2": {"type": object, "optional": True},
+        "in_object_3": {"type": object, "optional": True},
+        "in_object_4": {"type": object, "optional": True},
+    }
+
+    def run(self):
+        from colorama import Fore, Style
+
+        for i in range(5):
+            attr_name = "in_object_{}".format(i)
+            val = self.get_attribute_value(attr_name)
+            if val is not None:
+                LOGGER.info(
+                    f"{Fore.MAGENTA}[{self.node_name}] {attr_name}:{Fore.YELLOW}{val}{Style.RESET_ALL}"
+                )

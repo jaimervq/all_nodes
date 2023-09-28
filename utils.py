@@ -12,7 +12,7 @@ import importlib
 import inspect
 import sys
 
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 from PySide2 import QtCore
 from PySide2 import QtGui
 import yaml
@@ -36,12 +36,22 @@ LOGGER = get_logger(__name__)
 
 
 def print_separator(message):
+    """Print a separator to screen
+
+    Args:
+        message (str): Message to display in the separator
+    """
     print("\n", end="")
     print(message.upper())
     print("-" * len(message))
 
 
 def print_test_header(message):
+    """Print a test header separator to screen
+
+    Args:
+        message (str): Message to display in the separator
+    """
     message = "TEST STARTED - " + message
     print("\n", end="")
     print(f"{Fore.GREEN}+-{'-' * len(message)}-+")
@@ -59,7 +69,6 @@ def get_config(config_name):
 
     Returns:
         dict: with read config
-
     """
     root = os.path.abspath(__file__)
     root_dir_path = os.path.dirname(root)
@@ -70,15 +79,16 @@ def get_config(config_name):
 
 
 # -------------------------------- NODE CLASSES -------------------------------- #
-NODE_STYLES = get_config("node_lib_styles")
-
 CLASSES_TO_SKIP = [
     "GeneralLogicNode",
     "Run",
     "SpecialInputNode",
+    "OptionInput",
     "GrabInputFromCtx",
     "SetOutputToCtx",
-]
+]  # Classes to skip when gathering all usable clases, populating widgets...
+
+NODE_STYLES = get_config("node_lib_styles")
 
 
 def register_node_lib(full_path, all_classes_dict):
@@ -142,6 +152,7 @@ def register_node_lib(full_path, all_classes_dict):
 
 
 def get_all_node_classes():
+    # Paths to be examined
     libraries_path = os.getenv("ALL_NODES_LIB_PATH", "").split(os.pathsep)
     if not os.getenv("ALL_NODES_LIB_PATH"):
         root = os.path.abspath(__file__)
@@ -153,6 +164,7 @@ def get_all_node_classes():
             "will just scan for node libraries at default location: " + default_lib_path
         )
 
+    # Iterate through paths
     all_py = list()
     for path in libraries_path:
         path = path.strip()
@@ -166,8 +178,8 @@ def get_all_node_classes():
                 if p.endswith(".py") and "__init__" not in p:
                     all_py.append(p)
 
-    executor = concurrent.futures.ThreadPoolExecutor()
     all_classes_dict = dict()
+    executor = concurrent.futures.ThreadPoolExecutor()
     for full_path in all_py:
         executor.submit(register_node_lib, full_path, all_classes_dict)
 
@@ -234,7 +246,6 @@ def get_scene_from_alias(scenes_dict, alias):
         alias (str): alias/filename to search for
 
     Returns: str, full path to the yml scene found
-
     """
     scene_path = None
 
@@ -261,6 +272,14 @@ def get_scene_from_alias(scenes_dict, alias):
 
 # -------------------------------- UTILITY -------------------------------- #
 def get_bright_color(color_name):
+    """Given a color name, get a fully saturated and bright version of it
+
+    Args:
+        color_name (str): name of the color to saurate
+
+    Returns:
+        str: name of the saturated color
+    """
     base_color = QtGui.QColor(color_name)
     h, s, v = (
         base_color.hue(),

@@ -253,7 +253,7 @@ class NodePanel(QtWidgets.QWidget):
 
         if conns:
             for conn in conns:
-                conn_l = QtWidgets.QLabel("🔗")
+                conn_l = QtWidgets.QLabel("└─")
                 conn_l.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
                 self.grid_layout.addWidget(conn_l, self.row_count, 0, 1, 1)
                 attrib_conns = QtWidgets.QLabel()

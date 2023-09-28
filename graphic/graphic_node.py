@@ -298,7 +298,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         # Set type of widget depending on the type of input needed
         input_widget = QtWidgets.QLineEdit(parent=None)
-        if self.input_datatype == str:
+        if self.input_datatype == "str":
             input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
             )
@@ -309,7 +309,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
             input_widget.textChanged.connect(self.update_attribute_from_widget)
 
-        elif self.input_datatype == dict:
+        elif self.input_datatype == "dict":
             input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
             )
@@ -320,7 +320,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
             input_widget.textChanged.connect(self.update_attribute_from_widget)
 
-        elif self.input_datatype == list:
+        elif self.input_datatype == "list":
             input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
             )
@@ -331,21 +331,24 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
             input_widget.textChanged.connect(self.update_attribute_from_widget)
 
-        elif self.input_datatype == bool:
+        elif self.input_datatype == "bool":
             input_widget = QtWidgets.QCheckBox("False", parent=None)
-            input_widget.setStyleSheet("background:transparent; color:white;")
+            input_widget.setStyleSheet(
+                "QCheckBox::indicator{border : 1px solid white;}"
+                "QCheckBox::indicator:checked{ background:rgba(255,255,200,150); }"
+                "QCheckBox{ background:transparent; color:white}"
+            )
             input_widget.stateChanged.connect(
                 lambda: input_widget.setText(
                     ["False", "True"][input_widget.isChecked()]
                 )
             )
-
             if self.logic_node.get_attribute_value("out_bool"):
                 input_widget.setChecked(self.logic_node.get_attribute_value("out_bool"))
 
             input_widget.stateChanged.connect(self.update_attribute_from_widget)
 
-        elif self.input_datatype == int:
+        elif self.input_datatype == "int":
             input_widget = QtWidgets.QSpinBox(parent=None)
             input_widget.setMaximum(int(1e6))
             input_widget.setMinimum(int(-1e6))
@@ -358,7 +361,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
             input_widget.valueChanged.connect(self.update_attribute_from_widget)
 
-        elif self.input_datatype == float:
+        elif self.input_datatype == "float":
             input_widget = QtWidgets.QDoubleSpinBox(parent=None)
             input_widget.setMaximum(1e6)
             input_widget.setMinimum(-1e6)
@@ -370,6 +373,21 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 input_widget.setValue(self.logic_node.get_attribute_value("out_float"))
 
             input_widget.valueChanged.connect(self.update_attribute_from_widget)
+
+        elif self.input_datatype == "option":
+            input_widget = QtWidgets.QComboBox(parent=None)
+            input_widget.setStyleSheet(
+                "QComboBox { background:transparent; color:white; border:1px solid white; }"
+                "QWidget:item { color: black; background:white; }"
+            )
+            input_widget.addItems(self.logic_node.INPUT_OPTIONS)
+
+            if self.logic_node.get_attribute_value("out_str"):
+                input_widget.setCurrentText(
+                    self.logic_node.get_attribute_value("out_str")
+                )
+
+            input_widget.currentIndexChanged.connect(self.update_attribute_from_widget)
 
         # Set size of the widget and add it to a graphics proxy widget
         input_widget.setFixedSize(
@@ -465,38 +483,41 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
     # CHANGE ATTRIBUTES ----------------------
     def update_attribute_from_widget(self):
-        if self.input_datatype == str:
+        if self.input_datatype == "str":
             text = self.proxy_input_widget.widget().text()
             if text:
                 self.logic_node.set_special_attr_value("out_str", text)
-        elif self.input_datatype == dict:
+        elif self.input_datatype == "dict":
             text = self.proxy_input_widget.widget().text()
             if text:
                 try:
                     eval_dict = ast.literal_eval(text)
-                    if eval_dict and type(eval_dict) == dict:
+                    if eval_dict and type(eval_dict) == "dict":
                         self.logic_node.set_special_attr_value("out_dict", eval_dict)
                 except (ValueError, SyntaxError):
                     pass
-        elif self.input_datatype == list:
+        elif self.input_datatype == "list":
             text = self.proxy_input_widget.widget().text()
             if text:
                 try:
                     eval_list = ast.literal_eval(text)
-                    if eval_list and type(eval_list) == list:
+                    if eval_list and type(eval_list) == "list":
                         self.logic_node.set_special_attr_value("out_list", eval_list)
                 except (ValueError, SyntaxError):
                     pass
-        elif self.input_datatype == bool:
+        elif self.input_datatype == "bool":
             checked = self.proxy_input_widget.widget().isChecked()
             self.logic_node.set_special_attr_value("out_bool", checked)
-        elif self.input_datatype == int:
+        elif self.input_datatype == "int":
             val = self.proxy_input_widget.widget().value()
             self.logic_node.set_special_attr_value("out_int", val)
-        elif self.input_datatype == float:
+        elif self.input_datatype == "float":
             val = self.proxy_input_widget.widget().value()
             self.logic_node.set_special_attr_value("out_float", val)
             self.logic_node.set_special_attr_value("out_int", int(val))
+        elif self.input_datatype == "option":
+            val = self.proxy_input_widget.widget().currentText()
+            self.logic_node.set_special_attr_value("out_str", val)
 
         if self.scene():
             GS.attribute_editor_refresh_node_requested.emit(self.logic_node.uuid)
