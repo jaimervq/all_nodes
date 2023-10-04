@@ -1,0 +1,24 @@
+## Registry of the styles (colors and icons) for this lib
+
+casting_nodes:
+    color: '#1d0a40'
+
+debug_nodes:
+    color: '#404040'
+
+file_reading_nodes:
+    color: '#5e0e01'
+
+file_writing_nodes:
+    color: '#5e3901'
+
+flow_control_nodes:
+    color: "#294a41"
+
+special_context_nodes:
+    color: '#707070'
+    default_icon: cube
+
+special_input_nodes:
+    color: '#4b007a'
+

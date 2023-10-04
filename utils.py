@@ -59,25 +59,6 @@ def print_test_header(message):
     print(f"{Fore.GREEN}+-{'-' * len(message)}-+ {Style.RESET_ALL}")
 
 
-# -------------------------------- CONFIGS -------------------------------- #
-def get_config(config_name):
-    """
-    Get a config from an existing yaml file.
-
-    Args:
-        config_name (str): name of config to read from configs folder
-
-    Returns:
-        dict: with read config
-    """
-    root = os.path.abspath(__file__)
-    root_dir_path = os.path.dirname(root)
-    config_file = os.path.join(root_dir_path, "config", config_name + ".yml")
-    with open(config_file, "r") as stream:
-        LOGGER.debug("Reading config '{}' from {}".format(config_name, config_file))
-        return yaml.safe_load(stream)
-
-
 # -------------------------------- NODE CLASSES -------------------------------- #
 CLASSES_TO_SKIP = [
     "GeneralLogicNode",
@@ -88,15 +69,33 @@ CLASSES_TO_SKIP = [
     "SetOutputToCtx",
 ]  # Classes to skip when gathering all usable clases, populating widgets...
 
-NODE_STYLES = get_config("node_lib_styles")
-
 
 def register_node_lib(full_path, all_classes_dict):
-    icons_path = os.path.join(os.path.dirname(full_path), "icons")
     node_lib_path = os.path.dirname(full_path)
     node_lib_name = os.path.basename(node_lib_path)
     module_filename = os.path.basename(full_path)
     module_name = os.path.splitext(module_filename)[0]
+    icons_path = os.path.join(node_lib_path, "icons")
+    styles_path = os.path.join(node_lib_path, "styles.yml")
+
+    # ICONS - registering the icons so they can be found
+    if not os.path.isdir(icons_path):
+        LOGGER.warning(
+            f"No icons folder available for {module_filename}, icons for this module should be saved at: {icons_path}"
+        )
+    if os.path.isdir(icons_path) and icons_path not in QtCore.QDir.searchPaths("icons"):
+        QtCore.QDir.addSearchPath("icons", icons_path)
+        LOGGER.debug("Registered path {} to 'icons'".format(icons_path))
+
+    # STYLES
+    node_styles = dict()
+    if not os.path.isfile(styles_path):
+        LOGGER.warning(
+            f"No styles file available for {node_lib_name}, styles for this library should be saved at: {styles_path}"
+        )
+    else:
+        with open(styles_path, "r") as stream:
+            node_styles = yaml.safe_load(stream)
 
     # CLASSES SCANNING
     loaded_spec = importlib.util.spec_from_file_location(
@@ -125,30 +124,19 @@ def register_node_lib(full_path, all_classes_dict):
     all_classes_dict[module_name]["classes"] = module_classes
 
     all_classes_dict[module_name]["color"] = constants.DEFAULT_NODE_COLOR
-    for style in NODE_STYLES:
-        if style in module_name:
-            all_classes_dict[module_name]["color"] = NODE_STYLES[style].get(
+    for module_style in node_styles:
+        if module_style in module_name:
+            all_classes_dict[module_name]["color"] = node_styles[module_style].get(
                 "color", constants.DEFAULT_NODE_COLOR
             )
-            all_classes_dict[module_name]["default_icon"] = NODE_STYLES[style].get(
-                "default_icon"
-            )
+            all_classes_dict[module_name]["default_icon"] = node_styles[
+                module_style
+            ].get("default_icon")
     LOGGER.debug(
         "Scanned {} for classes: found {}".format(
             os.path.basename(full_path), class_counter
         )
     )
-
-    # ICONS - registering the icons so they can be found
-    if not os.path.isdir(icons_path):
-        LOGGER.warning(
-            "No icons folder available for {}, icons for this module should be saved at: {}".format(
-                module_filename, icons_path
-            )
-        )
-    elif icons_path not in QtCore.QDir.searchPaths("icons"):
-        QtCore.QDir.addSearchPath("icons", icons_path)
-        LOGGER.debug("Registered path {} to 'icons'".format(icons_path))
 
 
 def get_all_node_classes():

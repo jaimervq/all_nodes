@@ -29,8 +29,6 @@ LOGGER = utils.get_logger(__name__)
 
 
 # -------------------------------- CUSTOM GRAPHICS VIEW -------------------------------- #
-
-
 class CustomGraphicsView(QtWidgets.QGraphicsView):
     def __init__(self):
         QtWidgets.QGraphicsView.__init__(self)
@@ -564,9 +562,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Args:
             graphic_node (GeneralGraphicNode): node to be expanded
         """
-        GS.attribute_editor_context_expansion_requested.emit(
-            graphic_node.logic_node.uuid
-        )
+        GS.context_expansion_requested.emit(graphic_node.logic_node.uuid)
 
     def show_log(self, graphic_node: GeneralGraphicNode):
         """

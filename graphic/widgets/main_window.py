@@ -108,7 +108,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             self.remove_node_in_attribute_editor_by_uuid
         )
 
-        GS.attribute_editor_context_expansion_requested.connect(self.expand_context)
+        GS.context_expansion_requested.connect(self.expand_context)
 
         GS.attribute_editor_global_refresh_requested.connect(self.attr_editor.refresh)
 
