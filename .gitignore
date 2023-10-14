@@ -1,6 +1,5 @@
 *.pyc
 *.ai
 
-.graphics_creation/
 .idea/
 .venv/

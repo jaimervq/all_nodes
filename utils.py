@@ -114,6 +114,22 @@ def register_node_lib(full_path, all_classes_dict):
     for name, cls in class_memebers:
         if name in CLASSES_TO_SKIP:
             continue
+
+        # Icon for this class  # TODO Refactor this out
+        default_icon = node_styles.get(module_name, dict()).get("default_icon")
+        icon_path = "icons:nodes.png" if not cls.IS_CONTEXT else "icons:cubes.png"
+        if QtCore.QFile.exists(f"icons:{name}.png"):
+            icon_path = f"icons:{name}.png"
+        elif QtCore.QFile.exists(f"icons:{name}.svg"):
+            icon_path = f"icons:{name}.svg"
+        elif default_icon:
+            if QtCore.QFile.exists("icons:" + default_icon + ".png"):
+                icon_path = f"icons:{default_icon}.png"
+            elif QtCore.QFile.exists("icons:" + default_icon + ".svg"):
+                icon_path = f"icons:{default_icon}.svg"
+        setattr(cls, "ICON_PATH", icon_path)
+
+        # Class name and object
         setattr(cls, "FILEPATH", full_path)  # TODO not ideal?
         module_classes.append((name, cls))
         class_counter += 1
@@ -129,9 +145,6 @@ def register_node_lib(full_path, all_classes_dict):
             all_classes_dict[module_name]["color"] = node_styles[module_style].get(
                 "color", constants.DEFAULT_NODE_COLOR
             )
-            all_classes_dict[module_name]["default_icon"] = node_styles[
-                module_style
-            ].get("default_icon")
     LOGGER.debug(
         "Scanned {} for classes: found {}".format(
             os.path.basename(full_path), class_counter
@@ -140,6 +153,11 @@ def register_node_lib(full_path, all_classes_dict):
 
 
 def get_all_node_classes():
+    # Add UI paths  # TODO refactor this properly
+    root_dir_path = os.path.dirname(os.path.abspath(__file__))
+    QtCore.QDir.addSearchPath("icons", os.path.join(root_dir_path, "graphic/icons"))
+    QtCore.QDir.addSearchPath("ui", os.path.join(root_dir_path, "graphic/ui"))
+
     # Paths to be examined
     libraries_path = os.getenv("ALL_NODES_LIB_PATH", "").split(os.pathsep)
     if not os.getenv("ALL_NODES_LIB_PATH"):

@@ -37,10 +37,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.ui = loader.load(file, self)
         self.setCentralWidget(self.ui)
 
-        # Add icons path
-        QtCore.QDir.addSearchPath("icons", os.path.join(root_dir_path, "graphic/icons"))
-        QtCore.QDir.addSearchPath("ui", os.path.join(root_dir_path, "graphic/ui"))
-
         # Dock
         self.dock = QtWidgets.QDockWidget()
         self.dock.setWindowTitle("Attribute Editor")
@@ -184,7 +180,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             module_filename = ALL_CLASSES[m]["module_filename"]
             module_nice_name = m.capitalize().replace("_", " ")
             color = ALL_CLASSES[m].get("color", constants.DEFAULT_NODE_COLOR)
-            default_icon = ALL_CLASSES[m].get("default_icon")
 
             if node_lib_name not in top_level_items:
                 lib_item = QtWidgets.QTreeWidgetItem()
@@ -207,20 +202,8 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 class_item.setData(0, QtCore.Qt.UserRole, name)
                 if cls.NICE_NAME:
                     class_item.setText(0, cls.NICE_NAME)
-                icon = (
-                    QtGui.QIcon("icons:nodes.png")
-                    if not cls.IS_CONTEXT
-                    else QtGui.QIcon("icons:cubes.png")
-                )
-                if QtCore.QFile.exists("icons:{}.png".format(name)):
-                    icon = QtGui.QIcon("icons:{}.png".format(name))
-                elif QtCore.QFile.exists("icons:{}.svg".format(name)):
-                    icon = QtGui.QIcon("icons:{}.svg".format(name))
-                elif default_icon:
-                    if QtCore.QFile.exists("icons:" + default_icon + ".png"):
-                        icon = QtGui.QIcon("icons:" + default_icon + ".png")
-                    elif QtCore.QFile.exists("icons:" + default_icon + ".svg"):
-                        icon = QtGui.QIcon("icons:" + default_icon + ".svg")
+
+                icon = QtGui.QIcon(cls.ICON_PATH)
                 class_item.setIcon(0, icon)
                 item_color = QtGui.QColor(color)
                 item_color.setAlphaF(0.25)

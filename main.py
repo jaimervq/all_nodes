@@ -25,7 +25,10 @@ def launch_gui():
     """
     Just launch the tool, with GUI to create/edit scenes.
     """
+    # App
     app = QApplication(sys.argv)
+
+    # Launch
     AllNodesWindow()
     app.exec_()
 
@@ -49,6 +52,7 @@ def launch_batch(scene_file: str, set_parameters: list):
             node = scene.to_node(node_name)
             if node:
                 node.set_attribute_from_str(attr_name, attr_str_value)
+
     scene.run_all_nodes()
 
 

@@ -335,6 +335,11 @@ class LogicScene:
         LOGGER.info("Finished running logic scene")
         print("\n", end="")
 
+        # Mark nodes that were skipped
+        for node in self.all_nodes():
+            if node.success == constants.NOT_RUN:
+                node.success = constants.SKIPPED
+
         # Analytics
         LOGGER.info("Gathering analytics")
         node_properties_list = []
