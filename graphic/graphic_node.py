@@ -46,6 +46,12 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.bright_color_name = utils.get_bright_color(color_name)
 
         # SUB-ITEMS
+        class_pixmap = QtGui.QPixmap(self.logic_node.ICON_PATH)
+        print(self.logic_node.ICON_PATH)
+        class_pixmap = class_pixmap.scaledToHeight(
+            constants.STRIPE_HEIGHT, QtCore.Qt.TransformationMode.SmoothTransformation
+        )
+        self.class_icon = QtWidgets.QGraphicsPixmapItem(class_pixmap, parent=self)
         self.class_text = QtWidgets.QGraphicsTextItem(parent=self)
 
         self.proxy_help_btn = QtWidgets.QGraphicsProxyWidget(parent=self)
@@ -67,6 +73,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.badge_icon.hide()
 
         self.extras_renderer = QtSvg.QSvgRenderer("icons:ctx.svg")
+
+        self.proxy_input_widget = QtWidgets.QGraphicsProxyWidget(parent=self)
 
         # ATTRIBUTES
         self.graphic_attributes = []
@@ -104,6 +112,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         """
         Calculate width to draw the node with, based on the size of its graphical attributes.
         """
+
+        # Biggest attr names
         longest_in_name = max(
             [
                 attribute.attr_text.boundingRect().width()
@@ -118,19 +128,34 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 if attribute.connector_type == constants.OUTPUT
             ]
         )
+
+        # Size of the options in case it is a multi-choice input node
+        size_options = 0
+        if self.input_datatype == "option":
+            size_options = 15 * (
+                max([len(elem) for elem in self.logic_node.INPUT_OPTIONS])
+            )
+
+        # Calculate max
         self.node_width = max(
-            longest_in_name + longest_out_name,
-            self.class_text.boundingRect().width()
+            2.5 * constants.CHAMFER_RADIUS
+            + self.class_text.boundingRect().width()
             + self.proxy_help_btn.boundingRect().width()
             + 20,
+            longest_in_name + longest_out_name,
+            2 * constants.CHAMFER_RADIUS + size_options,
         )
-
         return False
 
     def setup_node(self):
         """
         Setup some of the subcomponents of the node.
         """
+        # NODE ICON
+        self.class_icon.moveBy(
+            constants.CHAMFER_RADIUS / 2.0, constants.CHAMFER_RADIUS / 2.0
+        )
+
         # NODE NAME
         self.class_text.setHtml(
             '<p align="left"><font color=white>{0}'.format(self.logic_node.node_name)
@@ -138,9 +163,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         node_class_font = QtGui.QFont(
             constants.NODE_FONT, int(0.4 * constants.HEADER_HEIGHT)
         )
-        node_class_font.setUnderline(True)
         self.class_text.setFont(node_class_font)
-        self.class_text.moveBy(10, 0)
+        self.class_text.moveBy(2.5 * constants.CHAMFER_RADIUS, 0)
 
         # HELP
         help_btn = QtWidgets.QPushButton(parent=None)
@@ -173,12 +197,14 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         i = 0
         for attr in self.logic_node.get_input_attrs():
             attr = GeneralGraphicAttribute(attr, self, i)
+            attr.setZValue(100)
             self.graphic_attributes.append(attr)
             i += 1
 
         i = 0
         for attr in self.logic_node.get_output_attrs():
             attr = GeneralGraphicAttribute(attr, self, i)
+            attr.setZValue(100)
             self.graphic_attributes.append(attr)
             i += 1
 
@@ -187,7 +213,12 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         Setup the shape and size of the node and its subcomponents.
         """
         # BASIC SHAPE
-        self.setPen(QtGui.QPen(QtGui.QColor(self.bright_color_name), 2))
+        self.setZValue(20)
+        self.setPen(
+            QtGui.QPen(
+                QtGui.QColor(self.bright_color_name), constants.NODE_CONTOUR_THICKNESS
+            )
+        )
         self.guess_width_to_use()
         new_path = QtGui.QPainterPath()
         new_path.addRoundedRect(
@@ -225,6 +256,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             )
             if row_count % 2 == 0:
                 stripe.setBrush(QtGui.QColor(255, 255, 255, 20))
+            stripe.setZValue(10)
 
         # BUTTON MOVEMENT
         self.proxy_help_btn.setPos(
@@ -297,8 +329,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         if not self.input_datatype:
             return
 
-        # Set type of widget depending on the type of input needed
+        # Default widget
         input_widget = QtWidgets.QLineEdit(parent=None)
+
+        # Set type of widget depending on the type of input needed
         if self.input_datatype == "str":
             input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
@@ -390,16 +424,20 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
             input_widget.currentIndexChanged.connect(self.update_attribute_from_widget)
 
-        # Set size of the widget and add it to a graphics proxy widget
+        # Set size of the widget
         input_widget.setFixedSize(
-            int(0.9 * self.node_width), int(0.8 * constants.HEADER_HEIGHT)
+            int(self.node_width - 2 * constants.CHAMFER_RADIUS),
+            int(0.8 * constants.HEADER_HEIGHT),
         )
         input_widget.setFont(
             QtGui.QFont(constants.NODE_FONT, int(0.5 * input_widget.height()))
         )
-        self.proxy_input_widget = QtWidgets.QGraphicsProxyWidget(parent=self)
+
+        # Then add it to the graphics proxy widget
         self.proxy_input_widget.setWidget(input_widget)
-        self.proxy_input_widget.moveBy(0.05 * self.node_width, constants.HEADER_HEIGHT)
+        self.proxy_input_widget.moveBy(
+            constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
+        )
 
     def setup_extras(self):
         """
@@ -444,6 +482,12 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.badge_icon.hide()
             self.error_marquee.hide()
 
+        elif self.logic_node.success == constants.SKIPPED:
+            self.badge_icon.setElementId("neutral")
+            self.badge_icon.setToolTip('<p style="color: gray">Skipped<br>')
+
+            self.error_marquee.hide()
+
         elif self.logic_node.success == constants.SUCCESSFUL:
             self.badge_icon.setElementId("okay")
             self.badge_icon.setToolTip(
@@ -454,17 +498,17 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.error_marquee.hide()
 
         elif self.logic_node.success in [constants.FAILED, constants.ERROR]:
+            self.error_marquee.show()
+
             if self.logic_node.success == constants.FAILED:
                 self.badge_icon.setElementId("failed")
                 self.error_marquee.setPen(constants.NODE_FAILED_PEN)
                 self.error_marquee.setBrush(constants.NODE_FAILED_BRUSH)
-                self.error_marquee.show()
 
             elif self.logic_node.success == constants.ERROR:
                 self.badge_icon.setElementId("error")
                 self.error_marquee.setPen(constants.NODE_ERROR_PEN)
                 self.error_marquee.setBrush(constants.NODE_ERROR_BRUSH)
-                self.error_marquee.show()
 
             # Full feedback
             html_text = ""
@@ -743,17 +787,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             )
             plug_path.addPolygon(plug_polygon)
 
-        elif self.logic_attribute.get_datatype_str() == "object":
-            plug_polygon = QtGui.QPolygon()
-            w = 360 / 5
-            for i in range(5):
-                t = w * i - 90
-                x = constants.PLUG_RADIUS * math.cos(math.radians(t))
-                y = constants.PLUG_RADIUS * math.sin(math.radians(t))
-                plug_polygon.append(QtCore.QPoint(x, y))
-            plug_path.addPolygon(plug_polygon)
-
-        else:
+        elif self.logic_attribute.get_datatype_str() == "Run":
             plug_polygon = QtGui.QPolygon(
                 [
                     QtCore.QPoint(-constants.PLUG_RADIUS, constants.PLUG_RADIUS),
@@ -763,9 +797,24 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             )
             plug_path.addPolygon(plug_polygon)
 
+        else:
+            plug_polygon = QtGui.QPolygon()
+            w = 360 / 5
+            for i in range(5):
+                t = w * i - 90
+                x = constants.PLUG_RADIUS * math.cos(math.radians(t))
+                y = constants.PLUG_RADIUS * math.sin(math.radians(t))
+                plug_polygon.append(QtCore.QPoint(x, y))
+            plug_path.addPolygon(plug_polygon)
+
         plug_path.closeSubpath()
         self.plug_polygon.setPath(plug_path)
-        self.plug_polygon.setPen(constants.CONNECTOR_AVAILABLE_PEN)
+        self.plug_polygon.setPen(
+            QtGui.QPen(
+                QtGui.QColor(self.parent_node.bright_color_name),
+                constants.NODE_CONTOUR_THICKNESS * 0.5,
+            )
+        )
         self.plug_polygon.setBrush(
             QtGui.QBrush(
                 QtGui.QColor(
@@ -778,7 +827,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
         self.plug_polygon.setZValue(50)
 
         self.plug_polygon.setData(0, constants.PLUG)
-        self.plug_polygon.setData(1, self)
+        # self.plug_polygon.setData(1, self)
 
         # Glow
         self.glow.setPath(plug_path)
@@ -802,11 +851,11 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
 
         if self.logic_attribute.connector_type == constants.INPUT:
             self.plug_polygon.moveBy(
-                -constants.PLUG_RADIUS * 1.2,
+                -constants.PLUG_RADIUS * 1.3,
                 constants.STRIPE_HEIGHT / 2,
             )
             self.glow.moveBy(
-                -constants.PLUG_RADIUS * 1.2,
+                -constants.PLUG_RADIUS * 1.3,
                 constants.STRIPE_HEIGHT / 2,
             )
         elif self.logic_attribute.connector_type == constants.OUTPUT:
@@ -814,11 +863,11 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
                 self.parent_node.node_width - self.attr_text.boundingRect().width(), 0
             )
             self.plug_polygon.moveBy(
-                self.parent_node.node_width + constants.PLUG_RADIUS * 1.2,
+                self.parent_node.node_width + constants.PLUG_RADIUS * 1.3,
                 constants.STRIPE_HEIGHT / 2,
             )
             self.glow.moveBy(
-                self.parent_node.node_width + constants.PLUG_RADIUS * 1.2,
+                self.parent_node.node_width + constants.PLUG_RADIUS * 1.3,
                 constants.STRIPE_HEIGHT / 2,
             )
 
@@ -889,7 +938,12 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             self.plug_polygon.setPen(constants.CONNECTOR_USED_PEN)
         else:
             self.glow.hide()
-            self.plug_polygon.setPen(constants.CONNECTOR_AVAILABLE_PEN)
+            self.plug_polygon.setPen(
+                QtGui.QPen(
+                    QtGui.QColor(self.parent_node.bright_color_name),
+                    constants.NODE_CONTOUR_THICKNESS * 0.5,
+                )
+            )
 
     # SPECIAL METHODS ----------------------
     def __str__(self):

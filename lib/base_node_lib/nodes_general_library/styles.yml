@@ -3,6 +3,10 @@
 casting_nodes:
     color: '#1d0a40'
 
+datetime_nodes:
+    color: '#707060'
+    default_icon: date
+
 debug_nodes:
     color: '#404040'
 

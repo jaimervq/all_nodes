@@ -5,8 +5,8 @@ __credits__ = []
 __license__ = "MIT License"
 
 
-from functools import partial
 import logging
+import math
 import os
 import pprint
 import subprocess
@@ -171,17 +171,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
         # PATH TESTS
         self.testing_graphic_attr = None
 
-        self.testing_path_glow = QtWidgets.QGraphicsPathItem()
-        self.testing_path_glow.setPen(constants.LINE_GLOW_PEN)
-        blur = QtWidgets.QGraphicsBlurEffect()
-        blur.setBlurRadius(constants.LINE_GLOW_PEN.width() * 1.5)
-        self.testing_path_glow.setGraphicsEffect(blur)
-        self.testing_path_glow.setZValue(-1)
-        self.addItem(self.testing_path_glow)
-
-        self.testing_path = QtWidgets.QGraphicsPathItem()
-        self.testing_path.setPen(constants.TEST_LINE_PEN)
-        self.testing_path.setZValue(-1)
+        self.testing_path = ConnectorLine()
+        self.testing_path.set_testing_appearance()
         self.addItem(self.testing_path)
 
     # SCENE SETUP ----------------------
@@ -317,38 +308,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
             graphic_attr_1 (GeneralGraphicAttribute)
             graphic_attr_2 (GeneralGraphicAttribute)
         """
-        p1, p2 = (
-            graphic_attr_1.plug_coords(),
-            graphic_attr_2.plug_coords(),
-        )
-
-        new_path = QtGui.QPainterPath(p1)
-        c_p1 = QtCore.QPoint(((p2.x() + p1.x()) / 2) + 10, p1.y())
-        c_p2 = QtCore.QPoint(((p2.x() + p1.x()) / 2) - 10, p2.y())
-        if constants.STRAIGHT_LINES:
-            new_path.lineTo(p2)
-        else:
-            new_path.cubicTo(c_p1, c_p2, p2)
-
-        new_valid_line_glow = QtWidgets.QGraphicsPathItem(new_path)
-        new_valid_line_glow.setPen(constants.LINE_GLOW_PEN)
-        blur = QtWidgets.QGraphicsBlurEffect()
-        blur.setBlurRadius(constants.LINE_GLOW_PEN.width() * 1.5)
-        new_valid_line_glow.setGraphicsEffect(blur)
-        new_valid_line_glow.setZValue(-1)
-        new_valid_line_glow.setData(0, constants.CONNECTOR_LINE)
-        new_valid_line_glow.setData(1, graphic_attr_1)
-        new_valid_line_glow.setData(2, graphic_attr_2)
-        if constants.GLOW_EFFECTS:
-            self.addItem(new_valid_line_glow)
-
-        new_valid_line = QtWidgets.QGraphicsPathItem(new_path)
-        new_valid_line.setPen(constants.VALID_LINE_PEN)
-        new_valid_line.setZValue(-1)
-        new_valid_line.setData(0, constants.CONNECTOR_LINE)
-        new_valid_line.setData(1, graphic_attr_1)
-        new_valid_line.setData(2, graphic_attr_2)
-        self.addItem(new_valid_line)
+        connector_line = ConnectorLine(graphic_attr_1, graphic_attr_2)
+        self.addItem(connector_line)
+        connector_line.setZValue(-1)
 
     def redraw_node_lines(self, node: GeneralGraphicNode):
         """
@@ -401,6 +363,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
         """
         for line in self.items():
             g_1, g_2 = line.data(1), line.data(2)
+            if g_1 is None or g_2 is None:
+                continue
             if line.data(0) == constants.CONNECTOR_LINE and node in [
                 g_1.parent_node,
                 g_2.parent_node,
@@ -454,7 +418,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         for logic_node in new_logic_nodes:
             for node_dict in scene_dict["nodes"]:
                 node_name = next(iter(node_dict))
-                if logic_node.node_name.endswith(node_name):
+                if logic_node.node_name == node_name:
                     self.add_graphic_node_from_logic_node(
                         logic_node,
                         node_dict[node_name]["x_pos"],
@@ -699,7 +663,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
         test_items = self.items(selection_rect)
         for item in test_items:
             if item and item.data(0) == constants.GRAPHIC_NODE:
-                menu = QtWidgets.QMenu()
+                menu = QtWidgets.QMenu()  # TODO add tooltips
+
+                # Common actions
                 rename_action = menu.addAction("Rename this node")
                 rename_action.setIcon(QtGui.QIcon("icons:rename.png"))
                 rename_action.triggered.connect(lambda: self.rename_graphic_node(item))
@@ -716,13 +682,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 reset_single_node_action.triggered.connect(
                     lambda: self.reset_single_node(item)
                 )
-                soft_reset_single_node_action = menu.addAction(
-                    "Soft-reset only this node (S)"
-                )
-                soft_reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
-                soft_reset_single_node_action.triggered.connect(
-                    lambda: self.soft_reset_single_node(item)
-                )
+
+                # Context-specific
                 if item.logic_node.IS_CONTEXT:
                     menu.addSeparator()
                     expand_context_action = menu.addAction(
@@ -732,16 +693,32 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     expand_context_action.triggered.connect(
                         lambda: self.expand_context(item)
                     )
+
+                # Debug
+                menu.addSeparator()
+                soft_reset_single_node_action = menu.addAction(
+                    "[DEBUG] Soft-reset only this node (S)"
+                )
+                soft_reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
+                soft_reset_single_node_action.triggered.connect(
+                    lambda: self.soft_reset_single_node(item)
+                )
+
+                # DEV-specific
                 if constants.IN_DEV:
                     menu.addSeparator()
                     print_node_log_action = menu.addAction("Print node log")
                     print_node_log_action.setIcon(QtGui.QIcon("icons:nodes_2.png"))
                     print_node_log_action.triggered.connect(lambda: self.show_log(item))
+
+                # Style
                 f = QtCore.QFile(
                     r"ui:stylesheet.qss"
                 )  # TODO not ideal, maybe a reduced qss?
                 with open(f.fileName(), "r") as s:
                     menu.setStyleSheet(s.read())
+
+                # Exec
                 menu.exec_(event.screenPos(), parent=self)
                 break
 
@@ -837,32 +814,21 @@ class CustomScene(QtWidgets.QGraphicsScene):
         QtWidgets.QGraphicsScene.mouseMoveEvent(self, event)
 
         if self.testing_graphic_attr:
-            if constants.GLOW_EFFECTS:
-                self.testing_path_glow.show()
             self.testing_path.show()
 
             test_origin = self.testing_graphic_attr.plug_coords()
-            new_path = QtGui.QPainterPath(test_origin)
 
-            p1 = self.testing_path.path().pointAtPercent(0)
+            p1 = test_origin
             p2 = event.scenePos()
-            c_p1 = QtCore.QPoint(((p2.x() + p1.x()) / 2) + 10, p1.y())
-            c_p2 = QtCore.QPoint(((p2.x() + p1.x()) / 2) - 10, p2.y())
-            if constants.STRAIGHT_LINES:
-                new_path.lineTo(p2)
-            else:
-                new_path.cubicTo(c_p1, c_p2, p2)
+
+            new_path = ConnectorLine.calculate_path(p1, p2)
 
             if new_path.length() > 7000:
                 self.testing_path.hide()
-                self.testing_path_glow.hide()
             else:
                 self.testing_path.show()
-                if constants.GLOW_EFFECTS:
-                    self.testing_path_glow.show()
 
-            self.testing_path.setPath(new_path)
-            self.testing_path_glow.setPath(new_path)
+            self.testing_path.set_new_path(new_path)
 
     def mouseReleaseEvent(self, event):
         QtWidgets.QGraphicsScene.mouseReleaseEvent(self, event)
@@ -957,7 +923,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         self.testing_graphic_attr = None
         self.testing_path.hide()
-        self.testing_path_glow.hide()
 
         GS.attribute_editor_global_refresh_requested.emit()
 
@@ -987,3 +952,129 @@ class CustomScene(QtWidgets.QGraphicsScene):
             )
         QtWidgets.QGraphicsScene.dropEvent(self, event)
         event.acceptProposedAction()
+
+
+# -------------------------------- HELPER CLASES -------------------------------- #
+class ConnectorLine(QtWidgets.QGraphicsPathItem):
+    def __init__(self, graphic_attr_1=None, graphic_attr_2=None):
+        QtWidgets.QGraphicsPathItem.__init__(self)
+
+        self.graphic_attr_1 = None
+        self.graphic_attr_2 = None
+
+        self.glow = QtWidgets.QGraphicsPathItem(parent=self)
+        self.arrow_glow = QtWidgets.QGraphicsPathItem(parent=self)
+        self.white_line = QtWidgets.QGraphicsPathItem(parent=self)
+        self.arrow = QtWidgets.QGraphicsPathItem(parent=self)
+
+        # Main path ---------------------
+        if graphic_attr_1 is None or graphic_attr_2 is None:
+            p1, p2 = (QtCore.QPointF(0.0, 0.0), QtCore.QPointF(0.0, 0.0))
+        elif graphic_attr_1.connector_type == constants.OUTPUT:
+            p1, p2 = (
+                graphic_attr_1.plug_coords(),
+                graphic_attr_2.plug_coords(),
+            )
+            self.graphic_attr_1 = graphic_attr_1
+            self.graphic_attr_2 = graphic_attr_2
+        else:
+            p1, p2 = (
+                graphic_attr_2.plug_coords(),
+                graphic_attr_1.plug_coords(),
+            )
+            self.graphic_attr_1 = graphic_attr_2
+            self.graphic_attr_2 = graphic_attr_1
+
+        connector_path = self.calculate_path(p1, p2)
+
+        self.setPath(connector_path)
+
+        # Glow
+        if constants.GLOW_EFFECTS:
+            self.glow.setPath(connector_path)
+            self.glow.setPen(constants.LINE_GLOW_PEN)
+            blur = QtWidgets.QGraphicsBlurEffect()
+            blur.setBlurRadius(constants.LINE_GLOW_PEN.width() * 1.5)
+            self.glow.setGraphicsEffect(blur)
+        else:
+            self.glow.hide()
+
+        # White line
+        self.white_line.setPath(connector_path)
+        self.white_line.setPen(constants.VALID_LINE_PEN)
+
+        # Arrow ---------------------
+        arrow_path = QtGui.QPainterPath()
+        arrow_polygon = QtGui.QPolygon(
+            [
+                QtCore.QPoint(constants.PLUG_RADIUS * 1.3, 0),
+                QtCore.QPoint(
+                    -constants.PLUG_RADIUS * 1.3, constants.PLUG_RADIUS * 1.3
+                ),
+                QtCore.QPoint(-constants.PLUG_RADIUS * 0.9, 0),
+                QtCore.QPoint(
+                    -constants.PLUG_RADIUS * 1.3, -constants.PLUG_RADIUS * 1.3
+                ),
+            ]
+        )
+        arrow_path.addPolygon(arrow_polygon)
+        arrow_path.closeSubpath()
+
+        # Arrow glow
+        if constants.GLOW_EFFECTS:
+            self.arrow_glow.setPath(arrow_path)
+            self.arrow_glow.setPen(constants.LINE_GLOW_PEN)
+            blur = QtWidgets.QGraphicsBlurEffect()
+            blur.setBlurRadius(constants.LINE_GLOW_PEN.width() * 1.5)
+            self.arrow_glow.setGraphicsEffect(blur)
+        else:
+            self.arrow_glow.hide()
+
+        # Arrow
+        self.arrow.setPath(arrow_path)
+        self.arrow.setPen(QtCore.Qt.NoPen)
+        self.arrow.setBrush(QtGui.QBrush(constants.VALID_LINE_PEN.color()))
+
+        # Placement and rotation
+        if self.graphic_attr_1 is not None and self.graphic_attr_2 is not None:
+            self.arrow_glow.moveBy((p2.x() + p1.x()) / 2, (p2.y() + p1.y()) / 2)
+            self.arrow.moveBy((p2.x() + p1.x()) / 2, (p2.y() + p1.y()) / 2)
+            ref_1 = self.path().pointAtPercent(0.49)
+            ref_2 = self.path().pointAtPercent(0.51)
+            radians = math.atan2(ref_2.y() - ref_1.y(), ref_2.x() - ref_1.x())
+            angle = math.degrees(radians)
+
+            self.arrow_glow.setRotation(angle)
+            self.arrow.setRotation(angle)
+
+        # Data
+        self.setData(0, constants.CONNECTOR_LINE)
+        # TODO split this data into attrs
+        self.setData(1, graphic_attr_1)
+        self.setData(2, graphic_attr_2)
+
+    @staticmethod
+    def calculate_path(p1, p2):
+        new_path = QtGui.QPainterPath(p1)
+        if constants.CONNECTOR_LINE_GEO == constants.STRAIGHT_LINES:
+            new_path.lineTo(p2)
+        elif constants.CONNECTOR_LINE_GEO == constants.STEPPED_LINES:
+            s_p1 = QtCore.QPointF(((p2.x() + p1.x()) / 2), p1.y())
+            s_p2 = QtCore.QPointF(((p2.x() + p1.x()) / 2), p2.y())
+            new_path.lineTo(s_p1)
+            new_path.lineTo(s_p2)
+            new_path.lineTo(p2)
+        elif constants.CONNECTOR_LINE_GEO == constants.SPLINE_LINES:
+            c_p1 = QtCore.QPoint(((p2.x() + p1.x()) / 2) + 10, p1.y())
+            c_p2 = QtCore.QPoint(((p2.x() + p1.x()) / 2) - 10, p2.y())
+            new_path.cubicTo(c_p1, c_p2, p2)
+
+        return new_path
+
+    def set_testing_appearance(self):
+        self.white_line.setPen(constants.TEST_LINE_PEN)
+
+    def set_new_path(self, new_path):
+        self.setPath(new_path)
+        self.white_line.setPath(new_path)
+        self.glow.setPath(new_path)

@@ -1,5 +1,5 @@
-# CONTEXT fail_scene
-# ------------------
+# SCENE fail_scene
+# ----------------
 # Description: 
 
 # Nodes section: overall list of nodes to be created
@@ -49,5 +49,5 @@ connections:
 - TimedNode_1.COMPLETED -> ErrorNode_1.START
 
 
-# Context created at: 2023-04-29 19:09:22.095762
-# Created by: jaime.rvq
+# Scene created at: 2023-10-17 15:04:40.006060
+# Created by: jaime
