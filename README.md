@@ -1,14 +1,20 @@
-# all_nodes
-![tests](https://github.com/JaimeRVQ/all_nodes/actions/workflows/tests.yml/badge.svg)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![code style](https://img.shields.io/badge/code%20style-black-black)
 
-**all_nodes** is a node editor designed to be used in the most flexible way possible.
+<h1 align="center">
+    <img src="https://github.com/jaimervq/all_nodes/blob/main/docs/all_nodes_banner.png"/><br>
+    <a href=https://github.com/jaimervq/all_nodes/actions> 
+        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=Tests&style=for-the-badge"> 
+    </a>
+    <a href=https://opensource.org/licenses/MIT> 
+        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge"> 
+    </a>
+    <a href=https://github.com/psf/black> 
+        <img alt="Code style" src="https://img.shields.io/badge/code%20style-black-black?style=for-the-badge"> 
+    </a><br>
+    <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=for-the-badge">
+</h1>
 
-Some of its main goals are:
-* Prevent code from being re-written, duplicated
-* Make debugging tasks easier, by using a one-node-at-a-time process
-* Provide a nice graphic scene where node networks can be examined, modified, etc
+**all_nodes** is a visual programming node editor designed to be used in the most flexible way possible.
+It also aims to prevent re-duplication and re-writing of code inside of a project, as well as making debugging easier with its one-node-at-a-time approach to execution.
 
 ![](docs/preview_1.png)
 
@@ -18,11 +24,19 @@ The places where all_nodes will search for node classes, scenes, etc is defined 
 ## Folder structure example
 Example of organization of a folder, that contains two libraries
 
-| Folder structure                      | Classes representation                   | Scenes                                |
-|---------------------------------------|------------------------------------------|---------------------------------------|
-| ![](docs/folder_example.png) | ![](docs/structure_example.png) | ![](docs/scenes_example.png) |                              
+| Folder structure             | Classes representation          | Scenes                       |
+| ---------------------------- | ------------------------------- | ---------------------------- |
+| ![](docs/folder_example.png) | ![](docs/structure_example.png) | ![](docs/scenes_example.png) |
 
-Each library can have as many modules as needed, and can have an 'icons' folder to provide icons for the classes contained in the modules.
+This folder has:
+
+- A `*node_lib` named folder with node libraries, in this case 2 libraries: `lib_1` and `lib_2`. Inside each library we can have:
+
+    - As many `py` modules as needed 
+    - A `styles.yml` file to define default styles for these modules (default colors, icons...)
+    - A `icons` folder for the classes contained in the modules
+
+- A `*scene_lib` named folder with scenes saved in yaml format
 
 ## Defining a node
 Inside each module, nodes/classes can be defined as easy as this:
@@ -70,7 +84,7 @@ Key elements that a node **CAN** have:
 * The `OUTPUTS_DICT` dictionary, if the node needs outputs
 
 Other considerations:
-* The `import` statements are kept inside the run method, so no ImportError is met when editing DCC-specific nodes outside the DCC they are meant for.
+* The `import` statements are kept inside the run method, so no ImportError is met when editing nodes outside the software they are meant for.
 
 ## Defining a context
 ![](docs/context.png)
