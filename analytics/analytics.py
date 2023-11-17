@@ -8,7 +8,6 @@ import os
 
 import harperdb
 import matplotlib.pyplot as plt
-from prettytable import PrettyTable
 
 from all_nodes import constants
 from all_nodes import utils
@@ -155,6 +154,8 @@ def process_analytics():
         f"SELECT AVG(execution_time) AS average_time, class_name "
         f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
         f"WHERE NOT IS_CONTEXT "
+        f"AND class_name != 'TimedNode' "
+        f"AND class_name != 'StartFile' "
         f"GROUP BY class_name "
         f"ORDER BY average_time DESC "
         f"LIMIT 10"

@@ -1,7 +1,6 @@
 PySide2
 PyYAML
 harperdb
-prettytable
 colorama
 black
 matplotlib
