@@ -12,9 +12,12 @@ import getpass
 import os
 import yaml
 
+from PySide2 import QtCore
+
 from all_nodes import constants
 from all_nodes import utils
 from all_nodes.analytics import analytics
+from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
 from all_nodes.logic import ALL_CLASSES, ALL_SCENES
 from all_nodes.logic.logic_node import GeneralLogicNode
 
@@ -22,6 +25,7 @@ from all_nodes.logic.logic_node import GeneralLogicNode
 LOGGER = utils.get_logger(__name__)
 
 
+# -------------------------------- LOGIC SCENE -------------------------------- #
 class LogicScene:
     def __init__(self):
         self.scene_name = None
@@ -32,6 +36,8 @@ class LogicScene:
         self.class_counter = dict()
 
         self.pasted_count = 0
+
+        self.thread_manager = QtCore.QThreadPool()
 
         LOGGER.debug("Initialized logic scene")
 
@@ -252,7 +258,7 @@ class LogicScene:
             found_scene_path = utils.get_scene_from_alias(ALL_SCENES, scene_path)
             if not found_scene_path:
                 raise LogicSceneError(
-                    "Cannot find scene for alias'{}'".format(scene_path)
+                    "Cannot find scene for alias '{}'".format(scene_path)
                 )
             else:
                 scene_path = found_scene_path
@@ -322,7 +328,19 @@ class LogicScene:
         for node in self.all_logic_nodes:
             node.soft_reset()
 
-    def run_all_nodes(self):
+    def run_all_nodes(self, spawn_thread=True):
+        if spawn_thread:
+            worker = Worker(self._run_all_nodes)
+            self.thread_manager.start(worker)
+        else:
+            self._run_all_nodes()
+
+    def run_all_nodes_batch(self):
+        """For non-GUI, we cannot spawn threads"""
+        # TODO investigate why this happens
+        self._run_all_nodes()
+
+    def _run_all_nodes(self):
         # Feedback
         if self.scene_name:
             utils.print_separator("Running {}".format(self.scene_name))
@@ -338,7 +356,7 @@ class LogicScene:
         # Mark nodes that were skipped
         for node in self.all_nodes():
             if node.success == constants.NOT_RUN:
-                node.success = constants.SKIPPED
+                node.mark_skipped()
 
         # Analytics
         LOGGER.info("Gathering analytics")
@@ -353,6 +371,17 @@ class LogicScene:
                 ):  # TODO make this properly recursive
                     node_properties_list.append(i_node.get_node_full_dict())
         analytics.submit_bulk_analytics(node_properties_list)
+
+    def run_list_of_nodes(self, nodes_to_execute, spawn_thread=True):
+        if spawn_thread:
+            worker = Worker(self._run_list_of_nodes, nodes_to_execute)
+            self.thread_manager.start(worker)
+        else:
+            self._run_list_of_nodes(nodes_to_execute)
+
+    def _run_list_of_nodes(self, nodes_to_execute):
+        for node in nodes_to_execute:
+            node.run_single()
 
     # FEEDBACK GATHERING ----------------------
     def gather_failed_nodes(self):
@@ -372,5 +401,28 @@ class LogicScene:
         return errored_log
 
 
+# -------------------------------- UTILITY -------------------------------- #
 class LogicSceneError(Exception):
     pass
+
+
+# -------------------------------- WORKER -------------------------------- #
+class Worker(QtCore.QRunnable):
+    """
+    Worker thread.
+    """
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+        # Store constructor arguments (re-used for processing)
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self):
+        """
+        Initialise the runner function with passed args, kwargs.
+        """
+        self.fn(*self.args, **self.kwargs)
+        GS.execution_finished.emit()
+        GS.attribute_editor_global_refresh_requested.emit()

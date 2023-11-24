@@ -12,7 +12,7 @@ from PySide2 import QtCore
 from PySide2 import QtGui
 
 
-# -------------------------------- GRAPHICAL -------------------------------- #
+# -------------------------------- GRAPHIC -------------------------------- #
 # Overall style
 GLOW_EFFECTS = True
 SHOW_GRID = True
@@ -46,22 +46,24 @@ DEFAULT_NODE_COLOR = "#4D004C"  # magenta
 PLUG_RADIUS = int(0.3 * STRIPE_HEIGHT)
 CONNECTOR_USED_PEN = QtGui.QPen(QtCore.Qt.white, 3)
 
-
-# -------------------------------- NAMING -------------------------------- #
-# Graphic
+# Naming
 GRAPHIC_NODE = "GRAPHIC_NODE"
 GRAPHIC_ATTRIBUTE = "GRAPHIC_ATTRIBUTE"
 PLUG = "PLUG"
 CONNECTOR_LINE = "CONNECTOR_LINE"
 
-# Logic
+
+# -------------------------------- LOGIC -------------------------------- #
+# Naming
 INPUT = "INPUT"
 OUTPUT = "OUTPUT"
 
 START = "START"
 COMPLETED = "COMPLETED"
 
+# Node statuses
 NOT_RUN = "NOT_RUN"
+EXECUTING = "EXECUTING"
 SKIPPED = "SKIPPED"
 SUCCESSFUL = "SUCCESSFUL"
 FAILED = "FAILED"

@@ -1,1 +1,39 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><defs><style>.cls-1{fill:#39b54a;}.cls-1,.cls-2,.cls-3,.cls-4,.cls-5,.cls-6{stroke:#fff;stroke-miterlimit:10;}.cls-1,.cls-3,.cls-5,.cls-6{stroke-width:2px;}.cls-2{fill:none;}.cls-2,.cls-4{stroke-width:3px;}.cls-3{fill:#ef9426;}.cls-4,.cls-6{fill:#ed1c24;}.cls-5{fill:#999;}.cls-7{font-size:18.85px;fill:#fff;font-family:Century;}</style></defs><g id="okay"><path class="cls-1" d="M25,2.5v7.77c0,2.85-2.43,13.64-10,16.6-7.57-3-10-13.75-10-16.6V2.5Z"/><polyline class="cls-2" points="10.63 13.75 14.38 16.88 20.63 8.13"/></g><g id="failed"><path class="cls-3" d="M24.85,2.5v7.65c0,2.81-2.4,13.43-9.85,16.35C7.55,23.58,5.15,13,5.15,10.15V2.5Z"/><line class="cls-4" x1="10.69" y1="8.65" x2="19.31" y2="17.27"/><line class="cls-4" x1="19.31" y1="8.65" x2="10.69" y2="17.27"/></g><g id="neutral"><path class="cls-5" d="M24.85,2.5v7.65c0,2.81-2.4,13.43-9.85,16.35C7.55,23.58,5.15,13,5.15,10.15V2.5Z"/><line class="cls-2" x1="10.5" y1="13" x2="19.5" y2="13"/></g><g id="error"><path class="cls-6" d="M24.85,2.5v7.65c0,2.81-2.4,13.43-9.85,16.35C7.55,23.58,5.15,13,5.15,10.15V2.5Z"/><text class="cls-7" transform="translate(11.93 20.28)">!</text></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 28.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 30 30" style="enable-background:new 0 0 30 30;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#39B54A;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
+	.st1{fill:none;stroke:#FFFFFF;stroke-width:3;stroke-miterlimit:10;}
+	.st2{fill:#EF9426;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
+	.st3{fill:#999999;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
+	.st4{fill:#BA3DC1;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
+	.st5{fill:none;stroke:#FFFFFF;stroke-miterlimit:10;}
+	.st6{fill:#FFFFFF;}
+	.st7{fill:#ED1C24;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
+	.st8{font-family:'Century';}
+	.st9{font-size:18.85px;}
+</style>
+<g id="okay">
+	<path class="st0" d="M25,2.5v7.8c0,2.9-2.4,13.6-10,16.6c-7.6-3-10-13.8-10-16.6V2.5H25z"/>
+	<polyline class="st1" points="10.6,13.8 14.4,16.9 20.6,8.1 	"/>
+</g>
+<g id="failed">
+	<path class="st2" d="M24.9,2.5v7.6c0,2.8-2.4,13.4-9.9,16.4C7.6,23.6,5.2,13,5.2,10.1V2.5H24.9z"/>
+	<line class="st1" x1="10.7" y1="8.6" x2="19.3" y2="17.3"/>
+	<line class="st1" x1="19.3" y1="8.6" x2="10.7" y2="17.3"/>
+</g>
+<g id="neutral">
+	<path class="st3" d="M24.9,2.5v7.6c0,2.8-2.4,13.4-9.9,16.4C7.6,23.6,5.2,13,5.2,10.1V2.5H24.9z"/>
+	<line class="st1" x1="10.5" y1="13" x2="19.5" y2="13"/>
+</g>
+<g id="executing">
+	<path class="st4" d="M24.9,2.5v7.6c0,2.8-2.4,13.4-9.9,16.4C7.5,23.6,5.1,13,5.1,10.1V2.5H24.9z"/>
+	<polygon class="st5" points="18.9,7.1 11.1,7.1 14.4,12.8 11.1,18.5 18.9,18.5 15.6,12.8 	"/>
+	<polygon class="st6" points="13.4,9.3 15,12 16.6,9.3 	"/>
+</g>
+<g id="error">
+	<path class="st7" d="M24.9,2.5v7.6c0,2.8-2.4,13.4-9.9,16.4C7.6,23.6,5.2,13,5.2,10.1V2.5H24.9z"/>
+	<text transform="matrix(1 0 0 1 11.93 20.28)" class="st6 st8 st9">!</text>
+</g>
+</svg>

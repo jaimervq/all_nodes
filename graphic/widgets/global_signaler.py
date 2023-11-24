@@ -21,8 +21,12 @@ class GlobalSignaler(QtCore.QObject):
     # CONTEXTS ----------------------
     context_expansion_requested = QtCore.Signal(str)
 
-    # GLOBAL ----------------------
+    # GLOBAL REFRESH ----------------------
     attribute_editor_global_refresh_requested = QtCore.Signal()
+
+    # EXECUTION ----------------------
+    execution_started = QtCore.Signal()
+    execution_finished = QtCore.Signal()
 
     def __new__(cls):
         if cls._instance is None:

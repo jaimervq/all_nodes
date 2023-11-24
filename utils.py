@@ -272,7 +272,7 @@ def get_scene_from_alias(scenes_dict, alias):
                         scene_name, full_path = elem
                         if scene_name == alias:
                             scene_path = full_path
-
+                            return scene_path
     return scene_path
 
 
