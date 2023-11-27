@@ -151,6 +151,20 @@ class LogicSceneTesting(unittest.TestCase):
             logic_scene.load_from_file("fake_scene")
         print(e.exception)
 
+    def test_execute_scene_from_alias(self):
+        utils.print_test_header("test_execute_scene_from_alias")
+
+        logic_scene = LogicScene()
+        logic_scene.load_from_file("simple_regex")
+        logic_scene.run_all_nodes_batch()
+
+    def test_execute_scene_from_alias_2(self):
+        utils.print_test_header("test_execute_scene_from_alias_2")
+
+        logic_scene = LogicScene()
+        logic_scene.load_from_file("environ_to_yaml")
+        logic_scene.run_all_nodes_batch()
+
     def test_rename_node_incorrect(self):
         utils.print_test_header("test_rename_node_incorrect")
 

@@ -50,7 +50,21 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.feedback_line.setFont(QtGui.QFont("arial", 12))
         self.feedback_line.hide()
 
+        self.hourglass_animation = QtWidgets.QLabel(parent=self)
+        self.hourglass_animation.setAlignment(QtCore.Qt.AlignCenter)
+        ag_file = "ui:hourglass.gif"
+        self.movie = QtGui.QMovie(ag_file, QtCore.QByteArray(), self)
+        self.movie.setCacheMode(QtGui.QMovie.CacheAll)
+        self.movie.setSpeed(100)
+        self.hourglass_animation.setMovie(self.movie)
+        self.movie.start()
+        self.hourglass_animation.hide()
+
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
+
+        # Signals connection
+        GS.execution_started.connect(self.hourglass_animation.show)
+        GS.execution_finished.connect(self.hourglass_animation.hide)
 
     # UTILITY ----------------------
     def show_feedback(self, message, level=logging.INFO):
@@ -101,6 +115,10 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         QtWidgets.QGraphicsView.resizeEvent(self, event)
         self.feedback_line.move(25, self.height() - 50)
         self.feedback_line.setFixedSize(self.width(), 30)
+
+        self.hourglass_animation.move(self.width() - 200, self.height() - 200)
+        self.hourglass_animation.setFixedSize(200, 200)
+        self.movie.setScaledSize(QtCore.QSize(200, 200))
 
     # MOUSE EVENTS ----------------------
     def mousePressEvent(self, event):
@@ -166,13 +184,14 @@ class CustomScene(QtWidgets.QGraphicsScene):
         self.logic_scene = context.internal_scene if context else LogicScene()
 
         # Nodes
-        self.all_nodes = set()
+        self.all_graphic_nodes = set()
 
         # PATH TESTS
         self.testing_graphic_attr = None
 
         self.testing_path = ConnectorLine()
         self.testing_path.set_testing_appearance()
+        self.testing_path.hide()
         self.addItem(self.testing_path)
 
     # SCENE SETUP ----------------------
@@ -207,7 +226,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     new_logic_node = self.logic_scene.add_node_by_name(node_classname)
                     new_graph_node = GeneralGraphicNode(new_logic_node, color)
                     self.addItem(new_graph_node)
-                    self.all_nodes.add(new_graph_node)
+                    self.all_graphic_nodes.add(new_graph_node)
                     new_graph_node.setPos(x, y)
                     self.in_screen_feedback.emit(
                         "Created graphic node {}".format(node_classname), logging.INFO
@@ -234,7 +253,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 if logic_node.class_name == name:
                     new_graph_node = GeneralGraphicNode(logic_node, color)
                     self.addItem(new_graph_node)
-                    self.all_nodes.add(new_graph_node)
+                    self.all_graphic_nodes.add(new_graph_node)
                     LOGGER.info(
                         "Created graphic node from logic node {} at x:{} y:{}".format(
                             logic_node.node_name, x, y
@@ -252,7 +271,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         """
         self.clear_node_lines(graphic_node)
         graphic_node.clear_all_connections()
-        self.all_nodes.remove(graphic_node)
+        self.all_graphic_nodes.remove(graphic_node)
         self.removeItem(graphic_node)
 
         self.logic_scene.remove_node_by_name(graphic_node.logic_node.node_name)
@@ -387,7 +406,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         # Grab logic scene info and add the xy coords
         the_dict = self.logic_scene.convert_scene_to_dict()
-        for g_node in self.all_nodes:
+        for g_node in self.all_graphic_nodes:
             node_name = g_node.logic_node.node_name
             for node_dict in the_dict["nodes"]:
                 if node_name in node_dict:
@@ -428,7 +447,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         # Connections
         all_graphic_attrs = []
-        for g_node in self.all_nodes:
+        for g_node in self.all_graphic_nodes:
             if g_node.logic_node in new_logic_nodes:
                 for g_attribute in g_node.graphic_attributes:
                     all_graphic_attrs.append(g_attribute)
@@ -552,9 +571,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
         """
         logic_node = graphic_node.logic_node
         self.in_screen_feedback.emit("Running only selected node(s)", logging.INFO)
-        logic_node.run_single()
-        graphic_node.show_result()
-        GS.attribute_editor_global_refresh_requested.emit()
+        GS.execution_started.emit()
+        self.logic_scene.run_list_of_nodes([logic_node])
 
     def reset_single_node(self, graphic_node: GeneralGraphicNode):
         """
@@ -586,7 +604,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         """
         Deselect all graphic nodes.
         """
-        for n in self.all_nodes:
+        for n in self.all_graphic_nodes:
             n.setSelected(False)
 
     # SCENE EXECUTION ----------------------
@@ -595,14 +613,14 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Reset all graphic nodes.
         """
         utils.print_separator("Resetting all graphic nodes")
-        for g_node in self.all_nodes:
+        for g_node in self.all_graphic_nodes:
             g_node.reset()
 
     def show_result_on_nodes(self):
         """
         Display the internal result of each graphic node.
         """
-        for g_node in self.all_nodes:
+        for g_node in self.all_graphic_nodes:
             g_node.show_result()
 
     def reset_graphic_scene(self):
@@ -617,10 +635,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
         """
         Run all the nodes in this graphic scene.
         """
+        GS.execution_started.emit()
         self.reset_all_graphic_nodes()
         self.logic_scene.run_all_nodes()
-        self.show_result_on_nodes()
-        GS.attribute_editor_global_refresh_requested.emit()
 
     # UTILITY ----------------------
     def selected_nodes(self) -> list:
@@ -631,7 +648,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
             list: with all selected nodes.
         """
         sel_nodes = []
-        for n in self.all_nodes:
+        for n in self.all_graphic_nodes:
             if n.isSelected():
                 sel_nodes.append(n)
         return sel_nodes
@@ -641,7 +658,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         If selected nodes, fit all of them in the view. Otherwise, fit all nodes.
         """
         self.parent().resetMatrix()
-        nodes = list(self.all_nodes)
+        nodes = list(self.all_graphic_nodes)
         if self.selected_nodes():
             nodes = self.selected_nodes()
         if not nodes:
@@ -1047,7 +1064,7 @@ class ConnectorLine(QtWidgets.QGraphicsPathItem):
             self.arrow_glow.setRotation(angle)
             self.arrow.setRotation(angle)
 
-        # Data
+        # Data ---------------------
         self.setData(0, constants.CONNECTOR_LINE)
         # TODO split this data into attrs
         self.setData(1, graphic_attr_1)
@@ -1073,6 +1090,8 @@ class ConnectorLine(QtWidgets.QGraphicsPathItem):
 
     def set_testing_appearance(self):
         self.white_line.setPen(constants.TEST_LINE_PEN)
+        self.arrow_glow.hide()
+        self.arrow.hide()
 
     def set_new_path(self, new_path):
         self.setPath(new_path)

@@ -16,13 +16,15 @@ import re
 import time
 import uuid
 
+from PySide2 import QtCore
+
 from all_nodes import constants
 from all_nodes import utils
 
 LOGGER = utils.get_logger(__name__)
 
 
-# -------------------------------- NODES -------------------------------- #
+# -------------------------------- GENERAL NODE -------------------------------- #
 class GeneralLogicNode:
     """
     General logic node implementation.
@@ -83,6 +85,9 @@ class GeneralLogicNode:
         self.run_date = None
         self.execution_time = 0
         self.user = getpass.getuser()
+
+        # Signals
+        self.signaler = LogicNodeSignaler()
 
         # Feedback
         LOGGER.debug("Initialized node! {}".format(self.class_name))
@@ -526,11 +531,8 @@ class GeneralLogicNode:
                     self.full_name
                 )
             )
+            self.signaler.finished.emit()
             return
-
-        # Start timer
-        t1 = time.time()
-        self.run_date = datetime.datetime.now()
 
         # Check inputs
         if not self.check_all_inputs_have_value():
@@ -539,12 +541,17 @@ class GeneralLogicNode:
                     self.full_name
                 )
             )
+            self.signaler.finished.emit()
             return
 
-        # Feedback
+        # ------ START EXECUTION ------ #
         LOGGER.info(
             "Starting execution of {} ({})".format(self.full_name, self.class_name)
         )
+        t1 = time.time()
+        self.run_date = datetime.datetime.now()
+        self.success = constants.EXECUTING
+        self.signaler.status_changed.emit()
 
         # Clear any previous logging
         self.fail_log = []
@@ -552,7 +559,9 @@ class GeneralLogicNode:
 
         # Run
         if self.IS_CONTEXT:
-            self.internal_scene.run_all_nodes()
+            self.internal_scene.run_all_nodes(
+                spawn_thread=False
+            )  # TODO maybe this can be improved? / recursive
             internal_failures = self.internal_scene.gather_failed_nodes()
             if internal_failures:
                 for f in internal_failures:
@@ -568,6 +577,8 @@ class GeneralLogicNode:
             except Exception as e:
                 self.error(str(e))
                 LOGGER.exception(e)
+                self.signaler.finished.emit()
+                self.execution_time = time.time() - t1
                 return
 
         # Result of Run
@@ -577,13 +588,18 @@ class GeneralLogicNode:
                     self.full_name
                 )
             )
+            self.signaler.finished.emit()
+            self.execution_time = time.time() - t1
             return
+
         elif self.success == constants.ERROR:
             LOGGER.error(
                 "Execution of {} ERRORED, cannot keep executing from this node".format(
                     self.full_name
                 )
             )
+            self.signaler.finished.emit()
+            self.execution_time = time.time() - t1
             return
 
         # Check outputs were all set during Run
@@ -593,6 +609,7 @@ class GeneralLogicNode:
                 "cannot keep executing from this node".format(self.full_name)
             )
             self.fail("Not all output attributes are set")
+            self.execution_time = time.time() - t1
             return
 
         # Mark successful
@@ -609,6 +626,9 @@ class GeneralLogicNode:
 
         # Stop timer
         self.execution_time = time.time() - t1
+
+        # Signal
+        self.signaler.finished.emit()
 
         # Execute connected
         if execute_connected:
@@ -677,7 +697,14 @@ class GeneralLogicNode:
             )
             self.error_log.append(message)
 
+    def mark_skipped(self):
+        self.success = constants.SKIPPED
+        self.signaler.finished.emit()
+
     def propagate_results(self):
+        """
+        Propagate the values of calculated output attrs to the other connected nodes input attrs.
+        """
         for attr in self.get_output_attrs():
             attr.propagate_value()
 
@@ -760,67 +787,16 @@ class GeneralLogicNode:
         return help_text
 
 
-class SpecialInputNode(GeneralLogicNode):
+class LogicNodeSignaler(QtCore.QObject):
     """
-    Special type of node. When represented graphically, will accept direct input though a widget.
+    Defines the signals available from a logic node.
     """
 
-    INPUT_TYPE = None
-
-    def run(self):
-        pass
-
-    def set_special_attr_value(self, attribute_name: str, value):
-        for attribute in self.all_attributes:
-            if attribute.attribute_name == attribute_name:
-                LOGGER.debug(
-                    "Setting special attribute {} to {}".format(
-                        attribute.dot_name, value
-                    )
-                )
-                self.set_attribute_value(attribute_name, value)
-                return
-
-    def get_node_full_dict(self):
-        node_dict = super().get_node_full_dict()
-        for attr in self.all_attributes:
-            if (
-                "out_" in attr.attribute_name
-                and attr.get_datatype_str() in attr.attribute_name
-            ):
-                node_dict["special_attr_value"] = attr.value
-                return node_dict
-
-    def reset(self):
-        """
-        Reset attributes of the node.
-
-        These nodes are special, we cannot reset their out attributes directly, as they are mainly established
-        and manipulated through the GUI.
-        """
-        LOGGER.info(
-            "Not resetting all of special node {} attrs, some are supposed to be modified through GUI".format(
-                self.full_name
-            )
-        )
-        for attr in self.all_attributes:
-            if attr.attribute_name in [constants.START, constants.COMPLETED]:
-                attr.clear()
-
-        self.success = constants.NOT_RUN
-
-        self.fail_log = []
-        self.error_log = []
+    status_changed = QtCore.Signal()
+    finished = QtCore.Signal()
 
 
-class OptionInput(SpecialInputNode):
-    INPUT_TYPE = "option"
-    INPUT_OPTIONS = ["A", "B", "C"]
-
-    OUTPUTS_DICT = {"out_str": {"type": str}}
-
-
-# -------------------------------- ATTRIBUTES -------------------------------- #
+# -------------------------------- ATTRIBUTE -------------------------------- #
 class GeneralLogicAttribute:
     def __init__(
         self,
@@ -1001,6 +977,67 @@ class GeneralLogicAttribute:
     # SPECIAL METHODS ----------------------
     def __str__(self):
         return "GeneralLogicAttribute: {}, value:{}".format(self.dot_name, self.value)
+
+
+# -------------------------------- SUBCLASSES -------------------------------- #
+class SpecialInputNode(GeneralLogicNode):
+    """
+    Special type of node. When represented graphically, will accept direct input though a widget.
+    """
+
+    INPUT_TYPE = None
+
+    def run(self):
+        pass
+
+    def set_special_attr_value(self, attribute_name: str, value):
+        for attribute in self.all_attributes:
+            if attribute.attribute_name == attribute_name:
+                LOGGER.debug(
+                    "Setting special attribute {} to {}".format(
+                        attribute.dot_name, value
+                    )
+                )
+                self.set_attribute_value(attribute_name, value)
+                return
+
+    def get_node_full_dict(self):
+        node_dict = super().get_node_full_dict()
+        for attr in self.all_attributes:
+            if (
+                "out_" in attr.attribute_name
+                and attr.get_datatype_str() in attr.attribute_name
+            ):
+                node_dict["special_attr_value"] = attr.value
+                return node_dict
+
+    def reset(self):
+        """
+        Reset attributes of the node.
+
+        These nodes are special, we cannot reset their out attributes directly, as they are mainly established
+        and manipulated through the GUI.
+        """
+        LOGGER.info(
+            "Not resetting all of special node {} attrs, some are supposed to be modified through GUI".format(
+                self.full_name
+            )
+        )
+        for attr in self.all_attributes:
+            if attr.attribute_name in [constants.START, constants.COMPLETED]:
+                attr.clear()
+
+        self.success = constants.NOT_RUN
+
+        self.fail_log = []
+        self.error_log = []
+
+
+class OptionInput(SpecialInputNode):
+    INPUT_TYPE = "option"
+    INPUT_OPTIONS = ["A", "B", "C"]
+
+    OUTPUTS_DICT = {"out_str": {"type": str}}
 
 
 # -------------------------------- UTILITY -------------------------------- #

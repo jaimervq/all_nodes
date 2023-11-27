@@ -95,6 +95,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.update_attribute_from_widget()
         self.setup_extras()
 
+        # Connect
+        self.logic_node.signaler.status_changed.connect(self.show_result)
+        self.logic_node.signaler.finished.connect(self.show_result)
+
     # PROPERTIES ----------------------
     @property
     def node_height(self):
@@ -480,6 +484,12 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         if self.logic_node.success == constants.NOT_RUN:
             self.badge_icon.hide()
+            self.error_marquee.hide()
+
+        elif self.logic_node.success == constants.EXECUTING:
+            self.badge_icon.setElementId("executing")
+            self.badge_icon.setToolTip('<p style="color: gray">Executing...<br>')
+
             self.error_marquee.hide()
 
         elif self.logic_node.success == constants.SKIPPED:

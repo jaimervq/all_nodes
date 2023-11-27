@@ -53,7 +53,7 @@ def launch_batch(scene_file: str, set_parameters: list):
             if node:
                 node.set_attribute_from_str(attr_name, attr_str_value)
 
-    scene.run_all_nodes()
+    scene.run_all_nodes(spawn_thread=False)
 
 
 # MAIN ---------------------------------------------------
