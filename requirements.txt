@@ -2,5 +2,5 @@ PySide2
 PyYAML
 harperdb
 colorama
-black
+ruff
 matplotlib

@@ -1,14 +1,14 @@
 
 <h1 align="center">
     <img src="https://github.com/jaimervq/all_nodes/blob/main/docs/all_nodes_banner.png"/><br>
-    <a href=https://github.com/jaimervq/all_nodes/actions> 
+    <a href=https://github.com/jaimervq/all_nodes/actions/workflows/tests.yml> 
         <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=Tests&style=for-the-badge"> 
     </a>
     <a href=https://opensource.org/licenses/MIT> 
         <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge"> 
     </a>
-    <a href=https://github.com/psf/black> 
-        <img alt="Code style" src="https://img.shields.io/badge/code%20style-black-black?style=for-the-badge"> 
+    <a href=https://github.com/astral-sh/ruff> 
+        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge&label=Code style"> 
     </a><br>
     <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=for-the-badge">
 </h1>

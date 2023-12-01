@@ -287,10 +287,7 @@ def get_bright_color(color_name):
         str: name of the saturated color
     """
     base_color = QtGui.QColor(color_name)
-    h, s, v = (
-        base_color.hue(),
-        base_color.saturation(),
-        base_color.value(),
-    )
+    h = base_color.hue()
+
     bright_color = QtGui.QColor.fromHsv(h, 255, 255)
     return bright_color.name()

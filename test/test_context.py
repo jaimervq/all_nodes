@@ -14,8 +14,8 @@ class ContextTesting(unittest.TestCase):
         """
         utils.print_test_header("test_context_creation")
 
-        l = LogicScene()
-        n_1 = l.add_node_by_name("EnvironToYmlCtx")
+        logic_scene = LogicScene()
+        n_1 = logic_scene.add_node_by_name("EnvironToYmlCtx")
         self.assertIsNotNone(n_1)
 
     def test_fake_context_creation(self):
@@ -24,9 +24,9 @@ class ContextTesting(unittest.TestCase):
         """
         utils.print_test_header("test_fake_context_creation")
 
-        l = LogicScene()
+        logic_scene = LogicScene()
         with self.assertRaises(LogicSceneError) as e:
-            l.add_node_by_name("FakeCtx")
+            logic_scene.add_node_by_name("FakeCtx")
         print(e.exception)
 
     def test_context_run(self):
@@ -35,8 +35,8 @@ class ContextTesting(unittest.TestCase):
         """
         utils.print_test_header("test_context_run")
 
-        l = LogicScene()
-        n_1 = l.add_node_by_name("EnvironToYmlCtx")
+        logic_scene = LogicScene()
+        n_1 = logic_scene.add_node_by_name("EnvironToYmlCtx")
         n_1.run_single()
         self.assertEqual(n_1.success, constants.SUCCESSFUL)
 

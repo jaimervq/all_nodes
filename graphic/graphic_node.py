@@ -547,7 +547,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             if text:
                 try:
                     eval_dict = ast.literal_eval(text)
-                    if eval_dict and type(eval_dict) == "dict":
+                    if eval_dict and isinstance(eval_dict, dict):
                         self.logic_node.set_special_attr_value("out_dict", eval_dict)
                 except (ValueError, SyntaxError):
                     pass
@@ -556,7 +556,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             if text:
                 try:
                     eval_list = ast.literal_eval(text)
-                    if eval_list and type(eval_list) == list:
+                    if eval_list and isinstance(eval_list, list):
                         self.logic_node.set_special_attr_value("out_list", eval_list)
                 except (ValueError, SyntaxError):
                     pass
@@ -564,8 +564,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             text = self.proxy_input_widget.widget().text()
             if text:
                 try:
-                    eval_list = ast.literal_eval(text)
-                    if eval_list and type(eval_list) == tuple:
+                    eval_tuple = ast.literal_eval(text)
+                    if eval_tuple and isinstance(eval_tuple, tuple):
                         self.logic_node.set_special_attr_value("out_tuple", eval_list)
                 except (ValueError, SyntaxError):
                     pass

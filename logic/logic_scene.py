@@ -153,13 +153,15 @@ class LogicScene:
         target_node_name = target_attr_name.rsplit(".", 1)[0]
         if self.to_node(source_node_name) is None:
             raise LogicSceneError(
-                "Cannot connect! {} -> {}, source node '{}' does not exist"
-                "".format(source_attr_name, target_attr_name, source_node_name)
+                "Cannot connect! {} -> {}, source node '{}' does not exist".format(
+                    source_attr_name, target_attr_name, source_node_name
+                )
             )
         elif self.to_node(target_node_name) is None:
             raise LogicSceneError(
-                "Cannot connect! {} -> {}, target node '{}' does not exist"
-                "".format(source_attr_name, target_attr_name, target_node_name)
+                "Cannot connect! {} -> {}, target node '{}' does not exist".format(
+                    source_attr_name, target_attr_name, target_node_name
+                )
             )
         elif source_attr is None:
             raise LogicSceneError(
@@ -248,7 +250,6 @@ class LogicScene:
             LOGGER.debug("Using namespace: {}".format(namespace))
 
         # Alias
-        found_by_alias = False
         if not os.path.isfile(scene_path):
             LOGGER.info(
                 "Cannot find scene with path '{}', trying to find it as alias".format(
@@ -364,9 +365,7 @@ class LogicScene:
         for node in self.all_logic_nodes:
             node_properties_list.append(node.get_node_full_dict())
             if node.IS_CONTEXT:
-                for (
-                    i_node
-                ) in (
+                for i_node in (
                     node.internal_scene.all_logic_nodes
                 ):  # TODO make this properly recursive
                     node_properties_list.append(i_node.get_node_full_dict())

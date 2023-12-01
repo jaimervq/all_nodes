@@ -9,7 +9,6 @@ __license__ = "MIT License"
 import ast
 import datetime
 import getpass
-import inspect
 import os
 import pprint
 import re
@@ -758,10 +757,14 @@ class GeneralLogicNode:
         return None
 
     def __str__(self):
-        return "<{} object>".format(self.full_name, self.class_name)
+        return "<{} object>".format(
+            self.full_name,
+        )
 
     def __repr__(self):
-        return "<{} object>".format(self.full_name, self.class_name)
+        return "<{} object>".format(
+            self.full_name,
+        )
 
     def get_node_html_help(self):
         """

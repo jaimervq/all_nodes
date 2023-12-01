@@ -23,7 +23,7 @@ class EmptyNode(GeneralLogicNode):
 
 class ErrorNode(GeneralLogicNode):
     def run(self):
-        i = 100 / 0
+        100 / 0
 
 
 class FailNode(GeneralLogicNode):
@@ -35,7 +35,7 @@ class FailNode(GeneralLogicNode):
 class FailAndErrorNode(GeneralLogicNode):
     def run(self):
         self.fail("This node has failed")
-        a = [10][5]
+        [10][5]
 
 
 class TimedNode(GeneralLogicNode):

@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
         os: [ubuntu-latest, windows-latest]
         exclude:
           - os: windows-latest
@@ -30,13 +30,13 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Env vars LINUX
+      - name: Set PYTHONPATH (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           parentdir="$(dirname `pwd`)";
           echo "PYTHONPATH=$parentdir:$PYTHONPATH" >> $GITHUB_ENV
 
-      - name: Env vars WINDOWS
+      - name: Set PYTHONPATH (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           $parentdir=(get-item (pwd) ).parent.FullName
@@ -49,6 +49,10 @@ jobs:
         run: |
           python -m unittest discover ./test
 
-      - name: Run black test
+      - name: Check formatting
         run: |
-          black --check .
+          ruff format --check .
+
+      - name: Check linting
+        run: |
+          ruff check .
