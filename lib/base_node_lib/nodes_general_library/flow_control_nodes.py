@@ -4,7 +4,6 @@ __credits__ = []
 __license__ = "MIT License"
 
 
-from all_nodes import constants
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_node import Run
 from all_nodes import utils
@@ -28,7 +27,7 @@ class BasicIf(GeneralLogicNode):
     def run(self):
         in_bool = self.get_attribute_value("in_bool")
 
-        if in_bool == True:
+        if in_bool:
             self.set_output("path_1", Run())
         else:
             self.set_output("path_2", Run())
@@ -45,5 +44,5 @@ class Basicbreaker(GeneralLogicNode):
     def run(self):
         in_bool = self.get_attribute_value("in_bool")
 
-        if in_bool == True:
+        if in_bool:
             self.error("BREAKING")

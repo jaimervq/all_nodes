@@ -30,7 +30,7 @@ class StatisticsTesting(unittest.TestCase):
         utils.print_test_header("test_make_wrong_query")
 
         with self.assertRaises(harperdb.exceptions.HarperDBError) as e:
-            res = analytics.make_query(
+            analytics.make_query(
                 f"SELECT * " f"FROM {analytics.ALL_NODES_SCHEMA}.DUMMY" f"LIMIT 10"
             )
         print(e.exception)

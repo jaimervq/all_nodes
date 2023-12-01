@@ -112,7 +112,7 @@ def process_analytics():
             tick.set_rotation(45)
             tick.set_horizontalalignment("right")
         ax.set_ylabel("Amount of nodes run")
-        ax.set_title(f"Recent usage")
+        ax.set_title("Recent usage")
 
         graph_file = os.path.join(
             root_dir_path, "../docs/analytics", "recent_usage.png"
@@ -143,7 +143,7 @@ def process_analytics():
         ax.set_xlabel("Number of usages")
         ax.set_ylabel("Node class")
         ax.invert_yaxis()
-        ax.set_title(f"Top 30 most used nodes")
+        ax.set_title("Top 30 most used nodes")
 
         graph_file = os.path.join(root_dir_path, "../docs/analytics", "most_used.png")
         fig.tight_layout()
@@ -174,7 +174,7 @@ def process_analytics():
         ax.set_xlabel("Average execution time (s)")
         ax.set_ylabel("Node class")
         ax.invert_yaxis()
-        ax.set_title(f"Top 10 slowest nodes")
+        ax.set_title("Top 10 slowest nodes")
 
         graph_file = os.path.join(root_dir_path, "../docs/analytics", "slowest.png")
         fig.tight_layout()
@@ -204,7 +204,7 @@ def process_analytics():
             tick.set_rotation(45)
             tick.set_horizontalalignment("right")
         ax.set_ylabel("Node class")
-        ax.set_title(f"Most recently errored nodes")
+        ax.set_title("Most recently errored nodes")
         ax.grid(which="major", axis="x", linestyle="--")
 
         graph_file = os.path.join(root_dir_path, "../docs/analytics", "errored.png")
@@ -237,7 +237,7 @@ def process_analytics():
             tick.set_rotation(45)
             tick.set_horizontalalignment("right")
         ax.set_ylabel("Node class")
-        ax.set_title(f"Most recently failed nodes")
+        ax.set_title("Most recently failed nodes")
         ax.grid(which="major", axis="x", linestyle="--")
 
         graph_file = os.path.join(root_dir_path, "../docs/analytics", "failed.png")
