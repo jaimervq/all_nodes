@@ -54,7 +54,7 @@ def submit_bulk_analytics(node_attrs_list):
         LOGGER.info("Cannot submit the stats of this run to the DB")
         return
 
-    LOGGER.info("Submitting stats...")
+    LOGGER.info(f"Submitting stats to {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE}...")
     db = harperdb.HarperDB(
         url=HARPERDB_URL,
         username=HARPERDB_READ_AND_WRITE_USERNAME,

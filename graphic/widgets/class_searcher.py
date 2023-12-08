@@ -58,12 +58,7 @@ class ClassSearcher(QtWidgets.QWidget):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
 
         if event.key() == QtCore.Qt.Key_Return and not modifiers:
-            if self.class_list.selectedItems():
-                GS.node_creation_requested.emit(
-                    self.pos().x(),
-                    self.pos().y(),
-                    self.class_list.selectedItems()[0].text(),
-                )
+            self.send_signal()
 
     def send_signal(self):
         if self.class_list.selectedItems():
