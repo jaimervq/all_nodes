@@ -360,6 +360,7 @@ class LogicScene:
                 node.mark_skipped()
 
         # Analytics
+        # TODO separate into own method in case analytics crash
         LOGGER.info("Gathering analytics")
         node_properties_list = []
         for node in self.all_logic_nodes:

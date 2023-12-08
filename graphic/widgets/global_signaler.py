@@ -10,19 +10,24 @@ from PySide2 import QtCore
 class GlobalSignaler(QtCore.QObject):
     _instance = None
 
+    # WIDGET MOVE ----------------------
+    class_searcher_move = QtCore.Signal(int, int)
+
     # TABS ----------------------
     tab_names_refresh_requested = QtCore.Signal()
 
-    # NODE-SPECIFIC ----------------------
+    # ATTRIBUTE EDITOR ----------------------
     attribute_editor_node_addition_requested = QtCore.Signal(str)
     attribute_editor_refresh_node_requested = QtCore.Signal(str)
     attribute_editor_remove_node_requested = QtCore.Signal(str)
 
+    attribute_editor_global_refresh_requested = QtCore.Signal()
+
     # CONTEXTS ----------------------
     context_expansion_requested = QtCore.Signal(str)
 
-    # GLOBAL REFRESH ----------------------
-    attribute_editor_global_refresh_requested = QtCore.Signal()
+    # NODE CREATION ----------------------
+    node_creation_requested = QtCore.Signal(QtCore.QPoint, str)
 
     # EXECUTION ----------------------
     execution_started = QtCore.Signal()
