@@ -22,6 +22,7 @@ from all_nodes.logic import ALL_CLASSES
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_scene import LogicScene
 from all_nodes import utils
+from all_nodes.graphic.widgets.class_searcher import ClassSearcher
 from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
 
 
@@ -59,6 +60,10 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.hourglass_animation.setMovie(self.movie)
         self.movie.start()
         self.hourglass_animation.hide()
+
+        self.class_searcher = ClassSearcher(parent=self)
+        self.class_searcher.hide()
+        GS.class_searcher_move.connect(self.move_line)
 
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
 
@@ -110,6 +115,10 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.feedback_line.setGraphicsEffect(effect)
         anim.start()
 
+    def move_line(self, x, y):
+        self.class_searcher.move(self.mapFromGlobal(QtCore.QPoint(x, y)))
+        self.class_searcher.reset()
+
     # RESIZE EVENTS ----------------------
     def resizeEvent(self, event):
         QtWidgets.QGraphicsView.resizeEvent(self, event)
@@ -129,6 +138,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
             self.middle_pressed = True
         elif event.button() == QtCore.Qt.LeftButton:
             self.left_pressed = True
+            self.class_searcher.hide()
 
         QtWidgets.QGraphicsView.mousePressEvent(self, event)
 
@@ -174,7 +184,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 # -------------------------------- CUSTOM SCENE CLASS -------------------------------- #
 class CustomScene(QtWidgets.QGraphicsScene):
     # TODO rethink if these could go in the GLOBAL_SIGNALER
-    dropped_node = QtCore.Signal(int, int)
+    dropped_node = QtCore.Signal(QtCore.QPoint)
     in_screen_feedback = QtCore.Signal(str, int)
 
     def __init__(self, context=None):
@@ -205,7 +215,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 painter.drawLine(QtCore.QLine(-20_000, i, 20_000, i))
 
     # ADD AND DELETE NODES ----------------------
-    def add_graphic_node_by_name(
+    def add_graphic_node_by_class_name(
         self, node_classname: str, x: int = 0, y: int = 0
     ) -> GeneralGraphicNode:
         """
@@ -774,6 +784,10 @@ class CustomScene(QtWidgets.QGraphicsScene):
         ):
             for n in self.selected_nodes():
                 self.expand_context(n)
+        elif event.key() == QtCore.Qt.Key_Slash and not modifiers:
+            GS.class_searcher_move.emit(
+                QtGui.QCursor.pos().x(), QtGui.QCursor.pos().y()
+            )
 
     # MOUSE EVENTS ----------------------
     def mousePressEvent(self, event):
@@ -894,37 +908,37 @@ class CustomScene(QtWidgets.QGraphicsScene):
             if graphic_attr_1.connector_type == constants.INPUT:
                 new_g_node = None
                 if graphic_attr_1.logic_attribute.data_type == str:
-                    new_g_node = self.add_graphic_node_by_name(
+                    new_g_node = self.add_graphic_node_by_class_name(
                         "StrInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_str"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type == list:
-                    new_g_node = self.add_graphic_node_by_name(
+                    new_g_node = self.add_graphic_node_by_class_name(
                         "ListInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_list"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type == dict:
-                    new_g_node = self.add_graphic_node_by_name(
+                    new_g_node = self.add_graphic_node_by_class_name(
                         "DictInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_dict"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type == int:
-                    new_g_node = self.add_graphic_node_by_name(
+                    new_g_node = self.add_graphic_node_by_class_name(
                         "IntInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_int"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type == float:
-                    new_g_node = self.add_graphic_node_by_name(
+                    new_g_node = self.add_graphic_node_by_class_name(
                         "FloatInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_float"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type == bool:
-                    new_g_node = self.add_graphic_node_by_name(
+                    new_g_node = self.add_graphic_node_by_class_name(
                         "BoolInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_bool"]
@@ -965,7 +979,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     self.load_from_file(url.toLocalFile())
         else:
             self.dropped_node.emit(
-                event.scenePos().x() - 100, event.scenePos().y() - 100
+                self.parent().mapFromScene(event.scenePos()) - QtCore.QPoint(20, 20)
             )
         QtWidgets.QGraphicsScene.dropEvent(self, event)
         event.acceptProposedAction()
