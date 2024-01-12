@@ -54,7 +54,7 @@ def submit_bulk_analytics(node_attrs_list):
         LOGGER.info("Cannot submit the stats of this run to the DB")
         return
 
-    LOGGER.info("Submitting stats...")
+    LOGGER.info(f"Submitting stats to {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE}...")
     db = harperdb.HarperDB(
         url=HARPERDB_URL,
         username=HARPERDB_READ_AND_WRITE_USERNAME,
@@ -124,7 +124,7 @@ def process_analytics():
     res = db.sql(
         f"SELECT COUNT(id) AS total, class_name "
         f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
-        f"WHERE class_name NOT LIKE '%Input' AND class_name NOT LIKE '%Ctx' AND NOT IS_CONTEXT "
+        f"WHERE (class_name NOT LIKE '%Input' AND class_name NOT LIKE '%Ctx' AND NOT IS_CONTEXT) "
         f"GROUP BY class_name "
         f"ORDER BY total DESC "
         f"LIMIT 30"
@@ -182,9 +182,9 @@ def process_analytics():
 
     # Last errored
     res = db.sql(
-        f"SELECT class_name, run_date "
+        f"SELECT class_name, run_date, id "
         f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
-        f"WHERE success='ERROR' "
+        f"WHERE (success='ERROR' AND run_date IS NOT NULL) "  # TODO find out why run_date is sometimes not registered
         f"ORDER BY run_date ASC "
         f"LIMIT 50"
     )

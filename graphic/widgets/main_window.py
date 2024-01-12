@@ -92,6 +92,8 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.ui.tabWidget.currentChanged.connect(self.show_scene_results)
 
         # Global signaler
+        GS.node_creation_requested.connect(self.add_node_to_current)
+
         GS.tab_names_refresh_requested.connect(self.refresh_tab_names)
 
         GS.attribute_editor_node_addition_requested.connect(
@@ -275,7 +277,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         graphics_scene.setSceneRect(-20000, -20000, 40000, 40000)
         graphics_scene.setParent(graphics_view)
-        graphics_scene.dropped_node.connect(self.add_node_to_current)
+        graphics_scene.dropped_node.connect(
+            self.add_node_to_current
+        )  # TODO use the GS?
         graphics_scene.in_screen_feedback.connect(graphics_view.show_feedback)
 
         if context:
@@ -336,19 +340,26 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             if n.uuid == uuid:
                 return n
 
-    def add_node_to_current(self, x, y):
+    def add_node_to_current(self, pos, class_name=None):
         """
         Add a new node to the current graphic scene.
 
         Args:
-            x (int): horizontal coord t add the node to
-            y (int): vertical coord t add the node to
+            x (int): horizontal coord t (in view coords) add the node to
+            y (int): vertical coord t (in view coords) add the node to
+            class_name (str, optional): class name of the node to instantiate
         """
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
-        selected = self.ui.nodes_tree.selectedItems()[0]
-        node_type = str(selected.data(0, QtCore.Qt.UserRole)).strip()
-        current_scene.add_graphic_node_by_name(node_type, x, y)
+        node_class_name = class_name
+        if class_name is None:
+            selected = self.ui.nodes_tree.selectedItems()[0]
+            node_class_name = str(selected.data(0, QtCore.Qt.UserRole)).strip()
+        current_scene.add_graphic_node_by_class_name(
+            node_class_name,
+            current_gw.mapToScene(pos).x(),
+            current_gw.mapToScene(pos).y(),
+        )
 
     # ATTRIBUTE EDITOR ----------------------
     def refresh_node_in_attribute_editor_by_uuid(self, uuid):

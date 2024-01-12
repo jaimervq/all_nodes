@@ -47,7 +47,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         # SUB-ITEMS
         class_pixmap = QtGui.QPixmap(self.logic_node.ICON_PATH)
-        print(self.logic_node.ICON_PATH)
         class_pixmap = class_pixmap.scaledToHeight(
             constants.STRIPE_HEIGHT, QtCore.Qt.TransformationMode.SmoothTransformation
         )
