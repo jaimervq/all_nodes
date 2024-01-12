@@ -1,6 +1,6 @@
-PySide2
-PyYAML
-harperdb
 colorama
-ruff
+harperdb
 matplotlib
+PySide2>5, <6
+PyYAML
+ruff==0.1.6
