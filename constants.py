@@ -87,6 +87,6 @@ if IN_DEV:
     )
 
 # -------------------------------- ANALYTICS -------------------------------- #
-HARPERDB_ENV = os.getenv("HARPERDB_ENV", "PROD")
+DB_ENV = os.getenv("DB_ENV", "PROD")
 if IN_DEV:
-    HARPERDB_ENV = "DEV"
+    DB_ENV = "DEV"

@@ -1,6 +1,6 @@
 import unittest
 
-import harperdb
+import pymongo
 
 from all_nodes.analytics import analytics
 from all_nodes.logic.logic_scene import LogicScene
@@ -11,27 +11,29 @@ from all_nodes import utils
 class StatisticsTesting(unittest.TestCase):
     def test_small_query(self):
         """
-        Just make a small query to HarperDB
+        Just make a small query to DB
         """
         utils.print_test_header("test_small_query")
 
-        res = analytics.make_query(
-            f"SELECT * "
-            f"FROM {analytics.ALL_NODES_SCHEMA}.{analytics.ALL_NODES_TABLE} "
-            f"LIMIT 10"
-        )
+        res = list(analytics.make_query({}).limit(10))
 
         self.assertGreater(len(res), 5)
 
     def test_make_wrong_query(self):
         """
-        Make an impossible query HarperDB
+        Make an impossible query DB
         """
-        utils.print_test_header("test_make_wrong_query")
-
-        with self.assertRaises(harperdb.exceptions.HarperDBError) as e:
-            analytics.make_query(
-                f"SELECT * " f"FROM {analytics.ALL_NODES_SCHEMA}.DUMMY" f"LIMIT 10"
+        with self.assertRaises(pymongo.errors.OperationFailure) as e:
+            analytics.make_query_aggregation(
+                [
+                    {
+                        "$match": {
+                            "success": {"$not": "FAILED"},
+                            "class_name": {"$not": "666"},
+                        }
+                    },
+                    {"$limit": 10},
+                ]
             )
         print(e.exception)
 
