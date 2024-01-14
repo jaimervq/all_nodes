@@ -10,6 +10,7 @@ from PySide2 import QtWidgets, QtCore
 
 from all_nodes import utils
 from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
+from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 
 
 LOGGER = utils.get_logger(__name__)
@@ -45,12 +46,14 @@ class ClassSearcher(QtWidgets.QWidget):
 
     def filter_classes(self):
         self.class_list.clear()
-        i = QtWidgets.QListWidgetItem("TEST")
-        i.setIcon(QtGui.QIcon("icons:cube.png"))
-        self.class_list.addItem(i)
-        i2 = QtWidgets.QListWidgetItem("SetEnvVariable")
-        i2.setIcon(QtGui.QIcon("icons:cube.png"))
-        self.class_list.addItem(i2)
+        current_text = self.search_bar.text()
+        if not current_text:
+            return
+        for class_name, icon_path in CR.get_all_classes_simplified():
+            if current_text.lower() in class_name.lower():
+                i = QtWidgets.QListWidgetItem(class_name)
+                i.setIcon(QtGui.QIcon(icon_path))
+                self.class_list.addItem(i)
 
     def keyPressEvent(self, event: QtWidgets.QWidget.event):
         QtWidgets.QWidget.keyPressEvent(self, event)
@@ -61,6 +64,7 @@ class ClassSearcher(QtWidgets.QWidget):
             self.send_signal()
 
     def send_signal(self):
+        # TODO rename this one
         if self.class_list.selectedItems():
             GS.node_creation_requested.emit(
                 self.pos(),

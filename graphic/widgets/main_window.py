@@ -17,7 +17,8 @@ from all_nodes import constants
 from all_nodes.graphic import graphic_scene
 from all_nodes.graphic.widgets.attribute_editor import AttributeEditor
 from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
-from all_nodes.logic import ALL_CLASSES, ALL_SCENES
+from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
+
 from all_nodes import utils
 
 
@@ -28,10 +29,13 @@ class AllNodesWindow(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
 
+        # Add UI paths
+        root_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        QtCore.QDir.addSearchPath("icons", os.path.join(root_dir_path, "icons"))
+        QtCore.QDir.addSearchPath("ui", os.path.join(root_dir_path, "ui"))
+
         # Load UI
-        root = os.path.abspath(__file__)
-        root_dir_path = os.path.dirname(os.path.dirname(os.path.dirname(root)))
-        file = QtCore.QFile(os.path.join(root_dir_path, "graphic/ui/all_nodes.ui"))
+        file = QtCore.QFile(os.path.join(root_dir_path, "ui/all_nodes.ui"))
         file.open(QtCore.QFile.ReadOnly)
         loader = QtUiTools.QUiLoader()
         self.ui = loader.load(file, self)
@@ -55,9 +59,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.the_process_window.setReadOnly(True)
         self.the_process_window.setWindowTitle("Execution feedback")
 
-        # MENU
-        self.create_menus()
-
         # ELEMENTS OF THE UI
         self.ui.nodes_tree.setMinimumWidth(260)
         self.ui.nodes_tree.setDragEnabled(True)
@@ -76,9 +77,12 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.make_connections()
 
         # INITIALIZE
-        self.populate_tree()
         self.create_dock_windows()
         self.show()
+
+        # POPULATE
+        self.create_menus()
+        self.populate_tree()
 
     def make_connections(self):
         """
@@ -115,6 +119,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         """
         Create and populate menu bar.
         """
+        all_scenes = CR.get_all_scenes()
 
         def add_scenes_recursive(entries_dict: dict, menu: QtWidgets.QMenu):
             """
@@ -156,7 +161,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         file_menu.addAction(load_scene_action)
 
         scene_menu = menu.addMenu("&Scene")
-        add_scenes_recursive(ALL_SCENES, scene_menu)
+        add_scenes_recursive(all_scenes, scene_menu)
 
         window_menu = menu.addMenu("&Window")
         show_attr_editor = QtWidgets.QAction("Show attribute editor", self)
@@ -174,14 +179,16 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         """
         Populate the tree where all nodes are displayed.
         """
+        all_classes = CR.get_all_classes()
+
         top_level_items = {}
-        for m in sorted(ALL_CLASSES):
-            node_lib_path = ALL_CLASSES[m]["node_lib_path"]
-            node_lib_name = ALL_CLASSES[m]["node_lib_name"]
+        for m in sorted(all_classes):
+            node_lib_path = all_classes[m]["node_lib_path"]
+            node_lib_name = all_classes[m]["node_lib_name"]
             node_lib_nice_name = node_lib_name.capitalize().replace("_", " ")
-            module_filename = ALL_CLASSES[m]["module_filename"]
+            module_filename = all_classes[m]["module_filename"]
             module_nice_name = m.capitalize().replace("_", " ")
-            color = ALL_CLASSES[m].get("color", constants.DEFAULT_NODE_COLOR)
+            color = all_classes[m].get("color", constants.DEFAULT_NODE_COLOR)
 
             if node_lib_name not in top_level_items:
                 lib_item = QtWidgets.QTreeWidgetItem()
@@ -195,7 +202,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             module_item.setText(0, module_nice_name)
             module_item.setToolTip(0, "Module: {}".format(module_filename))
 
-            for name, cls in ALL_CLASSES[m]["classes"]:
+            for name, cls in all_classes[m]["classes"]:
                 class_item = QtWidgets.QTreeWidgetItem()
                 class_item.setText(0, name)
                 class_item.setToolTip(
