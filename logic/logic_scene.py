@@ -18,7 +18,8 @@ from all_nodes import constants
 from all_nodes import utils
 from all_nodes.analytics import analytics
 from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
-from all_nodes.logic import ALL_CLASSES, ALL_SCENES
+from all_nodes.logic import class_registry
+from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 from all_nodes.logic.logic_node import GeneralLogicNode
 
 
@@ -45,8 +46,9 @@ class LogicScene:
     def add_node_by_name(
         self, node_classname: str, rename_on_create=True
     ) -> GeneralLogicNode:
-        for m in sorted(ALL_CLASSES):
-            for name, cls in ALL_CLASSES[m]["classes"]:
+        all_classes = CR.get_all_classes()
+        for m in sorted(all_classes):
+            for name, cls in all_classes[m]["classes"]:
                 if node_classname == name:
                     new_logic_node = cls()
                     self.all_logic_nodes.add(new_logic_node)
@@ -237,6 +239,8 @@ class LogicScene:
         LOGGER.info("Wrote scene to file: {}".format(filepath))
 
     def load_from_file(self, scene_path: str, namespace: str = None) -> list:
+        all_scenes = CR.get_all_scenes()
+
         # See if we need namespace
         if self.all_nodes():
             if namespace is None:
@@ -256,7 +260,9 @@ class LogicScene:
                     scene_path
                 )
             )
-            found_scene_path = utils.get_scene_from_alias(ALL_SCENES, scene_path)
+            found_scene_path = class_registry.get_scene_from_alias(
+                all_scenes, scene_path
+            )
             if not found_scene_path:
                 raise LogicSceneError(
                     "Cannot find scene for alias '{}'".format(scene_path)

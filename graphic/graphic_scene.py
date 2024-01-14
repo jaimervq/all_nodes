@@ -18,7 +18,9 @@ import yaml
 
 from all_nodes import constants
 from all_nodes.graphic.graphic_node import GeneralGraphicNode, GeneralGraphicAttribute
-from all_nodes.logic import ALL_CLASSES
+from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
+
+
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_scene import LogicScene
 from all_nodes import utils
@@ -229,9 +231,10 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Returns:
             GeneralGraphicNode: newly create node
         """
-        for m in sorted(ALL_CLASSES):
-            color = ALL_CLASSES[m]["color"]
-            for name, cls in ALL_CLASSES[m]["classes"]:
+        all_classes = CR.get_all_classes()
+        for m in sorted(all_classes):
+            color = all_classes[m]["color"]
+            for name, _ in all_classes[m]["classes"]:
                 if node_classname == name:
                     new_logic_node = self.logic_scene.add_node_by_name(node_classname)
                     new_graph_node = GeneralGraphicNode(new_logic_node, color)
@@ -257,9 +260,10 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Returns:
             GeneralGraphicNode: newly created node
         """
-        for m in sorted(ALL_CLASSES):
-            color = ALL_CLASSES[m]["color"]
-            for name, cls in ALL_CLASSES[m]["classes"]:
+        all_classes = CR.get_all_classes()
+        for m in sorted(all_classes):
+            color = all_classes[m]["color"]
+            for name, cls in all_classes[m]["classes"]:
                 if logic_node.class_name == name:
                     new_graph_node = GeneralGraphicNode(logic_node, color)
                     self.addItem(new_graph_node)

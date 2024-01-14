@@ -11,7 +11,9 @@ from PySide2 import QtWidgets
 
 from all_nodes import constants
 from all_nodes.logic.logic_node import GeneralLogicNode
-from all_nodes.logic import ALL_CLASSES
+from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
+
+
 from all_nodes import utils
 
 
@@ -43,13 +45,14 @@ class NodePanel(QtWidgets.QWidget):
             QtGui.QColor: color that corresponds to the logic node
 
         """
+        all_classes = CR.get_all_classes()
         node_color = QtGui.QColor(constants.DEFAULT_NODE_COLOR)
-        for module in ALL_CLASSES:
-            classes = ALL_CLASSES[module]["classes"]
+        for module in all_classes:
+            classes = all_classes[module]["classes"]
             for c in classes:
                 c_name, _ = c
                 if c_name == self.logic_node.class_name:
-                    node_color = QtGui.QColor(ALL_CLASSES[module]["color"])
+                    node_color = QtGui.QColor(all_classes[module]["color"])
                     node_color.setAlphaF(0.8)
                     return node_color
 
