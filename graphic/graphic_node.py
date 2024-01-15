@@ -785,12 +785,25 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             )
             plug_path.addPolygon(plug_polygon)
 
-        elif self.logic_attribute.get_datatype_str() in ("int", "float"):
+        elif self.logic_attribute.get_datatype_str() == "int":
             plug_polygon = QtGui.QPolygon(
                 [
                     QtCore.QPoint(-constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
                     QtCore.QPoint(constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
                     QtCore.QPoint(constants.PLUG_RADIUS, constants.PLUG_RADIUS),
+                    QtCore.QPoint(-constants.PLUG_RADIUS, constants.PLUG_RADIUS),
+                ]
+            )
+            plug_path.addPolygon(plug_polygon)
+
+        elif self.logic_attribute.get_datatype_str() == "float":
+            plug_polygon = QtGui.QPolygon(
+                [
+                    QtCore.QPoint(-constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
+                    QtCore.QPoint(0.6 * constants.PLUG_RADIUS, -constants.PLUG_RADIUS),
+                    QtCore.QPoint(constants.PLUG_RADIUS, -0.25 * constants.PLUG_RADIUS),
+                    QtCore.QPoint(constants.PLUG_RADIUS, 0.25 * constants.PLUG_RADIUS),
+                    QtCore.QPoint(0.6 * constants.PLUG_RADIUS, constants.PLUG_RADIUS),
                     QtCore.QPoint(-constants.PLUG_RADIUS, constants.PLUG_RADIUS),
                 ]
             )
