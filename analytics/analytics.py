@@ -5,9 +5,10 @@ __license__ = "MIT License"
 
 
 import os
+import re
 
-import harperdb
 import matplotlib.pyplot as plt
+from pymongo import MongoClient
 
 from all_nodes import constants
 from all_nodes import utils
@@ -15,33 +16,57 @@ from all_nodes import utils
 
 LOGGER = utils.get_logger(__name__)
 
-HARPERDB_URL = "https://general-jaimervq.harperdbcloud.com/"
-HARPERDB_READ_USERNAME = "HARPERDB_READ_USER"
-HARPERDB_READ_PASSWORD = "k;J4^IhcKnTg}{"
-HARPERDB_READ_AND_WRITE_USERNAME = "HARPERDB_READ_AND_WRITE_USER"
-HARPERDB_READ_AND_WRITE_PASSWORD = os.getenv("HARPERDB_READ_AND_WRITE_PASSWORD")
 
-ALL_NODES_SCHEMA = "all_nodes"
-ENVIRONMENT = constants.HARPERDB_ENV
+DB_READ_AND_WRITE_PASSWORD = os.getenv("DB_READ_AND_WRITE_PASSWORD")
+DB_USERNAME = "jaimervq" if DB_READ_AND_WRITE_PASSWORD else "readonly_user"
+DB_PASSWORD = DB_READ_AND_WRITE_PASSWORD or "BqrWK1TzOmLfcqq2"
+CONNECTION_STRING = f"mongodb+srv://{DB_USERNAME}:{DB_PASSWORD}@cluster0.rud2hei.mongodb.net/?retryWrites=true&w=majority"
+
+ENVIRONMENT = constants.DB_ENV
+ALL_NODES_DB = "all_nodes"
 ALL_NODES_TABLE = f"node_usage_{ENVIRONMENT}"
 
 
-def make_query(query_str: str):
+# -------------------------------- CLIENT -------------------------------- #
+mongo_client = None
+try:
+    LOGGER.info(f"Connecting to MongoDB for analytics, username: {DB_USERNAME}")
+    mongo_client = MongoClient(CONNECTION_STRING)
+    LOGGER.debug(mongo_client.admin.command("ping"))
+except Exception:
+    LOGGER.warning("Could not connect to MongoDB!")
+
+
+# -------------------------------- METHODS -------------------------------- #
+def get_collection():
+    db = mongo_client[ALL_NODES_DB]
+    return db[ALL_NODES_TABLE]
+
+
+def make_query(query_dict: dict):
     """Make a query to the DB
 
     Args:
-        query_str (str): SQL query to be made
+        query_str (dict): query to be made
 
     Returns:
-        list: list of entries
+        pymongo.cursor.Cursor
     """
-    db = harperdb.HarperDB(
-        url=HARPERDB_URL,
-        username=HARPERDB_READ_USERNAME,
-        password=HARPERDB_READ_PASSWORD,
-    )
+    table = get_collection()
+    return table.find(query_dict)
 
-    return db.sql(query_str)
+
+def make_query_aggregation(pipeline: list):
+    """Make a query to the DB
+
+    Args:
+        pipeline (list): pipeline for query
+
+    Returns:
+        pymongo.cursor.Cursor
+    """
+    table = get_collection()
+    return table.aggregate(pipeline)
 
 
 def submit_bulk_analytics(node_attrs_list):
@@ -50,35 +75,24 @@ def submit_bulk_analytics(node_attrs_list):
     Args:
         node_attrs_list (list): list of dicts to be submitted to DB
     """
-    if not HARPERDB_READ_AND_WRITE_PASSWORD:
+    if not DB_READ_AND_WRITE_PASSWORD:
         LOGGER.info("Cannot submit the stats of this run to the DB")
         return
 
-    LOGGER.info(f"Submitting stats to {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE}...")
-    db = harperdb.HarperDB(
-        url=HARPERDB_URL,
-        username=HARPERDB_READ_AND_WRITE_USERNAME,
-        password=HARPERDB_READ_AND_WRITE_PASSWORD,
-    )
+    if not node_attrs_list:
+        LOGGER.info("Nothing to submit")
+        return
 
-    db.insert(ALL_NODES_SCHEMA, ALL_NODES_TABLE, node_attrs_list)
-    LOGGER.info(
-        f"Submitted {len(node_attrs_list)} entries to {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE}"
-    )
+    table = get_collection()
+    LOGGER.info(f"Submitting stats to {ALL_NODES_DB}.{ALL_NODES_TABLE}...")
+    table.insert_many(node_attrs_list)
 
 
 def process_analytics():
     """
     Create graphs with some node usage analytics
     """
-    # Connecting to DB
-    db = harperdb.HarperDB(
-        url=HARPERDB_URL,
-        username=HARPERDB_READ_USERNAME,
-        password=HARPERDB_READ_PASSWORD,
-    )
-
-    LOGGER.info(f"Getting statistics from {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE}")
+    LOGGER.info(f"Getting statistics from {ALL_NODES_DB}.{ALL_NODES_TABLE}")
 
     # Folder
     root = os.path.abspath(__file__)
@@ -88,14 +102,13 @@ def process_analytics():
     # Style for plots
     plt.style.use("seaborn-v0_8-dark")
 
-    # Overall usage
-    res = db.sql(
-        f"SELECT run_date, COUNT(*) as total "
-        f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
-        f"WHERE run_date IS NOT NULL "
-        f"GROUP BY run_date "
-        f"ORDER BY run_date ASC "
-        f"LIMIT 50"
+    # Overall usage ---------------------------------------
+    res = make_query_aggregation(
+        [
+            {"$match": {"run_date": {"$ne": None}}},
+            {"$group": {"_id": "$run_date", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}},
+        ]
     )
 
     if res:
@@ -103,8 +116,8 @@ def process_analytics():
         uses = list()
 
         for r in res:
-            dates.append(r.get("run_date"))
-            uses.append(r.get("total"))
+            dates.append(r.get("_id"))
+            uses.append(r.get("count"))
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.plot(dates, uses)
@@ -120,14 +133,22 @@ def process_analytics():
         fig.tight_layout()
         fig.savefig(graph_file)
 
-    # Most used
-    res = db.sql(
-        f"SELECT COUNT(id) AS total, class_name "
-        f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
-        f"WHERE (class_name NOT LIKE '%Input' AND class_name NOT LIKE '%Ctx' AND NOT IS_CONTEXT) "
-        f"GROUP BY class_name "
-        f"ORDER BY total DESC "
-        f"LIMIT 30"
+    # Most used ---------------------------------------
+    res = make_query_aggregation(
+        [
+            {
+                "$match": {
+                    "$nor": [
+                        {"class_name": re.compile(".*Input")},
+                        {"class_name": re.compile(".*Ctx")},
+                    ],
+                    "IS_CONTEXT": {"$ne": True},
+                }
+            },
+            {"$group": {"_id": "$class_name", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 30},
+        ]
     )
 
     if res:
@@ -135,8 +156,8 @@ def process_analytics():
         uses = list()
 
         for r in res:
-            node_names.append(r.get("class_name"))
-            uses.append(r.get("total"))
+            node_names.append(r.get("_id"))
+            uses.append(r.get("count"))
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.barh(node_names, uses)
@@ -149,16 +170,27 @@ def process_analytics():
         fig.tight_layout()
         fig.savefig(graph_file)
 
-    # Exec times
-    res = db.sql(
-        f"SELECT AVG(execution_time) AS average_time, class_name "
-        f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
-        f"WHERE NOT IS_CONTEXT "
-        f"AND class_name != 'TimedNode' "
-        f"AND class_name != 'StartFile' "
-        f"GROUP BY class_name "
-        f"ORDER BY average_time DESC "
-        f"LIMIT 10"
+    # Exec times ---------------------------------------
+    res = make_query_aggregation(
+        [
+            {
+                "$match": {
+                    "$nor": [
+                        {"class_name": re.compile(".*TimedNode")},
+                        {"class_name": re.compile(".*StartFile")},
+                    ],
+                    "IS_CONTEXT": {"$ne": True},
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$class_name",
+                    "average_time": {"$avg": "$execution_time"},
+                }
+            },
+            {"$sort": {"average_time": -1}},
+            {"$limit": 10},
+        ]
     )
 
     if res:
@@ -166,7 +198,7 @@ def process_analytics():
         avg_time = list()
 
         for r in res:
-            node_names.append(r.get("class_name"))
+            node_names.append(r.get("_id"))
             avg_time.append(r.get("average_time"))
 
         fig, ax = plt.subplots(figsize=(10, 7))
@@ -180,13 +212,18 @@ def process_analytics():
         fig.tight_layout()
         fig.savefig(graph_file)
 
-    # Last errored
-    res = db.sql(
-        f"SELECT class_name, run_date, id "
-        f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
-        f"WHERE (success='ERROR' AND run_date IS NOT NULL) "  # TODO find out why run_date is sometimes not registered
-        f"ORDER BY run_date ASC "
-        f"LIMIT 50"
+    # Last errored ---------------------------------------
+    res = make_query_aggregation(
+        [
+            {
+                "$match": {
+                    "success": {"$eq": "ERROR"},
+                    "run_date": {"$ne": None},
+                }
+            },
+            {"$sort": {"run_date": -1}},
+            {"$limit": 50},
+        ]
     )
 
     if res:
@@ -211,13 +248,18 @@ def process_analytics():
         fig.tight_layout()
         fig.savefig(graph_file)
 
-    # Last failed
-    res = db.sql(
-        f"SELECT class_name, run_date "
-        f"FROM {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE} "
-        f"WHERE success='FAILED' "
-        f"ORDER BY run_date ASC "
-        f"LIMIT 50"
+    # Last failed ---------------------------------------
+    res = make_query_aggregation(
+        [
+            {
+                "$match": {
+                    "success": {"$eq": "FAILED"},
+                    "run_date": {"$ne": None},
+                }
+            },
+            {"$sort": {"run_date": -1}},
+            {"$limit": 50},
+        ]
     )
 
     if res:
@@ -244,4 +286,4 @@ def process_analytics():
         fig.tight_layout()
         fig.savefig(graph_file)
 
-    LOGGER.info(f"Processed statistics from {ALL_NODES_SCHEMA}.{ALL_NODES_TABLE}")
+    LOGGER.info(f"Processed statistics from {ALL_NODES_DB}.{ALL_NODES_TABLE}")

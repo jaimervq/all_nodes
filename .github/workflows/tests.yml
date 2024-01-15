@@ -44,8 +44,8 @@ jobs:
 
       - name: Run unittests
         env:
-          HARPERDB_READ_AND_WRITE_PASSWORD: ${{ secrets.HARPERDB_READ_AND_WRITE_PASSWORD }}
-          HARPERDB_ENV: TEST
+          DB_READ_AND_WRITE_PASSWORD: ${{ secrets.DB_READ_AND_WRITE_PASSWORD }}
+          DB_ENV: TEST
         run: |
           python -m unittest discover ./test
 
