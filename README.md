@@ -10,14 +10,30 @@
     <a href=https://github.com/astral-sh/ruff> 
         <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge&label=Code style"> 
     </a><br>
+    <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-closed-raw/jaimervq/all_nodes?style=for-the-badge">
     <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=for-the-badge">
 </h1>
+<h3 align="center">
+    <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-features>Features</a> • 
+    <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-how-to>How to</a> • 
+    <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#%EF%B8%8F-execution-logic>Execution logic</a><br><br>
+    <img alt="" src="https://github.com/jaimervq/all_nodes/blob/main/docs/preview.png"><br>   
+</h3>
 
 **all_nodes** is a visual programming node editor designed to be used in the most flexible way possible.
 It also aims to prevent re-duplication and re-writing of code inside of a project, as well as making debugging easier with its one-node-at-a-time approach to execution.
 
-![](docs/preview_1.png)
+# 💡 Features
+| Feature name             |         Preview               |
+| ---------------------------- | ---------------------------- |
+| ✅ Drag and drop creation of nodes | ![](docs/drop.gif) |
+| ✅ Execution in separate thread | ![](docs/threading.gif) |
+| ✅ Visual feedback of execution | ![](docs/execution.gif) |
+| ✅ Class search | ![](docs/search.gif) |
+| ✅ Attribute editor | ![](docs/attribute_editor.gif) |
 
+
+# 📖 How to
 ## Adding more classes/nodes
 The places where all_nodes will search for node classes, scenes, etc is defined by the environment variable **ALL_NODES_LIB_PATH**
 
@@ -147,7 +163,7 @@ Also, when a scene belongs to a repo/folder that has been defined in the **ALL_N
 
 Example: `main.py -f environ_to_yaml`
 
-## Execution order of nodes
+# ▶️ Execution logic
 In a scene, the execution starts from nodes that are recognized as "starting nodes".
 Those are nodes that:
 * Have no dependency/inputs/connetions from others.
@@ -163,7 +179,7 @@ Another example:
 
 The node has a non-optional input. It is not connected, but a value has been defined to it, so the node can start executing.
 
-### Examples of execution order after the starting nodes
+## Examples of execution order after the starting nodes
 When a start node is executed, and it is successful, the nodes connected to its outputs will try to execute as well.
 Have a look at this example:
 
@@ -194,7 +210,7 @@ However, changing the scene a little bit, makes things  more complex:
 ## Create and run node networks on the fly
 For simple setups and tests, node networks can be created and run at the same time in a python script.
 
-Example:
+🐍 Example:
 ```python
 from all_nodes.logic.logic_scene import LogicScene
  
@@ -215,7 +231,7 @@ n_1["env_variable_value"].connect_to_other(n_2["in_object_0"])
 logic_scene.run_all_nodes()
 ```
 
-# Analytics
+# 📈 Analytics
 Automatically generated once a week
 ![](docs/analytics/recent_usage.png)
 ![](docs/analytics/most_used.png)
