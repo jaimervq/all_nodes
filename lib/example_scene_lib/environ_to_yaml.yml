@@ -14,6 +14,8 @@ nodes:
     y_pos: -284
 - OPEN_FILE:
     class_name: BoolInput
+    node_attributes:
+      out_bool: false
     x_pos: -914
     y_pos: -28
 - PrintToConsole_1:
