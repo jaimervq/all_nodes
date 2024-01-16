@@ -65,3 +65,26 @@ class PrintToConsole(GeneralLogicNode):
                 LOGGER.info(
                     f"{Fore.MAGENTA}[{self.node_name}] {attr_name}:{Fore.YELLOW}{val}{Style.RESET_ALL}"
                 )
+
+
+class IntAddition(GeneralLogicNode):
+    INPUTS_DICT = {
+        "in_int_0": {"type": int},
+        "in_int_1": {"type": int},
+        "in_int_2": {"type": int, "optional": True},
+        "in_int_3": {"type": int, "optional": True},
+        "in_int_4": {"type": int, "optional": True},
+    }
+
+    OUTPUTS_DICT = {"out_total": {"type": int}}
+
+    def run(self):
+        int_0 = self.get_attribute_value("in_int_0")
+        int_1 = self.get_attribute_value("in_int_1")
+        int_2 = self.get_attribute_value("in_int_2")
+        int_3 = self.get_attribute_value("in_int_3")
+        int_4 = self.get_attribute_value("in_int_4")
+
+        total = int_0 + int_1 + (int_2 or 0) + (int_3 or 0) + (int_4 or 0)
+
+        self.set_output("out_total", total)

@@ -221,7 +221,7 @@ def process_analytics():
                     "run_date": {"$ne": None},
                 }
             },
-            {"$sort": {"run_date": -1}},
+            {"$sort": {"run_date": 1}},
             {"$limit": 50},
         ]
     )
@@ -257,7 +257,7 @@ def process_analytics():
                     "run_date": {"$ne": None},
                 }
             },
-            {"$sort": {"run_date": -1}},
+            {"$sort": {"run_date": 1}},
             {"$limit": 50},
         ]
     )
