@@ -100,6 +100,7 @@ def register_node_lib(full_path):
     classes_dict[module_name]["node_lib_path"] = node_lib_path
     classes_dict[module_name]["node_lib_name"] = node_lib_name
     classes_dict[module_name]["module_filename"] = module_filename
+    classes_dict[module_name]["module_full_path"] = full_path
     classes_dict[module_name]["classes"] = module_classes
 
     classes_dict[module_name]["color"] = constants.DEFAULT_NODE_COLOR

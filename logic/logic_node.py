@@ -774,19 +774,31 @@ class GeneralLogicNode:
         Returns:
             str: with the complete text of the help
         """
-        help_text = " <b><font size = 5>{0}</b>".format(self.class_name)
-        help_text += "<br><font size = 2>" + self.__module__
+        help_text = f"<h1>{self.class_name}</h1>"
+        help_text += (
+            f"<p style='white-space:pre'>Class defined at:<br>{self.FILEPATH}</p>"
+        )
 
         if self.HELP:
-            help_text += "<br><br><font size = 3>HELP: " + self.HELP
+            help_text += f"<p style='white-space:pre'>HELP:<br>{self.HELP}"
 
-        help_text += "<br><br><br><font size=3>INPUTS_DICT:<br>" + pprint.pformat(
-            self.INPUTS_DICT
-        ).replace(">", ")").replace("<", "(")
+        help_text += (
+            "<h4><br>INPUTS_DICT:</h4><p style='white-space:pre; background-color:black'><code>"
+            + pprint.pformat(self.INPUTS_DICT, indent=2)
+            .replace(">", "&gt;")
+            .replace("<", "&lt;")
+            .replace("\n", "<br>")
+            + "</code></p>"
+        )
 
-        help_text += "<br><br><font size=3>OUTPUTS_DICT:<br>" + pprint.pformat(
-            self.OUTPUTS_DICT
-        ).replace(">", ")").replace("<", "(")
+        help_text += (
+            "<h4>OUTPUTS_DICT:</h4><p style='white-space:pre; background-color:black'><code>"
+            + pprint.pformat(self.OUTPUTS_DICT, indent=2)
+            .replace(">", "&gt;")
+            .replace("<", "&lt;")
+            .replace("\n", "<br>")
+            + "</code></p>"
+        )
 
         return help_text
 
