@@ -1,4 +1,3 @@
-
 <h1 align="center">
     <img src="https://github.com/jaimervq/all_nodes/blob/main/docs/all_nodes_banner.png"/><br>
     <a href=https://github.com/jaimervq/all_nodes/actions/workflows/tests.yml> 
@@ -24,14 +23,26 @@
 It also aims to prevent re-duplication and re-writing of code inside of a project, as well as making debugging easier with its one-node-at-a-time approach to execution.
 
 # 💡 Features
-| Feature name             |         Preview               |
-| ---------------------------- | ---------------------------- |
-| ✅ Drag and drop creation of nodes | ![](docs/drop.gif) |
-| ✅ Execution in separate thread | ![](docs/threading.gif) |
-| ✅ Visual feedback of execution | ![](docs/execution.gif) |
-| ✅ Class search | ![](docs/search.gif) |
-| ✅ Attribute editor | ![](docs/attribute_editor.gif) |
-
+<table align="center">
+  <tr>
+    <td>✅ Drag and drop creation of nodes<br></td>
+    <td>✅ Class search</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/drop.gif" width=60%></td>
+    <td align="center"><img src="docs/search.gif" width=60%></td>
+  </tr>
+</table>
+<table align="center">
+  <tr> 
+      <td>✅ Visual feedback of execution</td>
+    <td>✅ Execution in separate thread</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/execution.gif" width=60%></td>
+    <td align="center"><img src="docs/threading.gif" width=60%></td>
+  </tr>
+</table>
 
 # 📖 How to
 ## Adding more classes/nodes
