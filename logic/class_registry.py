@@ -275,5 +275,10 @@ class ClassRegistry:
 
         return cls._all_classes_simplified
 
+    def get_icon_path(cls, class_name_to_search):
+        for class_name, icon_path in cls.get_all_classes_simplified():
+            if class_name_to_search == class_name:
+                return icon_path
+
 
 CLASS_REGISTRY = ClassRegistry()

@@ -169,6 +169,7 @@ class NodePanel(QtWidgets.QWidget):
             self.grid_layout.addWidget(error_label, self.row_count, 0, 1, 3)
             self.row_count += 1
 
+        # Spacer
         verticalSpacer = QtWidgets.QSpacerItem(
             20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
         )
@@ -196,8 +197,11 @@ class NodePanel(QtWidgets.QWidget):
 
         if value is not None:
             attrib_value_le.setText(str(value))
+
         regex = QtCore.QRegExp(".*")
-        if data_type == float:
+        if data_type == str and value == "":
+            attrib_value_le.setText("''")
+        elif data_type == float:
             regex = QtCore.QRegExp("\d+\.\d+")
         elif data_type == int:
             regex = QtCore.QRegExp("\d+")
@@ -207,7 +211,6 @@ class NodePanel(QtWidgets.QWidget):
             regex = QtCore.QRegExp("[01]")
             if value is not None:
                 attrib_value_le.setText(str(int(value)))
-        # TODO corner case: if it is an empty str, the None placeholder will show
 
         validator = QtGui.QRegExpValidator(regex)
         attrib_value_le.setValidator(validator)

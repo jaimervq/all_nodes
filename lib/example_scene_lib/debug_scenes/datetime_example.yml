@@ -1,0 +1,34 @@
+# SCENE datetime_example
+# ----------------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- DatetimeFormatsSelect_1:
+    class_name: DatetimeFormatsSelect
+    node_attributes:
+      out_str: '%Y.%m.%d_%H.%M.%S'
+    x_pos: -1948
+    y_pos: -428
+- DatetimeNow_1:
+    class_name: DatetimeNow
+    x_pos: -2039
+    y_pos: -570
+- PrintToConsole_1:
+    class_name: PrintToConsole
+    x_pos: -1119
+    y_pos: -545
+- StrfDatetime_1:
+    class_name: StrfDatetime
+    x_pos: -1616
+    y_pos: -528
+
+# Connections section: connections to be done between nodes
+connections:
+- DatetimeFormatsSelect_1.out_str -> StrfDatetime_1.datetime_formatting
+- DatetimeNow_1.datetime_object -> StrfDatetime_1.datetime_object
+- StrfDatetime_1.datetime_formatted -> PrintToConsole_1.in_object_0
+
+
+# Scene modified at: 2024-01-22 01:31:41.529472
+# Modified by: Jaime

@@ -1,6 +1,6 @@
 # SCENE environ_to_yaml
 # ---------------------
-# Description: Simple example scene about how to write the environment to a yaml file
+# Description: 
 
 # Nodes section: overall list of nodes to be created
 nodes:
@@ -10,8 +10,8 @@ nodes:
     y_pos: -38
 - EnvironToYmlCtx_1:
     class_name: EnvironToYmlCtx
-    x_pos: -904
-    y_pos: -284
+    x_pos: -906
+    y_pos: -306
 - OPEN_FILE:
     class_name: BoolInput
     node_attributes:
@@ -24,8 +24,8 @@ nodes:
     y_pos: -120
 - StartFile_1:
     class_name: StartFile
-    x_pos: -299
-    y_pos: -303
+    x_pos: -312
+    y_pos: -302
 
 # Connections section: connections to be done between nodes
 connections:
@@ -36,5 +36,5 @@ connections:
 - OPEN_FILE.out_bool -> BasicIf_1.in_bool
 
 
-# Scene created at: 2023-09-26 11:33:50.118111
-# Created by: jaime.rvq
+# Scene modified at: 2024-01-22 01:30:06.284002
+# Created by: Jaime

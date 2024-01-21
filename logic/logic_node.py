@@ -216,9 +216,9 @@ class GeneralLogicNode:
     @property
     def full_name(self):
         if self.context:
-            return self.context.full_name + "." + self.node_name
+            return self.context.full_name + "/" + self.node_name
         else:
-            return self.node_name
+            return "/" + self.node_name
 
     @property
     def all_attribute_names(self):
@@ -490,6 +490,9 @@ class GeneralLogicNode:
         return True
 
     # CONTEXT ----------------------
+    def is_in_root(self):
+        return self.context is None
+
     def build_internal(self):
         if not self.IS_CONTEXT:
             return
@@ -836,7 +839,6 @@ class GeneralLogicAttribute:
     # PROPERTIES ----------------------
     @property
     def dot_name(self):
-        # TODO remove this and just use full name?
         return self.parent_node.node_name + "." + self.attribute_name
 
     @property
@@ -1015,6 +1017,13 @@ class SpecialInputNode(GeneralLogicNode):
                     )
                 )
                 self.set_attribute_value(attribute_name, value)
+                return
+
+    def clear_special_attr_value(self, attribute_name: str):
+        for attribute in self.all_attributes:
+            if attribute.attribute_name == attribute_name:
+                LOGGER.debug("Clearing special attribute {}".format(attribute.dot_name))
+                self[attribute_name].clear()
                 return
 
     def get_node_full_dict(self):

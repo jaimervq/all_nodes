@@ -619,10 +619,14 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             text = self.proxy_input_widget.widget().text()
             if text:
                 self.logic_node.set_special_attr_value("out_str", text)
+            else:
+                self.logic_node.clear_special_attr_value("out_str")
         elif self.input_datatype == "multiline_str":
             text = self.proxy_input_widget.widget().toPlainText()
             if text:
                 self.logic_node.set_special_attr_value("out_str", text)
+            else:
+                self.logic_node.clear_special_attr_value("out_str")
         elif self.input_datatype == "dict":
             text = self.proxy_input_widget.widget().toPlainText()
             if text:
@@ -632,6 +636,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                         self.logic_node.set_special_attr_value("out_dict", eval_dict)
                 except (ValueError, SyntaxError):
                     pass
+            else:
+                self.logic_node.clear_special_attr_value("out_dict")
         elif self.input_datatype == "list":
             text = self.proxy_input_widget.widget().text()
             if text:
@@ -641,6 +647,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                         self.logic_node.set_special_attr_value("out_list", eval_list)
                 except (ValueError, SyntaxError):
                     pass
+            else:
+                self.logic_node.clear_special_attr_value("out_list")
         elif self.input_datatype == "tuple":
             text = self.proxy_input_widget.widget().text()
             if text:
@@ -650,6 +658,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                         self.logic_node.set_special_attr_value("out_tuple", eval_list)
                 except (ValueError, SyntaxError):
                     pass
+            else:
+                self.logic_node.clear_special_attr_value()
         elif self.input_datatype == "bool":
             checked = self.proxy_input_widget.widget().isChecked()
             self.logic_node.set_special_attr_value("out_bool", checked)
