@@ -55,15 +55,19 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         self.proxy_help_btn = QtWidgets.QGraphicsProxyWidget(parent=self)
 
+        self.input_widget = None
+        self.proxy_input_widget = QtWidgets.QGraphicsProxyWidget(parent=self)
+
         self.selection_marquee = QtWidgets.QGraphicsPathItem(parent=self)
         self.selection_marquee.hide()
         self.error_marquee = QtWidgets.QGraphicsPathItem(parent=self)
         self.error_marquee.setFlag(QtWidgets.QGraphicsItem.ItemStacksBehindParent)
         self.error_marquee.hide()
-        self.glow = QtWidgets.QGraphicsPathItem(parent=self)
-        self.glow.hide()
 
         self.additional_info_text = QtWidgets.QGraphicsTextItem(parent=self)
+
+        self.glow = QtWidgets.QGraphicsPathItem(parent=self)
+        self.glow.hide()
 
         self.svg_renderer = QtSvg.QSvgRenderer("icons:badges.svg")
         self.badge_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
@@ -73,8 +77,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         self.extras_renderer = QtSvg.QSvgRenderer("icons:ctx.svg")
 
-        self.proxy_input_widget = QtWidgets.QGraphicsProxyWidget(parent=self)
-
         # ATTRIBUTES
         self.graphic_attributes = []
 
@@ -82,15 +84,14 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.input_datatype = None
         if hasattr(self.logic_node, "INPUT_TYPE"):
             self.input_datatype = self.logic_node.INPUT_TYPE
-            self.extra_header = constants.HEADER_HEIGHT
             self.setScale(0.7)
 
         # SETUP
         self.setup_node()
         self.add_graphic_attributes()
+        self.setup_widget()
         self.make_shape()
         self.place_graphic_attributes()
-        self.setup_widget()
         self.update_attribute_from_widget()
         self.setup_extras()
 
@@ -115,7 +116,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         """
         Calculate width to draw the node with, based on the size of its graphical attributes.
         """
-
         # Biggest attr names
         longest_in_name = max(
             [
@@ -132,23 +132,34 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             ]
         )
 
-        # Size of the options in case it is a multi-choice input node
-        size_options = 0
-        if self.input_datatype == "option":
-            size_options = 15 * (
-                max([len(elem) for elem in self.logic_node.INPUT_OPTIONS])
-            )
-
         # Calculate max
         self.node_width = max(
             2.5 * constants.CHAMFER_RADIUS
             + self.class_text.boundingRect().width()
             + self.proxy_help_btn.boundingRect().width()
             + 20,
-            longest_in_name + longest_out_name,
-            2 * constants.CHAMFER_RADIUS + size_options,
+            longest_in_name + longest_out_name + 2 * constants.CHAMFER_RADIUS + 20,
         )
-        return False
+
+        # Re-shape widget
+        if self.input_datatype:
+            self.node_width = max(
+                self.node_width,
+                self.input_widget.width() + 2 * constants.CHAMFER_RADIUS,
+            )
+
+            self.input_widget.setFixedSize(
+                max(
+                    self.node_width - 2 * constants.CHAMFER_RADIUS,
+                    self.input_widget.width(),
+                ),
+                self.input_widget.height(),
+            )
+
+            self.proxy_input_widget.setWidget(self.input_widget)
+            self.proxy_input_widget.moveBy(
+                constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
+            )
 
     def setup_node(self):
         """
@@ -333,114 +344,181 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             return
 
         # Default widget
-        input_widget = QtWidgets.QLineEdit(parent=None)
+        self.input_widget = QtWidgets.QLineEdit(parent=None)
+        self.input_widget.setFixedSize(
+            150,
+            int(constants.HEADER_HEIGHT),
+        )
 
         # Set type of widget depending on the type of input needed
         if self.input_datatype == "str":
-            input_widget.setStyleSheet(
+            self.input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
             )
-            input_widget.setPlaceholderText("str here")
+            self.input_widget.setPlaceholderText("str here")
 
             if self.logic_node.get_attribute_value("out_str"):
-                input_widget.setText(self.logic_node.get_attribute_value("out_str"))
+                self.input_widget.setText(
+                    self.logic_node.get_attribute_value("out_str")
+                )
 
-            input_widget.textChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
+
+        elif self.input_datatype == "multiline_str":
+            self.input_widget = QtWidgets.QPlainTextEdit(parent=None)
+            self.input_widget.setStyleSheet(
+                "background:transparent; color:white; border:1px solid white;"
+            )
+            self.input_widget.setPlaceholderText("Text here")
+
+            if self.logic_node.get_attribute_value("out_str"):
+                self.input_widget.setText(
+                    self.logic_node.get_attribute_value("out_str")
+                )
+
+            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.setFixedSize(
+                300,
+                int(4 * constants.HEADER_HEIGHT),
+            )
 
         elif self.input_datatype == "dict":
-            input_widget.setStyleSheet(
+            self.input_widget = QtWidgets.QPlainTextEdit(parent=None)
+            self.input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
             )
-            input_widget.setPlaceholderText("Paste dict here")
+            self.input_widget.setPlaceholderText("Paste dict here")
 
             if self.logic_node.get_attribute_value("out_dict"):
-                input_widget.setText(self.logic_node.get_attribute_value("out_dict"))
+                self.input_widget.setText(
+                    self.logic_node.get_attribute_value("out_dict")
+                )
 
-            input_widget.textChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.setFixedSize(
+                300,
+                int(4 * constants.HEADER_HEIGHT),
+            )
 
         elif self.input_datatype == "list":
-            input_widget.setStyleSheet(
+            self.input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
             )
-            input_widget.setPlaceholderText("Paste list here")
+            self.input_widget.setPlaceholderText("Paste list here")
 
             if self.logic_node.get_attribute_value("out_list"):
-                input_widget.setText(self.logic_node.get_attribute_value("out_list"))
+                self.input_widget.setText(
+                    self.logic_node.get_attribute_value("out_list")
+                )
 
-            input_widget.textChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
 
         elif self.input_datatype == "bool":
-            input_widget = QtWidgets.QCheckBox("False", parent=None)
-            input_widget.setStyleSheet(
+            self.input_widget = QtWidgets.QCheckBox("False", parent=None)
+            self.input_widget.setStyleSheet(
                 "QCheckBox::indicator{border : 1px solid white;}"
                 "QCheckBox::indicator:checked{ background:rgba(255,255,200,150); }"
                 "QCheckBox{ background:transparent; color:white}"
             )
-            input_widget.stateChanged.connect(
-                lambda: input_widget.setText(
-                    ["False", "True"][input_widget.isChecked()]
+            self.input_widget.stateChanged.connect(
+                lambda: self.input_widget.setText(
+                    ["False", "True"][self.input_widget.isChecked()]
                 )
             )
             if self.logic_node.get_attribute_value("out_bool"):
-                input_widget.setChecked(self.logic_node.get_attribute_value("out_bool"))
+                self.input_widget.setChecked(
+                    self.logic_node.get_attribute_value("out_bool")
+                )
 
-            input_widget.stateChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.stateChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.setFixedSize(
+                150,
+                int(constants.HEADER_HEIGHT),
+            )
 
         elif self.input_datatype == "int":
-            input_widget = QtWidgets.QSpinBox(parent=None)
-            input_widget.setMaximum(int(1e6))
-            input_widget.setMinimum(int(-1e6))
-            input_widget.setStyleSheet(
+            self.input_widget = QtWidgets.QSpinBox(parent=None)
+            self.input_widget.setMaximum(int(1e6))
+            self.input_widget.setMinimum(int(-1e6))
+            self.input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
             )
 
             if self.logic_node.get_attribute_value("out_int"):
-                input_widget.setValue(self.logic_node.get_attribute_value("out_int"))
+                self.input_widget.setValue(
+                    self.logic_node.get_attribute_value("out_int")
+                )
 
-            input_widget.valueChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.valueChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.setFixedSize(
+                150,
+                int(constants.HEADER_HEIGHT),
+            )
 
         elif self.input_datatype == "float":
-            input_widget = QtWidgets.QDoubleSpinBox(parent=None)
-            input_widget.setMaximum(1e6)
-            input_widget.setMinimum(-1e6)
-            input_widget.setStyleSheet(
+            self.input_widget = QtWidgets.QDoubleSpinBox(parent=None)
+            self.input_widget.setMaximum(1e6)
+            self.input_widget.setMinimum(-1e6)
+            self.input_widget.setStyleSheet(
                 "background:transparent; color:white; border:1px solid white;"
             )
 
             if self.logic_node.get_attribute_value("out_float"):
-                input_widget.setValue(self.logic_node.get_attribute_value("out_float"))
+                self.input_widget.setValue(
+                    self.logic_node.get_attribute_value("out_float")
+                )
 
-            input_widget.valueChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.valueChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.setFixedSize(
+                150,
+                int(constants.HEADER_HEIGHT),
+            )
 
         elif self.input_datatype == "option":
-            input_widget = QtWidgets.QComboBox(parent=None)
-            input_widget.setStyleSheet(
+            self.input_widget = QtWidgets.QComboBox(parent=None)
+            self.input_widget.setStyleSheet(
                 "QComboBox { background:transparent; color:white; border:1px solid white; }"
                 "QWidget:item { color: black; background:white; }"
             )
-            input_widget.addItems(self.logic_node.INPUT_OPTIONS)
+            self.input_widget.addItems(self.logic_node.INPUT_OPTIONS)
 
             if self.logic_node.get_attribute_value("out_str"):
-                input_widget.setCurrentText(
+                self.input_widget.setCurrentText(
                     self.logic_node.get_attribute_value("out_str")
                 )
 
-            input_widget.currentIndexChanged.connect(self.update_attribute_from_widget)
+            self.input_widget.currentIndexChanged.connect(
+                self.update_attribute_from_widget
+            )
+            self.input_widget.setFixedSize(
+                150,
+                int(constants.HEADER_HEIGHT),
+            )
+            self.input_widget.adjustSize()
+            self.input_widget.setFixedSize(
+                self.input_widget.width() + 20, self.input_widget.height()
+            )
 
-        # Set size of the widget
-        input_widget.setFixedSize(
-            int(self.node_width - 2 * constants.CHAMFER_RADIUS),
-            int(0.8 * constants.HEADER_HEIGHT),
-        )
-        input_widget.setFont(
-            QtGui.QFont(constants.NODE_FONT, int(0.5 * input_widget.height()))
+        elif self.input_datatype == "tuple":
+            self.input_widget.setStyleSheet(
+                "background:transparent; color:white; border:1px solid white;"
+            )
+            self.input_widget.setPlaceholderText("tuple here")
+
+            if self.logic_node.get_attribute_value("out_tuple"):
+                self.input_widget.setText(
+                    self.logic_node.get_attribute_value("out_tuple")
+                )
+
+            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
+
+        # Set font of the widget
+        self.input_widget.setFont(
+            QtGui.QFont(constants.NODE_FONT, constants.HEADER_HEIGHT * 0.4)
         )
 
-        # Then add it to the graphics proxy widget
-        self.proxy_input_widget.setWidget(input_widget)
-        self.proxy_input_widget.moveBy(
-            constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
-        )
+        # Measure
+        self.extra_header = self.input_widget.height() + 5
 
     def setup_extras(self):
         """
@@ -541,8 +619,12 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             text = self.proxy_input_widget.widget().text()
             if text:
                 self.logic_node.set_special_attr_value("out_str", text)
+        elif self.input_datatype == "multiline_str":
+            text = self.proxy_input_widget.widget().toPlainText()
+            if text:
+                self.logic_node.set_special_attr_value("out_str", text)
         elif self.input_datatype == "dict":
-            text = self.proxy_input_widget.widget().text()
+            text = self.proxy_input_widget.widget().toPlainText()
             if text:
                 try:
                     eval_dict = ast.literal_eval(text)

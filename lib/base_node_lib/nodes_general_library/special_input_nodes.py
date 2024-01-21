@@ -21,6 +21,15 @@ class StrInput(SpecialInputNode):
     OUTPUTS_DICT = {"out_str": {"type": str}}
 
 
+class MultilineStrInput(SpecialInputNode):
+    INPUT_TYPE = "multiline_str"
+
+    NICE_NAME = "Multiline string input"
+    HELP = ""
+
+    OUTPUTS_DICT = {"out_str": {"type": str}}
+
+
 class BoolInput(SpecialInputNode):
     INPUT_TYPE = "bool"
 

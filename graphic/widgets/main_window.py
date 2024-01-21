@@ -187,6 +187,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             node_lib_name = all_classes[m]["node_lib_name"]
             node_lib_nice_name = node_lib_name.capitalize().replace("_", " ")
             module_filename = all_classes[m]["module_filename"]
+            module_full_path = all_classes[m]["module_full_path"]
             module_nice_name = m.capitalize().replace("_", " ")
             color = all_classes[m].get("color", constants.DEFAULT_NODE_COLOR)
 
@@ -206,7 +207,10 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 class_item = QtWidgets.QTreeWidgetItem()
                 class_item.setText(0, name)
                 class_item.setToolTip(
-                    0, "Class: {}, from {}".format(name, module_filename)
+                    0,
+                    "<h2>Class:&nbsp;<b>{}</b></h2><p style='white-space:pre'>{}".format(
+                        name, module_full_path
+                    ),
                 )
                 class_item.setData(0, QtCore.Qt.UserRole, name)
                 if cls.NICE_NAME:
