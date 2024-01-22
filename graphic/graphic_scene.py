@@ -19,8 +19,6 @@ import yaml
 from all_nodes import constants
 from all_nodes.graphic.graphic_node import GeneralGraphicNode, GeneralGraphicAttribute
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
-
-
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_scene import LogicScene
 from all_nodes import utils
@@ -65,7 +63,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 
         self.class_searcher = ClassSearcher(parent=self)
         self.class_searcher.hide()
-        GS.class_searcher_move.connect(self.move_line)
+        GS.class_searcher_move.connect(self.move_search_bar)
 
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
 
@@ -117,7 +115,14 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.feedback_line.setGraphicsEffect(effect)
         anim.start()
 
-    def move_line(self, x, y):
+    def move_search_bar(self, x, y):
+        """
+        Move the classes search bar to a new position
+
+        Args:
+            x (int)
+            y (int)
+        """
         self.class_searcher.move(self.mapFromGlobal(QtCore.QPoint(x, y)))
         self.class_searcher.reset()
 
@@ -194,6 +199,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         # Logic scene
         self.logic_scene = context.internal_scene if context else LogicScene()
+        self.filepath = context.CONTEXT_DEFINITION_FILE if context else None
 
         # Nodes
         self.all_graphic_nodes = set()
@@ -358,19 +364,15 @@ class CustomScene(QtWidgets.QGraphicsScene):
             if c.data(0) == "GRAPHIC_ATTRIBUTE" and c.parent_node == node
         ]
 
-        lines_to_redraw = set()
         for g in graphic_attrs:
             g_1, g_2 = None, None
             for line in self.items():
+                if line.data(0) != constants.CONNECTOR_LINE:
+                    continue
                 g_1, g_2 = line.data(1), line.data(2)
 
-                if line.data(0) == constants.CONNECTOR_LINE and g in [g_1, g_2]:
-                    self.removeItem(line)
-                    lines_to_redraw.add((g_1, g_2))
-
-        if node in self.items():
-            for g_1, g_2 in lines_to_redraw:
-                self.draw_valid_line(g_1, g_2)
+                if g in [g_1, g_2]:
+                    line.repath()
 
     def disconnect_graphic_attrs(
         self,
@@ -405,18 +407,37 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 self.removeItem(line)
 
     # SAVE AND LOAD ----------------------
-    def save_to_file(self):
+    def set_filepath(self, filepath):
+        self.filepath = filepath
+
+    def save_to_file(self, filepath=None):
         """
         Save this graphics scene to a file.
+
+        Args:
+            filepath (str, optional): filepath to save to. Defaults to None.
         """
-        # Ask for filepath
-        dialog = QtWidgets.QFileDialog()
-        result = dialog.getSaveFileName(
-            caption="Specify target file", filter="*.yml *.ctx"
-        )
-        if not result[0] or not result[1]:
-            return
-        target_file = result[0]
+        target_file = filepath
+        if not filepath:
+            dialog = QtWidgets.QFileDialog()
+            result = dialog.getSaveFileName(
+                caption="Specify target file", filter="*.yml *.ctx"
+            )
+            if not result[0] or not result[1]:
+                return
+            target_file = result[0]
+        else:
+            dlg = QtWidgets.QMessageBox(parent=None)
+            dlg.setWindowTitle("Save scene")
+            dlg.setText(
+                f"<p style='white-space:pre'>Are you sure?<br>This will overwrite the scene at:<br>{filepath}"
+            )
+            dlg.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+            dlg.setIcon(QtWidgets.QMessageBox.Question)
+            button = dlg.exec_()
+
+            if button == QtWidgets.QMessageBox.No:
+                return
 
         # Grab logic scene info and add the xy coords
         the_dict = self.logic_scene.convert_scene_to_dict()
@@ -438,6 +459,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Args:
             source_file (str): filepath of scene to load
         """
+        # Set filepath
+        self.set_filepath(source_file)
+
         # Grab the scene dict and create logic nodes
         scene_dict = dict()
         with open(source_file, "r") as file:
@@ -692,68 +716,93 @@ class CustomScene(QtWidgets.QGraphicsScene):
             1,
         )
         test_items = self.items(selection_rect)
-        for item in test_items:
-            if item and item.data(0) == constants.GRAPHIC_NODE:
-                menu = QtWidgets.QMenu()  # TODO add tooltips
-
-                # Common actions
-                rename_action = menu.addAction("Rename this node")
-                rename_action.setIcon(QtGui.QIcon("icons:rename.png"))
-                rename_action.triggered.connect(lambda: self.rename_graphic_node(item))
-                examine_code_action = menu.addAction("Examine code (E)")
-                examine_code_action.setIcon(QtGui.QIcon("icons:examine.png"))
-                examine_code_action.triggered.connect(lambda: self.examine_code(item))
-                run_single_node_action = menu.addAction("Run only this node (Return ⏎)")
-                run_single_node_action.setIcon(QtGui.QIcon("icons:run_one.svg"))
-                run_single_node_action.triggered.connect(
-                    lambda: self.run_single_node(item)
-                )
-                reset_single_node_action = menu.addAction("Reset only this node (R)")
-                reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
-                reset_single_node_action.triggered.connect(
-                    lambda: self.reset_single_node(item)
-                )
-
-                # Context-specific
-                if item.logic_node.IS_CONTEXT:
-                    menu.addSeparator()
-                    expand_context_action = menu.addAction(
-                        "Expand context (Ctrl + Return ⏎)"
-                    )
-                    expand_context_action.setIcon(QtGui.QIcon("icons:cube.png"))
-                    expand_context_action.triggered.connect(
-                        lambda: self.expand_context(item)
-                    )
-
-                # Debug
-                menu.addSeparator()
-                soft_reset_single_node_action = menu.addAction(
-                    "[DEBUG] Soft-reset only this node (S)"
-                )
-                soft_reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
-                soft_reset_single_node_action.triggered.connect(
-                    lambda: self.soft_reset_single_node(item)
-                )
-
-                # DEV-specific
-                if constants.IN_DEV:
-                    menu.addSeparator()
-                    print_node_log_action = menu.addAction("Print node log")
-                    print_node_log_action.setIcon(QtGui.QIcon("icons:nodes_2.png"))
-                    print_node_log_action.triggered.connect(lambda: self.show_log(item))
-
-                # Style
-                f = QtCore.QFile(
-                    r"ui:stylesheet.qss"
-                )  # TODO not ideal, maybe a reduced qss?
-                with open(f.fileName(), "r") as s:
-                    menu.setStyleSheet(s.read())
-
-                # Exec
-                menu.exec_(event.screenPos(), parent=self)
-                break
+        if test_items:
+            for item in test_items:
+                if item and item.data(0) == constants.GRAPHIC_NODE:
+                    self.menu_node(event, item)
+                    break
+        else:
+            self.menu_scene(event)
 
         QtWidgets.QGraphicsScene.contextMenuEvent(self, event)
+
+    def menu_node(self, event, node):
+        menu = QtWidgets.QMenu()  # TODO add tooltips
+
+        # Common actions
+        rename_action = menu.addAction(" Rename this node")
+        rename_action.setIcon(QtGui.QIcon("icons:rename.png"))
+        rename_action.triggered.connect(lambda: self.rename_graphic_node(node))
+        examine_code_action = menu.addAction(" Examine code (E)")
+        examine_code_action.setIcon(QtGui.QIcon("icons:examine.png"))
+        examine_code_action.triggered.connect(lambda: self.examine_code(node))
+        run_single_node_action = menu.addAction(" Run only this node (Return ⏎)")
+        run_single_node_action.setIcon(QtGui.QIcon("icons:run_one.svg"))
+        run_single_node_action.triggered.connect(lambda: self.run_single_node(node))
+        reset_single_node_action = menu.addAction(" Reset only this node (R)")
+        reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
+        reset_single_node_action.triggered.connect(lambda: self.reset_single_node(node))
+
+        # Context-specific
+        if node.logic_node.IS_CONTEXT:
+            menu.addSeparator()
+            expand_context_action = menu.addAction(" Expand context (Ctrl + Return ⏎)")
+            expand_context_action.setIcon(QtGui.QIcon("icons:cube.png"))
+            expand_context_action.triggered.connect(lambda: self.expand_context(node))
+
+        # Debug
+        menu.addSeparator()
+        soft_reset_single_node_action = menu.addAction(
+            " [DEBUG] Soft-reset only this node (S)"
+        )
+        soft_reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
+        soft_reset_single_node_action.triggered.connect(
+            lambda: self.soft_reset_single_node(node)
+        )
+
+        # DEV-specific
+        if constants.IN_DEV:
+            menu.addSeparator()
+            print_node_log_action = menu.addAction(" Print node log")
+            print_node_log_action.setIcon(QtGui.QIcon("icons:nodes_2.png"))
+            print_node_log_action.triggered.connect(lambda: self.show_log(node))
+
+        # Style
+        f = QtCore.QFile(r"ui:stylesheet.qss")  # TODO not ideal, maybe a reduced qss?
+        with open(f.fileName(), "r") as s:
+            menu.setStyleSheet(s.read())
+
+        # Exec
+        menu.exec_(event.screenPos(), parent=self)
+
+    def menu_scene(self, event):
+        menu = QtWidgets.QMenu()  # TODO add tooltips
+
+        # Common actions
+        run_action = menu.addAction(" Run this scene")
+        run_action.setIcon(QtGui.QIcon("icons:brain.png"))
+        run_action.triggered.connect(self.run_graphic_scene)
+
+        # Saving
+        if self.filepath:
+            menu.addSeparator()
+            save_action = menu.addAction(
+                f" Save changes to {os.path.basename(self.filepath)}"
+            )
+            save_action.setIcon(QtGui.QIcon("icons:save.png"))
+            save_action.triggered.connect(lambda: self.save_to_file(self.filepath))
+        else:
+            save_action = menu.addAction(" Save scene as")
+            save_action.setIcon(QtGui.QIcon("icons:save.png"))
+            save_action.triggered.connect(self.save_to_file)
+
+        # Style
+        f = QtCore.QFile(r"ui:stylesheet.qss")  # TODO not ideal, maybe a reduced qss?
+        with open(f.fileName(), "r") as s:
+            menu.setStyleSheet(s.read())
+
+        # Exec
+        menu.exec_(event.screenPos(), parent=self)
 
     # KEYBOARD EVENTS ----------------------
     def keyPressEvent(self, event: QtWidgets.QGraphicsScene.event):
@@ -994,39 +1043,33 @@ class ConnectorLine(QtWidgets.QGraphicsPathItem):
     def __init__(self, graphic_attr_1=None, graphic_attr_2=None):
         QtWidgets.QGraphicsPathItem.__init__(self)
 
+        # Attributes to connect
         self.graphic_attr_1 = None
         self.graphic_attr_2 = None
 
+        # Start and end
+        self.p1 = QtCore.QPointF(0.0, 0.0)
+        self.p2 = QtCore.QPointF(0.0, 0.0)
+
+        # Items
         self.glow = QtWidgets.QGraphicsPathItem(parent=self)
         self.arrow_glow = QtWidgets.QGraphicsPathItem(parent=self)
         self.white_line = QtWidgets.QGraphicsPathItem(parent=self)
         self.arrow = QtWidgets.QGraphicsPathItem(parent=self)
 
         # Main path ---------------------
-        if graphic_attr_1 is None or graphic_attr_2 is None:
-            p1, p2 = (QtCore.QPointF(0.0, 0.0), QtCore.QPointF(0.0, 0.0))
-        elif graphic_attr_1.connector_type == constants.OUTPUT:
-            p1, p2 = (
-                graphic_attr_1.plug_coords(),
-                graphic_attr_2.plug_coords(),
-            )
-            self.graphic_attr_1 = graphic_attr_1
-            self.graphic_attr_2 = graphic_attr_2
-        else:
-            p1, p2 = (
-                graphic_attr_2.plug_coords(),
-                graphic_attr_1.plug_coords(),
-            )
-            self.graphic_attr_1 = graphic_attr_2
-            self.graphic_attr_2 = graphic_attr_1
+        if graphic_attr_1 is not None and graphic_attr_2 is not None:
+            if graphic_attr_1.connector_type == constants.OUTPUT:
+                self.graphic_attr_1 = graphic_attr_1
+                self.graphic_attr_2 = graphic_attr_2
+            else:
+                self.graphic_attr_1 = graphic_attr_2
+                self.graphic_attr_2 = graphic_attr_1
 
-        connector_path = self.calculate_path(p1, p2)
-
-        self.setPath(connector_path)
+        self.repath()
 
         # Glow
         if constants.GLOW_EFFECTS:
-            self.glow.setPath(connector_path)
             self.glow.setPen(constants.LINE_GLOW_PEN)
             blur = QtWidgets.QGraphicsBlurEffect()
             blur.setBlurRadius(constants.LINE_GLOW_PEN.width() * 1.5)
@@ -1035,7 +1078,6 @@ class ConnectorLine(QtWidgets.QGraphicsPathItem):
             self.glow.hide()
 
         # White line
-        self.white_line.setPath(connector_path)
         self.white_line.setPen(constants.VALID_LINE_PEN)
 
         # Arrow ---------------------
@@ -1070,17 +1112,7 @@ class ConnectorLine(QtWidgets.QGraphicsPathItem):
         self.arrow.setPen(QtCore.Qt.NoPen)
         self.arrow.setBrush(QtGui.QBrush(constants.VALID_LINE_PEN.color()))
 
-        # Placement and rotation
-        if self.graphic_attr_1 is not None and self.graphic_attr_2 is not None:
-            self.arrow_glow.moveBy((p2.x() + p1.x()) / 2, (p2.y() + p1.y()) / 2)
-            self.arrow.moveBy((p2.x() + p1.x()) / 2, (p2.y() + p1.y()) / 2)
-            ref_1 = self.path().pointAtPercent(0.49)
-            ref_2 = self.path().pointAtPercent(0.51)
-            radians = math.atan2(ref_2.y() - ref_1.y(), ref_2.x() - ref_1.x())
-            angle = math.degrees(radians)
-
-            self.arrow_glow.setRotation(angle)
-            self.arrow.setRotation(angle)
+        self.rotate_arrows()
 
         # Data ---------------------
         self.setData(0, constants.CONNECTOR_LINE)
@@ -1105,6 +1137,31 @@ class ConnectorLine(QtWidgets.QGraphicsPathItem):
             new_path.cubicTo(c_p1, c_p2, p2)
 
         return new_path
+
+    def repath(self):
+        if self.graphic_attr_1 is None or self.graphic_attr_2 is None:
+            return
+
+        p1, p2 = (
+            self.graphic_attr_1.plug_coords(),
+            self.graphic_attr_2.plug_coords(),
+        )
+
+        self.set_new_path(self.calculate_path(p1, p2))
+        self.rotate_arrows()
+
+    def rotate_arrows(self):
+        if self.graphic_attr_1 and self.graphic_attr_2:
+            p1, p2 = self.path().pointAtPercent(0.0), self.path().pointAtPercent(1.0)
+            self.arrow_glow.setPos((p2.x() + p1.x()) / 2, (p2.y() + p1.y()) / 2)
+            self.arrow.setPos((p2.x() + p1.x()) / 2, (p2.y() + p1.y()) / 2)
+            ref_1 = self.path().pointAtPercent(0.49)
+            ref_2 = self.path().pointAtPercent(0.51)
+            radians = math.atan2(ref_2.y() - ref_1.y(), ref_2.x() - ref_1.x())
+            angle = math.degrees(radians)
+
+            self.arrow_glow.setRotation(angle)
+            self.arrow.setRotation(angle)
 
     def set_testing_appearance(self):
         self.white_line.setPen(constants.TEST_LINE_PEN)

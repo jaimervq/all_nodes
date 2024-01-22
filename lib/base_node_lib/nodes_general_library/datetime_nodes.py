@@ -45,5 +45,6 @@ class DatetimeFormatsSelect(OptionInput):
     INPUT_OPTIONS = [
         "%d/%m/%Y,  %H:%M:%S",  # European
         "%m/%d/%Y, %H:%M:%S",  # American
+        "%Y.%m.%d_%H.%M.%S",  # Technical
     ]
     NICE_NAME = "Datetime formats"

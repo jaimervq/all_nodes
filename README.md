@@ -46,7 +46,7 @@ It also aims to prevent re-duplication and re-writing of code inside of a projec
 
 # 📖 How to
 ## Adding more classes/nodes
-The places where all_nodes will search for node classes, scenes, etc is defined by the environment variable **ALL_NODES_LIB_PATH**
+The places where all_nodes will search for node classes, scenes, etc is defined by the environment variable `ALL_NODES_LIB_PATH`
 
 ## Folder structure example
 Example of organization of a folder, that contains two libraries
@@ -161,18 +161,22 @@ The scene just needs two keys:
 * **nodes**: with a list of nodes to be created
 * **connections**: to establish the connections between the created nodes
 
-Note how the **->** symbol is used to make the connections section more easily readable.
+Note how the `->` symbol is used to make the connections section more easily readable.
 
 ## Batch execution
 Any .yml scene file can be executed in batch mode without the need to open the graphic editor.
 
-This can be done by launching the main file and making use of the **-f** flag.
+This can be done by launching the main file and making use of the `-f` flag.
 
 Example: `main.py -f D:/scene_examples/my_scene.yml`
 
 Also, when a scene belongs to a repo/folder that has been defined in the **ALL_NODES_LIB_PATH** variable, it can be found just by its "alias". This alias is just the file name, with no need for the complete path or the ,yml extension.
 
 Example: `main.py -f environ_to_yaml`
+
+Finally, we can use the `-s` argument to set all the attributes we want to change in the scene prior to running. This flag accepts as many arguments as we need. Here is an example setting one node's attribute prior to running:
+
+Example: `main.py -f environ_to_yaml -s OPEN_FILE.out_bool true`
 
 # ▶️ Execution logic
 In a scene, the execution starts from nodes that are recognized as "starting nodes".

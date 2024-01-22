@@ -151,7 +151,11 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         menu = self.menuBar()
 
         file_menu = menu.addMenu("&File")
-        save_scene_action = QtWidgets.QAction("Save current scene", self)
+        new_scene_action = QtWidgets.QAction("Clear workspace", self)
+        new_scene_action.setIcon(QtGui.QIcon("icons:clear.png"))
+        new_scene_action.triggered.connect(self.clear_workspace)
+        file_menu.addAction(new_scene_action)
+        save_scene_action = QtWidgets.QAction("Save current scene as", self)
         save_scene_action.setIcon(QtGui.QIcon("icons:save.png"))
         save_scene_action.triggered.connect(self.save_scene)
         file_menu.addAction(save_scene_action)
@@ -269,6 +273,28 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 lib_item.setHidden(True)
 
     # TABS ----------------------
+    def clear_workspace(self):
+        dlg = QtWidgets.QMessageBox(parent=None)
+        dlg.setWindowTitle("Clear workspace")
+        dlg.setText(
+            "<p style='white-space:pre'>Are you sure?<br>All unsaved progress will be lost!"
+        )
+        dlg.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        dlg.setIcon(QtWidgets.QMessageBox.Question)
+        button = dlg.exec_()
+
+        if button == QtWidgets.QMessageBox.No:
+            return
+
+        self.clear_tabs()
+        self.add_scene()
+
+    def clear_tabs(self):
+        """
+        Remove all tabs / scenes
+        """
+        self.ui.tabWidget.clear()
+
     def add_scene(self, context=None):
         """
         Add a new graphic scene to the widget (in a new tab).
@@ -278,9 +304,11 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         Args:
             context (GeneralLogicNode): optional, context node from which to build the scene
         """
-        scene_name = "ROOT"
+        scene_name = "/"
+        icon = QtGui.QIcon()
         if context:
             scene_name = context.full_name
+            icon = QtGui.QIcon(CR.get_icon_path(context.class_name))
 
         graphics_view = graphic_scene.CustomGraphicsView()
         graphics_scene = graphic_scene.CustomScene(context)
@@ -296,7 +324,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         if context:
             graphics_scene.load_from_file(context.CONTEXT_DEFINITION_FILE, False)
 
-        self.ui.tabWidget.addTab(graphics_view, scene_name)
+        self.ui.tabWidget.addTab(graphics_view, icon, scene_name)
         self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count() - 1)
 
     def expand_context(self, uuid):
@@ -307,6 +335,10 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             uuid (str): of the node to try to expand
         """
         n = self.get_node_by_uuid(uuid)
+
+        # See if it is a context
+        if not n.IS_CONTEXT:
+            return
 
         # See if the context is already expanded
         for i in range(self.ui.tabWidget.count()):
@@ -429,6 +461,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 return
             source_file = result[0]
 
+        # Clear scenes
+        self.clear_tabs()
+
         # Add scene and load
         self.add_scene()
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
@@ -437,7 +472,10 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         current_scene.fit_in_view()
         self.ui.tabWidget.setTabText(
             self.ui.tabWidget.currentIndex(),
-            os.path.splitext(os.path.basename(source_file))[0],
+            os.path.basename(source_file),
+        )
+        self.ui.tabWidget.setTabIcon(
+            self.ui.tabWidget.currentIndex(), QtGui.QIcon("icons:scene.png")
         )
 
     # SCENE EXECUTION ----------------------
@@ -463,6 +501,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         """
         Display execution results on the nodes of the graphic scene currently selected.
         """
-        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_index = self.ui.tabWidget.currentIndex()
+        if current_index < 0:
+            return
+        current_gw = self.ui.tabWidget.widget(current_index)
         current_scene = current_gw.scene()
         current_scene.show_result_on_nodes()

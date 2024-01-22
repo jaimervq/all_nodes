@@ -178,6 +178,12 @@ class LogicScene:
 
     # SAVE AND LOAD ----------------------
     def convert_scene_to_dict(self):
+        """
+        Convert the scene to a dict (that can be then written out as json, yaml...)
+
+        Returns:
+            dict: dict that represents the scene
+        """
         scene_dict = dict()
 
         scene_dict["nodes"] = list()
@@ -200,18 +206,31 @@ class LogicScene:
         return scene_dict
 
     def save_to_file(self, filepath: str, scene_dict: dict = None) -> None:
-        LOGGER.debug("Writing to file")
+        """
+        Save the scene out
 
+        Args:
+            filepath (str): filepath to save to
+            scene_dict (dict, optional): scene info to write out. Defaults to None.
+        """
+        # Get scene data
         if scene_dict is None:
             scene_dict = self.convert_scene_to_dict()
 
-        save_type = "scene"
+        # Save type
+        file_type = "scene"
         _, ext = os.path.splitext(filepath)
         if ext == ".ctx":
-            save_type = "context"
+            file_type = "context"
+
+        save_type = "created"
+        if os.path.exists(filepath):
+            save_type = "modified"
+
+        # Actual save
         with open(filepath, "w") as file:
             header = "# {} {}".format(
-                save_type.upper(), os.path.splitext(os.path.basename(filepath))[0]
+                file_type.upper(), os.path.splitext(os.path.basename(filepath))[0]
             )
             file.write(header)
             file.write("\n# " + "-" * (len(header) - 2))
@@ -230,17 +249,26 @@ class LogicScene:
                 yaml.dump(scene_dict["connections"], file)
 
             file.write(
-                "\n\n# {} created at: {}".format(
-                    save_type.capitalize(), datetime.datetime.now()
-                )
+                f"\n\n# {file_type.capitalize()} {save_type} at: {datetime.datetime.now()}"
             )
-            file.write("\n# Created by: {}".format(getpass.getuser()))
+            file.write(f"\n# {save_type.capitalize()} by: {getpass.getuser()}")
 
-        LOGGER.info("Wrote scene to file: {}".format(filepath))
+        LOGGER.info("💾 Wrote scene to file: {}".format(filepath))
 
     def load_from_file(self, scene_path: str, namespace: str = None) -> list:
-        all_scenes = CR.get_all_scenes()
+        """
+        Load scene from a given file
 
+        Args:
+            scene_path (str): scene filepath or alias to load
+            namespace (str, optional): namespace to apply to the created nodes while loading scene. Defaults to None.
+
+        Raises:
+            LogicSceneError: if the scene requested doesnt exist, or is malformed
+
+        Returns:
+            list: of newly created nodes
+        """
         # See if we need namespace
         if self.all_nodes():
             if namespace is None:
@@ -254,6 +282,7 @@ class LogicScene:
             LOGGER.debug("Using namespace: {}".format(namespace))
 
         # Alias
+        all_scenes = CR.get_all_scenes()  # TODO move this into the class
         if not os.path.isfile(scene_path):
             LOGGER.info(
                 "Cannot find scene with path '{}', trying to find it as alias".format(
@@ -344,7 +373,7 @@ class LogicScene:
 
     def run_all_nodes_batch(self):
         """For non-GUI, we cannot spawn threads"""
-        # TODO investigate why this happens
+        # TODO investigate a better way
         self._run_all_nodes()
 
     def _run_all_nodes(self):
@@ -390,6 +419,7 @@ class LogicScene:
             node.run_single()
 
     # FEEDBACK GATHERING ----------------------
+    # TODO make this properly recursive, mark contexts appropriately
     def gather_failed_nodes(self):
         failed_log = []
         for node in self.all_logic_nodes:

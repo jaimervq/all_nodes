@@ -30,8 +30,8 @@ nodes:
     class_name: TextFileExtensionSelect
     node_attributes:
       out_str: .yml
-    x_pos: -1256
-    y_pos: -95
+    x_pos: -1280
+    y_pos: -139
 
 # Connections section: connections to be done between nodes
 connections:
