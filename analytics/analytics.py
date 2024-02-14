@@ -8,6 +8,7 @@ import os
 import re
 
 import matplotlib.pyplot as plt
+import pandas as pd
 from pymongo import MongoClient
 
 from all_nodes import constants
@@ -112,12 +113,10 @@ def process_analytics():
     )
 
     if res:
-        dates = list()
-        uses = list()
+        df = pd.DataFrame(list(res))
 
-        for r in res:
-            dates.append(r.get("_id"))
-            uses.append(r.get("count"))
+        dates = df["_id"].tolist()
+        uses = df["count"].tolist()
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.plot(dates, uses)
@@ -152,12 +151,10 @@ def process_analytics():
     )
 
     if res:
-        node_names = list()
-        uses = list()
+        df = pd.DataFrame(list(res))
 
-        for r in res:
-            node_names.append(r.get("_id"))
-            uses.append(r.get("count"))
+        node_names = df["_id"].tolist()
+        uses = df["count"].tolist()
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.barh(node_names, uses)
@@ -194,12 +191,10 @@ def process_analytics():
     )
 
     if res:
-        node_names = list()
-        avg_time = list()
+        df = pd.DataFrame(list(res))
 
-        for r in res:
-            node_names.append(r.get("_id"))
-            avg_time.append(r.get("average_time"))
+        node_names = df["_id"].tolist()
+        avg_time = df["average_time"].tolist()
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.barh(node_names, avg_time)
@@ -227,15 +222,29 @@ def process_analytics():
     )
 
     if res:
-        node_names = list()
-        error_date = list()
+        df = pd.DataFrame(list(res))
 
-        for r in res:
-            node_names.append(r.get("class_name"))
-            error_date.append(r.get("run_date")[:10])
+        df_grouped = (
+            df.groupby(["class_name", "run_date"])
+            .size()
+            .to_frame("occurrences")
+            .reset_index()
+            .sort_values("run_date")
+        )
+
+        node_names = df_grouped["class_name"].tolist()
+        failed_date = df_grouped["run_date"].tolist()
+        occurrences = df_grouped["occurrences"].tolist()
 
         fig, ax = plt.subplots(figsize=(10, 7))
-        ax.scatter(error_date, node_names, c="red", alpha=0.3, s=60, edgecolors="black")
+        ax.scatter(
+            failed_date,
+            node_names,
+            c="red",
+            alpha=0.5,
+            s=[min(5000, 30 * o) for o in occurrences],
+            edgecolors="black",
+        )
         ax.set_xlabel("Error date")
         for tick in ax.get_xticklabels():
             tick.set_rotation(45)
@@ -263,16 +272,28 @@ def process_analytics():
     )
 
     if res:
-        node_names = list()
-        failed_date = list()
+        df = pd.DataFrame(list(res))
 
-        for r in res:
-            node_names.append(r.get("class_name"))
-            failed_date.append(r.get("run_date")[:10])
+        df_grouped = (
+            df.groupby(["class_name", "run_date"])
+            .size()
+            .to_frame("occurrences")
+            .reset_index()
+            .sort_values("run_date")
+        )
+
+        node_names = df_grouped["class_name"].tolist()
+        failed_date = df_grouped["run_date"].tolist()
+        occurrences = df_grouped["occurrences"].tolist()
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.scatter(
-            failed_date, node_names, c="orange", alpha=0.3, s=60, edgecolors="black"
+            failed_date,
+            node_names,
+            c="orange",
+            alpha=0.5,
+            s=[min(5000, 30 * o) for o in occurrences],
+            edgecolors="black",
         )
         ax.set_xlabel("Failure date")
         for tick in ax.get_xticklabels():
