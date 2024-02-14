@@ -1,5 +1,6 @@
 colorama
 matplotlib
+pandas
 pymongo[srv]
 PySide2>5, <6
 PyYAML
