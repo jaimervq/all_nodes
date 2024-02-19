@@ -6,9 +6,10 @@ __license__ = "MIT License"
 
 
 import concurrent.futures
-import os
 import importlib
 import inspect
+import os
+import time
 
 from PySide2 import QtCore
 import yaml
@@ -146,10 +147,15 @@ def get_all_node_classes():
                     all_py.append(p)
 
     all_classes_dict = dict()
+    t1 = time.time()
     executor = concurrent.futures.ThreadPoolExecutor()
-    for full_path in all_py:
-        future = executor.submit(register_node_lib, full_path)
-        all_classes_dict.update(future.result())
+    with concurrent.futures.ThreadPoolExecutor(10) as executor:
+        futures = [
+            executor.submit(register_node_lib, full_path) for full_path in all_py
+        ]
+        for future in concurrent.futures.as_completed(futures):
+            all_classes_dict.update(future.result())
+    LOGGER.info(f"Total time scanning classes: {time.time()-t1} s.")
 
     # TODO examine classes to make sure there are no repeated names?
     return all_classes_dict
