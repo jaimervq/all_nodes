@@ -49,10 +49,26 @@ class NodeTesting(unittest.TestCase):
 
         n_1 = file_reading_nodes.JsonToDict()
         n_2 = general_nodes.GetDictKey()
-        self.assertTrue(n_1.connect_attribute("out_dict", n_2, "in_dict"))
-        self.assertFalse(n_1["out_dict"].connect_to_other(n_2["key"]))
-        self.assertFalse(n_2["in_dict"].connect_to_other(n_2["key"]))
-        self.assertFalse(n_2["key"].connect_to_other(n_1["out_dict"]))
+        self.assertTrue(n_1.connect_attribute("out_dict", n_2, "in_dict")[0])
+        self.assertFalse(n_1["out_dict"].connect_to_other(n_2["key"])[0])
+        self.assertFalse(n_2["in_dict"].connect_to_other(n_2["key"])[0])
+        self.assertFalse(n_2["key"].connect_to_other(n_1["out_dict"])[0])
+
+    def test_connection_cycle(self):
+        """
+        Test connecting some node attributes.
+        """
+        utils.print_test_header("test_connection_cycle")
+
+        n_1 = debug_nodes.EmptyNode()
+        n_2 = debug_nodes.EmptyNode()
+        n_3 = debug_nodes.EmptyNode()
+        n_1.connect_attribute(constants.COMPLETED, n_2, constants.START)
+        n_2.connect_attribute(constants.COMPLETED, n_3, constants.START)
+        connection_status, _ = n_3.connect_attribute(
+            constants.COMPLETED, n_1, constants.START
+        )
+        self.assertFalse(connection_status)
 
     def test_getting_internal_dict(self):
         """

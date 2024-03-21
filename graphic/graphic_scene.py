@@ -327,16 +327,19 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     self.removeItem(item)
 
         # Connect
-        if graphic_attr_1.connect_graphic_attr(graphic_attr_2, check_logic):
+        can_connect, reason = graphic_attr_1.connect_graphic_attr(
+            graphic_attr_2, check_logic
+        )
+        if can_connect:
             self.in_screen_feedback.emit(
-                "Connected graphic attributes!",
+                reason,
                 logging.DEBUG,
             )
             self.draw_valid_line(graphic_attr_1, graphic_attr_2)
         else:
             self.in_screen_feedback.emit(
-                "Cannot connect those attributes",
-                logging.ERROR,
+                reason,
+                logging.WARNING,
             )
 
     def draw_valid_line(self, graphic_attr_1, graphic_attr_2):

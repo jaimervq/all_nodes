@@ -997,8 +997,9 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
         Returns: bool, whether the attribute could be connected
         """
         can_connect = True
+        reason = ""
         if check_logic:
-            can_connect = self.logic_attribute.connect_to_other(
+            can_connect, reason = self.logic_attribute.connect_to_other(
                 other_graphic_attr.logic_attribute
             )
         if can_connect:
@@ -1012,7 +1013,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
         self.show_connected_status()
         other_graphic_attr.show_connected_status()
 
-        return can_connect
+        return can_connect, reason
 
     def clear_connections(self):
         connected_g_attrs = list(self.connected_graphic_attrs)
