@@ -212,6 +212,25 @@ class GeneralLogicNode:
                 connected_nodes.add(connected_attr.parent_node)
         return connected_nodes
 
+    def in_connected_nodes_recursive(self):
+        in_connected_nodes = list()
+
+        in_immediate_nodes = set()
+        for attr in self.get_input_attrs():
+            for connected_attr in attr.connected_attributes:
+                in_immediate_nodes.add(connected_attr.parent_node)
+
+        in_immediate_nodes_list = list(in_immediate_nodes)
+        in_connected_nodes += in_immediate_nodes_list
+        for node in in_immediate_nodes_list:
+            in_connected_nodes += node.in_connected_nodes_recursive()
+
+        return in_connected_nodes
+
+    def check_cycles(self, node_to_check):
+        in_connected_nodes = self.in_connected_nodes_recursive()
+        return node_to_check in in_connected_nodes
+
     # PROPERTIES ----------------------
     @property
     def full_name(self):
@@ -898,32 +917,42 @@ class GeneralLogicAttribute:
             other_attribute (GeneralLogicAttribute)
 
         Returns:
-            bool: whether or not the connection could be done
+            tuple(bool, str): whether or not the connection could be done, log of the reason
         """
+        # Checks -------------------------
+        # Cycles check
+        if self.parent_node.check_cycles(
+            other_attribute.parent_node
+        ) or other_attribute.parent_node.check_cycles(self.parent_node):
+            connection_warning = "Cannot connect, cycle detected!"
+            LOGGER.warning(connection_warning)
+            return (False, connection_warning)
+
+        # Different nodes check
         if not self.parent_node != other_attribute.parent_node:
-            LOGGER.warning(
-                "Cannot connect {} and {}, both same node {}".format(
-                    self.dot_name,
-                    other_attribute.dot_name,
-                    self.parent_node.full_name,
-                )
+            connection_warning = "Cannot connect {} and {}, both same node {}".format(
+                self.dot_name,
+                other_attribute.dot_name,
+                self.parent_node.full_name,
             )
-            return False
+            LOGGER.warning(connection_warning)
+            return (False, connection_warning)
 
+        # IN - OUT check
         if not self.connector_type != other_attribute.connector_type:
-            LOGGER.warning(
-                "Cannot connect {} and {}, both are {}".format(
-                    self.dot_name, other_attribute.dot_name, self.connector_type
-                )
+            connection_warning = "Cannot connect {} and {}, both are {}".format(
+                self.dot_name, other_attribute.dot_name, self.connector_type
             )
-            return False
+            LOGGER.warning(connection_warning)
+            return (False, "Cannot connect both are {}".format(self.connector_type))
 
+        # Datatype check
         connection_direction = "->"
         if self.connector_type == constants.INPUT:
             connection_direction = "<-"
-        if not self.data_type == other_attribute.data_type:
+        if self.data_type != other_attribute.data_type:
             if object not in [self.data_type, other_attribute.data_type]:
-                LOGGER.warning(
+                connection_warning = (
                     "Cannot connect {} {} {}, different datatypes {}{}{}".format(
                         self.dot_name,
                         connection_direction,
@@ -933,8 +962,17 @@ class GeneralLogicAttribute:
                         other_attribute.get_datatype_str(),
                     )
                 )
-                return False
+                LOGGER.warning(connection_warning)
+                return (
+                    False,
+                    "Cannot connect, different datatypes {}{}{}".format(
+                        self.get_datatype_str(),
+                        connection_direction,
+                        other_attribute.get_datatype_str(),
+                    ),
+                )
 
+        # Connection -------------------------
         if self.connector_type == constants.OUTPUT:
             self.connected_attributes.add(other_attribute)
             other_attribute.connected_attributes = {self}
@@ -942,13 +980,12 @@ class GeneralLogicAttribute:
             self.connected_attributes = {other_attribute}
             other_attribute.connected_attributes.add(self)
 
-        LOGGER.info(
-            "Connected {} {} {}".format(
-                self.dot_name, connection_direction, other_attribute.dot_name
-            )
+        connection_log = "Connected {} {} {}".format(
+            self.dot_name, connection_direction, other_attribute.dot_name
         )
+        LOGGER.info(connection_log)
 
-        return True
+        return (True, connection_log)
 
     def disconnect_from_other(self, other_attribute: GeneralLogicAttribute):
         """

@@ -31,11 +31,11 @@ ALL_NODES_TABLE = f"node_usage_{ENVIRONMENT}"
 # -------------------------------- CLIENT -------------------------------- #
 mongo_client = None
 try:
-    LOGGER.info(f"Connecting to MongoDB for analytics, username: {DB_USERNAME}")
     mongo_client = MongoClient(CONNECTION_STRING)
     LOGGER.debug(mongo_client.admin.command("ping"))
+    LOGGER.info(f"Connected to MongoDB for analytics, username: {DB_USERNAME}")
 except Exception:
-    LOGGER.warning("Could not connect to MongoDB!")
+    LOGGER.debug("No statistics will be submitted")
 
 
 # -------------------------------- METHODS -------------------------------- #
