@@ -6,22 +6,19 @@ __license__ = "MIT License"
 
 import datetime
 
+from all_nodes.constants import InputsGUI
 from all_nodes.logic.logic_node import GeneralLogicNode
-from all_nodes.logic.logic_node import OptionInput
 from all_nodes import utils
 
 
 LOGGER = utils.get_logger(__name__)
 
 
-class DatetimeNow(GeneralLogicNode):
-    NICE_NAME = "Datetime now"
-    HELP = "Get a datetime object as of right now"
-
-    OUTPUTS_DICT = {"datetime_object": {"type": datetime.datetime}}
-
-    def run(self):
-        self.set_output("datetime_object", datetime.datetime.now())
+DATE_FORMATS = [
+    "%d/%m/%Y,  %H:%M:%S",  # European
+    "%m/%d/%Y, %H:%M:%S",  # American
+    "%Y.%m.%d_%H.%M.%S",  # Technical
+]
 
 
 class StrfDatetime(GeneralLogicNode):
@@ -41,10 +38,47 @@ class StrfDatetime(GeneralLogicNode):
         )
 
 
-class DatetimeFormatsSelect(OptionInput):
-    INPUT_OPTIONS = [
-        "%d/%m/%Y,  %H:%M:%S",  # European
-        "%m/%d/%Y, %H:%M:%S",  # American
-        "%Y.%m.%d_%H.%M.%S",  # Technical
-    ]
+class DatetimeFormatsSelect(GeneralLogicNode):
     NICE_NAME = "Datetime formats"
+
+    INTERNALS_DICT = {
+        "internal_datetime_format_str": {
+            "type": str,
+            "gui_type": InputsGUI.OPTION_INPUT,
+            "options": DATE_FORMATS,
+        },
+    }
+
+    OUTPUTS_DICT = {"out_datetime_format_str": {"type": str}}
+
+    def run(self):
+        self.set_output(
+            "out_datetime_format_str",
+            self.get_attribute_value("internal_datetime_format_str"),
+        )
+
+
+class DatetimeNow(GeneralLogicNode):
+    NICE_NAME = "Datetime now"
+    HELP = "Get a datetime object as of right now, as well as a formatted string"
+
+    INTERNALS_DICT = {
+        "internal_datetime_str": {
+            "type": str,
+            "gui_type": InputsGUI.OPTION_INPUT,
+            "options": DATE_FORMATS,
+        },
+    }
+
+    OUTPUTS_DICT = {
+        "datetime_object": {"type": datetime.datetime},
+        "out_datetime_str": {"type": str},
+    }
+
+    def run(self):
+        datetime_object = datetime.datetime.now()
+        datetime_formatting = self.get_attribute_value("internal_datetime_str")
+        self.set_output(
+            "out_datetime_str", datetime_object.strftime(datetime_formatting)
+        )
+        self.set_output("datetime_object", datetime_object)

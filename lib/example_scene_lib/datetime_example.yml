@@ -7,28 +7,35 @@ nodes:
 - DatetimeFormatsSelect_1:
     class_name: DatetimeFormatsSelect
     node_attributes:
-      out_str: '%Y.%m.%d_%H.%M.%S'
-    x_pos: -1948
-    y_pos: -428
+      internal_datetime_format_str: '%d/%m/%Y,  %H:%M:%S'
+    x_pos: -2039
+    y_pos: -396
 - DatetimeNow_1:
     class_name: DatetimeNow
+    node_attributes:
+      internal_datetime_str: '%d/%m/%Y,  %H:%M:%S'
     x_pos: -2039
     y_pos: -570
 - PrintToConsole_1:
     class_name: PrintToConsole
-    x_pos: -1119
-    y_pos: -545
+    x_pos: -1083
+    y_pos: -617
 - StrfDatetime_1:
     class_name: StrfDatetime
     x_pos: -1616
     y_pos: -528
+- StringPreview_1:
+    class_name: StringPreview
+    x_pos: -1084
+    y_pos: -389
 
 # Connections section: connections to be done between nodes
 connections:
-- DatetimeFormatsSelect_1.out_str -> StrfDatetime_1.datetime_formatting
+- DatetimeFormatsSelect_1.out_datetime_format_str -> StrfDatetime_1.datetime_formatting
 - DatetimeNow_1.datetime_object -> StrfDatetime_1.datetime_object
 - StrfDatetime_1.datetime_formatted -> PrintToConsole_1.in_object_0
+- StrfDatetime_1.datetime_formatted -> StringPreview_1.in_str
 
 
-# Scene modified at: 2024-01-22 01:31:41.529472
-# Modified by: Jaime
+# Scene modified at: 2024-04-26 15:23:52.012754
+# Modified by: jaime.rvq

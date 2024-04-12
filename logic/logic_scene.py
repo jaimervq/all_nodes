@@ -38,7 +38,7 @@ class LogicScene:
 
         self.pasted_count = 0
 
-        self.thread_manager = QtCore.QThreadPool()
+        self.thread_manager = QtCore.QThreadPool.globalInstance()
 
         LOGGER.debug("Initialized logic scene")
 
@@ -351,7 +351,7 @@ class LogicScene:
         self.pasted_count += 1
         return "pasted_{}::".format(self.pasted_count)
 
-    # EXECUTION ----------------------
+    # RESET NODES ----------------------
     def reset_all_nodes(self):
         LOGGER.debug("Resetting all logic nodes of scene {}".format(self.scene_name))
         for node in self.all_logic_nodes:
@@ -364,6 +364,7 @@ class LogicScene:
         for node in self.all_logic_nodes:
             node.soft_reset()
 
+    # EXECUTION ----------------------
     def run_all_nodes(self, spawn_thread=True):
         if spawn_thread:
             worker = Worker(self._run_all_nodes)
@@ -376,6 +377,13 @@ class LogicScene:
         # TODO investigate a better way
         self._run_all_nodes()
 
+    def run_list_of_nodes(self, nodes_to_execute, spawn_thread=True):
+        if spawn_thread:
+            worker = Worker(self._run_list_of_nodes, nodes_to_execute)
+            self.thread_manager.start(worker)
+        else:
+            self._run_list_of_nodes(nodes_to_execute)
+
     def _run_all_nodes(self):
         # Feedback
         if self.scene_name:
@@ -387,7 +395,6 @@ class LogicScene:
         for node in self.get_starting_nodes():
             node._run()
         LOGGER.info("Finished running logic scene")
-        print("\n", end="")
 
         # Mark nodes that were skipped
         for node in self.all_nodes():
@@ -407,20 +414,13 @@ class LogicScene:
                     node_properties_list.append(i_node.get_node_full_dict())
         analytics.submit_bulk_analytics(node_properties_list)
 
-    def run_list_of_nodes(self, nodes_to_execute, spawn_thread=True):
-        if spawn_thread:
-            worker = Worker(self._run_list_of_nodes, nodes_to_execute)
-            self.thread_manager.start(worker)
-        else:
-            self._run_list_of_nodes(nodes_to_execute)
-
     def _run_list_of_nodes(self, nodes_to_execute):
         for node in nodes_to_execute:
             node.run_single()
 
     # FEEDBACK GATHERING ----------------------
-    # TODO make this properly recursive, mark contexts appropriately
-    def gather_failed_nodes(self):
+    # TODO make these properly recursive, mark contexts appropriately
+    def gather_failed_nodes_logs(self) -> list:
         failed_log = []
         for node in self.all_logic_nodes:
             if node.success in [constants.FAILED, constants.ERROR]:
@@ -428,7 +428,7 @@ class LogicScene:
                     failed_log.append(node.full_name + ": " + line)
         return failed_log
 
-    def gather_errored_nodes(self):
+    def gather_errored_nodes_logs(self) -> list:
         errored_log = []
         for node in self.all_logic_nodes:
             if node.success in [constants.FAILED, constants.ERROR]:

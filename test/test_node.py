@@ -8,7 +8,7 @@ from all_nodes.lib.base_node_lib.nodes_general_library import debug_nodes
 from all_nodes.lib.base_node_lib.nodes_general_library import file_reading_nodes
 from all_nodes.lib.base_node_lib.nodes_general_library import file_writing_nodes
 from all_nodes.lib.base_node_lib.nodes_general_library import general_nodes
-from all_nodes.lib.base_node_lib.nodes_general_library import special_input_nodes
+from all_nodes.lib.base_node_lib.nodes_general_library import general_input_nodes
 from all_nodes import utils
 
 
@@ -76,11 +76,16 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_getting_internal_dict")
 
-        n_1 = special_input_nodes.StrInput()
+        n_1 = general_input_nodes.StrInput()
         n_2 = general_nodes.GetDictKey()
-        n_1.set_attribute_value("out_str", "test")
+
+        n_1.set_attribute_value("internal_str", "test")
         n_1.connect_attribute("out_str", n_2, "key")
+        n_2.set_attribute_value("in_dict", {"test": 100})
         n_1.run_chain()
+
+        assert n_2["out"].get_value() == 100
+
         pprint(n_2.get_node_full_dict())
 
     def test_inputs_checked_run(self):

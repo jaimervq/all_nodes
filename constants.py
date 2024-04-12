@@ -5,6 +5,7 @@ __credits__ = []
 __license__ = "MIT License"
 
 
+from enum import auto, Enum
 import logging
 import os
 
@@ -58,6 +59,8 @@ CONNECTOR_LINE = "CONNECTOR_LINE"
 INPUT = "INPUT"
 OUTPUT = "OUTPUT"
 
+INTERNAL = "INTERNAL"
+
 START = "START"
 COMPLETED = "COMPLETED"
 
@@ -68,6 +71,25 @@ SKIPPED = "SKIPPED"
 SUCCESSFUL = "SUCCESSFUL"
 FAILED = "FAILED"
 ERROR = "ERROR"
+
+
+# -------------------------------- GUI INPUT / PREVIEW TYPES -------------------------------- #
+class InputsGUI(Enum):
+    STR_INPUT = auto()
+    MULTILINE_STR_INPUT = auto()
+    INT_INPUT = auto()
+    FLOAT_INPUT = auto()
+    BOOL_INPUT = auto()
+    OPTION_INPUT = ["A", "B", "C"]
+    TUPLE_INPUT = auto()
+    DICT_INPUT = auto()
+    LIST_INPUT = auto()
+
+
+class PreviewsGUI(Enum):
+    STR_PREVIEW = auto()
+    MULTILINE_STR_PREVIEW = auto()
+    IMAGE_PREVIEW = auto()
 
 
 # -------------------------------- LOGGING PREFS -------------------------------- #

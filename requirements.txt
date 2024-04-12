@@ -1,6 +1,7 @@
 colorama
 matplotlib
 pandas
+Pillow
 pymongo[srv]
 PySide2>5, <6
 PyYAML

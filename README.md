@@ -8,8 +8,7 @@
     </a>
     <a href=https://github.com/astral-sh/ruff> 
         <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge&label=Code style"> 
-    </a><br>
-    <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-closed-raw/jaimervq/all_nodes?style=for-the-badge">
+    </a>
     <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=for-the-badge">
 </h1>
 <h3 align="center">
@@ -43,6 +42,17 @@ It also aims to prevent re-duplication and re-writing of code inside of a projec
     <td align="center"><img src="docs/threading.gif" width=60%></td>
   </tr>
 </table>
+<table align="center">
+  <tr> 
+      <td>✅ Preview of images and other elements</td>
+    <td>✅ Attribute editor</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/previews.gif" width=60%></td>
+    <td align="center"><img src="docs/attribute_editor.gif" width=60%></td>
+  </tr>
+</table>
+
 
 # 📖 How to
 ## Adding more classes/nodes
@@ -109,6 +119,7 @@ Key elements that a node **CAN** have:
 * A `HELP` attribute to explain how the node works
 * The `INPUTS_DICT` dictionary, if the node needs inputs
 * The `OUTPUTS_DICT` dictionary, if the node needs outputs
+* The `INTERNALS_DICT` dictionary, if the node needs inputs/previews through GUI
 
 Other considerations:
 * The `import` statements are kept inside the run method, so no ImportError is met when editing nodes outside the software they are meant for.
@@ -176,7 +187,7 @@ Example: `main.py -f environ_to_yaml`
 
 Finally, we can use the `-s` argument to set all the attributes we want to change in the scene prior to running. This flag accepts as many arguments as we need. Here is an example setting one node's attribute prior to running:
 
-Example: `main.py -f environ_to_yaml -s OPEN_FILE.out_bool true`
+Example: `main.py -f environ_to_yaml -s OPEN_FILE.internal_bool true`
 
 # ▶️ Execution logic
 In a scene, the execution starts from nodes that are recognized as "starting nodes".
@@ -248,6 +259,7 @@ logic_scene.run_all_nodes()
 
 # 📈 Analytics
 Automatically generated once a week
+(For personal use, they are not gathered from any other user)
 ![](docs/analytics/recent_usage.png)
 ![](docs/analytics/most_used.png)
 ![](docs/analytics/errored.png)

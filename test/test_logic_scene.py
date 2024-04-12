@@ -31,20 +31,20 @@ class LogicSceneTesting(unittest.TestCase):
         logic_scene.add_node_by_name("FailNode")
         self.assertEqual(logic_scene.node_count(), 4)
 
-    def test_run_node_graph_starting_at_node_2(self):
-        utils.print_test_header("test_run_node_graph_starting_at_node_2")
+    def test_run_node_graph_starting_at_node(self):
+        utils.print_test_header("test_run_node_graph_starting_at_node")
 
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("StrInput")
-        n_1.set_attribute_value("out_str", "test_people")
+        n_1.set_attribute_value("internal_str", "test_people")
         n_2 = logic_scene.add_node_by_name("GetDictKey")
         n_2.set_attribute_value("in_dict", LogicSceneTesting.DICT_EXAMPLE)
         n_2["key"].connect_to_other(n_1["out_str"])
         n_3 = logic_scene.add_node_by_name("PrintToConsole")
         n_3["in_object_0"].connect_to_other(n_2["out"])
         n_1.run_chain()
-        self.assertTrue(n_1.success)
-        self.assertTrue(n_2.success)
+        self.assertEqual(n_1.success, constants.SUCCESSFUL)
+        self.assertEqual(n_2.success, constants.SUCCESSFUL)
 
     def test_locate_starting_nodes(self):
         utils.print_test_header("test_locate_starting_nodes")
@@ -97,7 +97,7 @@ class LogicSceneTesting(unittest.TestCase):
 
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("StrInput")
-        n_1.set_attribute_value("out_str", "TEST")
+        n_1.set_attribute_value("internal_str", "TEST")
         n_2 = logic_scene.add_node_by_name("PrintToConsole")
         n_1["out_str"].connect_to_other(n_2["in_object_0"])
         n_2[constants.START].connect_to_other(n_1[constants.COMPLETED])
@@ -106,6 +106,7 @@ class LogicSceneTesting(unittest.TestCase):
         temp = tempfile.NamedTemporaryFile(suffix=".yaml", delete=False)
         temp.close()
         logic_scene.save_to_file(temp.name)
+
         self.assertTrue(os.path.isfile(temp.name))
 
     def test_load_scene_from_file(self):
@@ -158,12 +159,38 @@ class LogicSceneTesting(unittest.TestCase):
         logic_scene.load_from_file("simple_regex")
         logic_scene.run_all_nodes_batch()
 
+        assert len(logic_scene.gather_failed_nodes_logs()) == 0
+        assert len(logic_scene.gather_errored_nodes_logs()) == 0
+
     def test_execute_scene_from_alias_2(self):
         utils.print_test_header("test_execute_scene_from_alias_2")
 
         logic_scene = LogicScene()
         logic_scene.load_from_file("environ_to_yaml")
         logic_scene.run_all_nodes_batch()
+
+        assert len(logic_scene.gather_failed_nodes_logs()) == 0
+        assert len(logic_scene.gather_errored_nodes_logs()) == 0
+
+    def test_execute_scene_from_alias_3(self):
+        utils.print_test_header("test_execute_scene_from_alias_3")
+
+        logic_scene = LogicScene()
+        logic_scene.load_from_file("fail_scene")
+        logic_scene.run_all_nodes_batch()
+
+        assert len(logic_scene.gather_failed_nodes_logs()) == 2
+        assert len(logic_scene.gather_errored_nodes_logs()) == 4
+
+    def test_execute_scene_from_alias_4(self):
+        utils.print_test_header("test_execute_scene_from_alias_4")
+
+        logic_scene = LogicScene()
+        logic_scene.load_from_file("datetime_example")
+        logic_scene.run_all_nodes_batch()
+
+        assert len(logic_scene.gather_failed_nodes_logs()) == 0
+        assert len(logic_scene.gather_errored_nodes_logs()) == 0
 
     def test_rename_node_incorrect(self):
         utils.print_test_header("test_rename_node_incorrect")
