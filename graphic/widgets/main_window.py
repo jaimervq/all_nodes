@@ -131,7 +131,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             """
             menu.setToolTipsVisible(True)
             for key in entries_dict:
-                nice_name = key.capitalize().replace("_", " ")
+                nice_name = key.title().replace("_", " ")
                 libs_menu = menu.addMenu(nice_name)
                 libs_menu.setIcon(QtGui.QIcon("icons:folder.png"))
                 scenes_list = entries_dict[key]
@@ -141,7 +141,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 for elem in scenes_list:
                     if isinstance(elem, tuple):
                         scene_name, full_path = elem
-                        nice_name = scene_name.capitalize().replace("_", " ")
+                        nice_name = scene_name.title().replace("_", " ")
                         ac = QtWidgets.QAction(nice_name, parent=menu)
                         ac.setToolTip(full_path)
                         ac.triggered.connect(partial(self.load_scene, full_path))
@@ -189,10 +189,10 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         for m in sorted(all_classes):
             node_lib_path = all_classes[m]["node_lib_path"]
             node_lib_name = all_classes[m]["node_lib_name"]
-            node_lib_nice_name = node_lib_name.capitalize().replace("_", " ")
+            node_lib_nice_name = node_lib_name.title().replace("_", " ")
             module_filename = all_classes[m]["module_filename"]
             module_full_path = all_classes[m]["module_full_path"]
-            module_nice_name = m.capitalize().replace("_", " ")
+            module_nice_name = m.title().replace("_", " ")
             color = all_classes[m].get("color", constants.DEFAULT_NODE_COLOR)
 
             if node_lib_name not in top_level_items:
@@ -217,7 +217,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                     ),
                 )
                 class_item.setData(0, QtCore.Qt.UserRole, name)
-                if cls.NICE_NAME:
+                if (
+                    hasattr(cls, "NICE_NAME") and cls.NICE_NAME
+                ):  # TODO inheritance not working here?
                     class_item.setText(0, cls.NICE_NAME)
 
                 icon = QtGui.QIcon(cls.ICON_PATH)
@@ -245,6 +247,8 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 for i in range(node_file_item.childCount()):
                     node_class = node_file_item.child(i)
                     node_class.setFont(0, QtGui.QFont("arial", 14))
+
+        self.ui.nodes_tree.sortByColumn(0, QtCore.Qt.AscendingOrder)
 
     def filter_nodes_by_name(self):
         """

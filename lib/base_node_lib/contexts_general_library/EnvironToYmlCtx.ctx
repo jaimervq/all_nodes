@@ -6,32 +6,32 @@
 nodes:
 - CreateTempFile_1:
     class_name: CreateTempFile
-    x_pos: -979
-    y_pos: -150
+    x_pos: -1014
+    y_pos: -135
 - DictToYaml_1:
     class_name: DictToYaml
     x_pos: -637
     y_pos: -333
 - GetEntireEnviron_1:
     class_name: GetEntireEnviron
-    x_pos: -1028
-    y_pos: -314
+    x_pos: -1149
+    y_pos: -367
 - SetStrOutputToCtx_1:
     class_name: SetStrOutputToCtx
     x_pos: -176
     y_pos: -27
-- StrInput_3:
+- StrInput_2:
     class_name: StrInput
     node_attributes:
-      out_str: yaml_filepath
-    x_pos: -532
-    y_pos: -152
-- TextFileExtensionSelect_1:
+      internal_str: yaml_filepath
+    x_pos: -846
+    y_pos: 175
+- TextFileExtensionSelect_2:
     class_name: TextFileExtensionSelect
     node_attributes:
-      out_str: .yml
-    x_pos: -1280
-    y_pos: -139
+      internal_str: .yml
+    x_pos: -1441
+    y_pos: -55
 
 # Connections section: connections to be done between nodes
 connections:
@@ -39,9 +39,9 @@ connections:
 - CreateTempFile_1.tempfile_path -> SetStrOutputToCtx_1.out_parent_attr_value
 - DictToYaml_1.COMPLETED -> SetStrOutputToCtx_1.START
 - GetEntireEnviron_1.environ_dict -> DictToYaml_1.in_dict
-- StrInput_3.out_str -> SetStrOutputToCtx_1.out_parent_attr_name
-- TextFileExtensionSelect_1.out_str -> CreateTempFile_1.suffix
+- StrInput_2.out_str -> SetStrOutputToCtx_1.out_parent_attr_name
+- TextFileExtensionSelect_2.out_str -> CreateTempFile_1.suffix
 
 
-# Context created at: 2023-01-24 15:18:22.210039
-# Created by: jaime.rvq
+# Context modified at: 2024-04-12 13:39:22.998043
+# Modified by: jaime.rvq

@@ -5,7 +5,7 @@ __credits__ = []
 __license__ = "MIT License"
 
 
-import ast
+from functools import partial
 import math
 
 from PySide2 import QtWidgets
@@ -29,6 +29,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         # SHAPE
         self.extra_header = 0
+        self.extra_bottom = 0
         self.node_width = 450
 
         # INIT
@@ -51,15 +52,14 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             constants.STRIPE_HEIGHT, QtCore.Qt.TransformationMode.SmoothTransformation
         )
         self.class_icon = QtWidgets.QGraphicsPixmapItem(class_pixmap, parent=self)
+
         self.class_text = QtWidgets.QGraphicsTextItem(parent=self)
 
         self.proxy_help_btn = QtWidgets.QGraphicsProxyWidget(parent=self)
 
-        self.input_widget = None
-        self.proxy_input_widget = QtWidgets.QGraphicsProxyWidget(parent=self)
-
         self.selection_marquee = QtWidgets.QGraphicsPathItem(parent=self)
         self.selection_marquee.hide()
+
         self.error_marquee = QtWidgets.QGraphicsPathItem(parent=self)
         self.error_marquee.setFlag(QtWidgets.QGraphicsItem.ItemStacksBehindParent)
         self.error_marquee.hide()
@@ -80,19 +80,30 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         # ATTRIBUTES
         self.graphic_attributes = []
 
-        # SPECIAL / INPUT
-        self.input_datatype = None
-        if hasattr(self.logic_node, "INPUT_TYPE"):
-            self.input_datatype = self.logic_node.INPUT_TYPE
-            self.setScale(0.7)
+        # DIRECT INPUT WIDGETS
+        self.input_widgets = []
+        self.proxy_input_widgets = []
+
+        self.has_gui_inputs = False
+        if self.logic_node.get_gui_internals_inputs():
+            self.has_gui_inputs = True
+
+        # PREVIEW WIDGETS
+        self.preview_widgets = []
+        self.proxy_preview_widgets = []
+
+        self.has_gui_previews = False
+        if self.logic_node.get_gui_internals_previews():
+            self.has_gui_previews = True
 
         # SETUP
         self.setup_node()
         self.add_graphic_attributes()
-        self.setup_widget()
+        self.setup_input_widgets()
+        self.setup_preview_widgets()
         self.make_shape()
         self.place_graphic_attributes()
-        self.update_attribute_from_widget()
+        self.update_attributes_from_widgets()
         self.setup_extras()
 
         # Connect
@@ -106,6 +117,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             constants.HEADER_HEIGHT
             + self.extra_header
             + (self.logic_node.get_max_in_or_out_count()) * constants.STRIPE_HEIGHT
+            + self.extra_bottom
         )
         total_h += constants.STRIPE_HEIGHT
 
@@ -141,25 +153,74 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             longest_in_name + longest_out_name + 2 * constants.CHAMFER_RADIUS + 20,
         )
 
-        # Re-shape widget
-        if self.input_datatype:
+        # Re-shape input / preview widgets
+        if self.has_gui_inputs:
             self.node_width = max(
                 self.node_width,
-                self.input_widget.width() + 2 * constants.CHAMFER_RADIUS,
-            )
-
-            self.input_widget.setFixedSize(
                 max(
-                    self.node_width - 2 * constants.CHAMFER_RADIUS,
-                    self.input_widget.width(),
+                    w.width() + 2 * constants.CHAMFER_RADIUS for w in self.input_widgets
                 ),
-                self.input_widget.height(),
             )
 
-            self.proxy_input_widget.setWidget(self.input_widget)
-            self.proxy_input_widget.moveBy(
-                constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
+            for i in range(len(self.input_widgets)):
+                self.input_widgets[i].setFixedSize(
+                    max(
+                        self.node_width - 2 * constants.CHAMFER_RADIUS,
+                        self.input_widgets[i].width(),
+                    ),
+                    self.input_widgets[i].height(),
+                )
+
+                self.proxy_input_widgets.append(
+                    QtWidgets.QGraphicsProxyWidget(parent=self)
+                )
+                self.proxy_input_widgets[i].setWidget(self.input_widgets[i])
+                self.proxy_input_widgets[i].setPos(
+                    constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
+                )
+                if i:
+                    prev_widget = self.proxy_input_widgets[i - 1].widget()
+                    self.proxy_input_widgets[i].setPos(
+                        constants.CHAMFER_RADIUS,
+                        prev_widget.pos().y() + prev_widget.height(),
+                    )
+
+        if self.has_gui_previews:
+            self.node_width = max(
+                self.node_width,
+                max(
+                    w.width() + 2 * constants.CHAMFER_RADIUS
+                    for w in self.preview_widgets
+                ),
             )
+
+            for i in range(len(self.preview_widgets)):
+                self.preview_widgets[i].setFixedSize(
+                    max(
+                        self.node_width - 2 * constants.CHAMFER_RADIUS,
+                        self.preview_widgets[i].width(),
+                    ),
+                    self.preview_widgets[i].height(),
+                )
+
+                self.proxy_preview_widgets.append(
+                    QtWidgets.QGraphicsProxyWidget(parent=self)
+                )
+                self.proxy_preview_widgets[i].setWidget(self.preview_widgets[i])
+                self.proxy_preview_widgets[i].setPos(
+                    constants.CHAMFER_RADIUS,
+                    constants.HEADER_HEIGHT
+                    + +self.extra_header
+                    + (self.logic_node.get_max_in_or_out_count())
+                    * constants.STRIPE_HEIGHT
+                    + constants.CHAMFER_RADIUS,
+                )
+                if i:
+                    prev_widget = self.proxy_preview_widgets[i - 1].widget()
+                    self.proxy_preview_widgets[i].setPos(
+                        constants.CHAMFER_RADIUS,
+                        prev_widget.pos().y() + prev_widget.height(),
+                    )
 
     def setup_node(self):
         """
@@ -336,189 +397,336 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         for attr in self.graphic_attributes:
             attr.setup_graphics()
 
-    def setup_widget(self):
+    def setup_input_widgets(self):
         """
-        For special nodes that take input, setup a widget to receive the input
+        For special nodes that take input, setup widgets to receive the input
         """
-        if not self.input_datatype:
+        if not self.has_gui_inputs:
             return
 
-        # Default widget
-        self.input_widget = QtWidgets.QLineEdit(parent=None)
-        self.input_widget.setFixedSize(
-            150,
-            int(constants.HEADER_HEIGHT),
-        )
+        # Set type of widget depending on the type of input neede
+        gui_internals_inputs = self.logic_node.get_gui_internals_inputs()
 
-        # Set type of widget depending on the type of input needed
-        if self.input_datatype == "str":
-            self.input_widget.setStyleSheet(
-                "background:transparent; color:white; border:1px solid white;"
-            )
-            self.input_widget.setPlaceholderText("str here")
+        for attr_name in gui_internals_inputs:
+            gui_input_type = gui_internals_inputs.get(attr_name).get("gui_type")
 
-            if self.logic_node.get_attribute_value("out_str"):
-                self.input_widget.setText(
-                    self.logic_node.get_attribute_value("out_str")
+            if gui_input_type == constants.InputsGUI.STR_INPUT:
+                new_input_widget = QtWidgets.QLineEdit(parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(
+                    150,
+                    int(constants.HEADER_HEIGHT),
                 )
-
-            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
-
-        elif self.input_datatype == "multiline_str":
-            self.input_widget = QtWidgets.QPlainTextEdit(parent=None)
-            self.input_widget.setStyleSheet(
-                "background:transparent; color:white; border:1px solid white;"
-            )
-            self.input_widget.setPlaceholderText("Text here")
-
-            if self.logic_node.get_attribute_value("out_str"):
-                self.input_widget.setText(
-                    self.logic_node.get_attribute_value("out_str")
+                new_input_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px solid white;"
                 )
-
-            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
-            self.input_widget.setFixedSize(
-                300,
-                int(4 * constants.HEADER_HEIGHT),
-            )
-
-        elif self.input_datatype == "dict":
-            self.input_widget = QtWidgets.QPlainTextEdit(parent=None)
-            self.input_widget.setStyleSheet(
-                "background:transparent; color:white; border:1px solid white;"
-            )
-            self.input_widget.setPlaceholderText("Paste dict here")
-
-            if self.logic_node.get_attribute_value("out_dict"):
-                self.input_widget.setText(
-                    self.logic_node.get_attribute_value("out_dict")
+                new_input_widget.setPlaceholderText("str here")
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_input_widget.setText(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                new_input_widget.textChanged.connect(
+                    partial(
+                        self.update_attributes_from_widgets,
+                        attr_name,
+                    )
                 )
+                self.input_widgets.append(new_input_widget)
 
-            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
-            self.input_widget.setFixedSize(
-                300,
-                int(4 * constants.HEADER_HEIGHT),
-            )
-
-        elif self.input_datatype == "list":
-            self.input_widget.setStyleSheet(
-                "background:transparent; color:white; border:1px solid white;"
-            )
-            self.input_widget.setPlaceholderText("Paste list here")
-
-            if self.logic_node.get_attribute_value("out_list"):
-                self.input_widget.setText(
-                    self.logic_node.get_attribute_value("out_list")
+            elif gui_input_type == constants.InputsGUI.MULTILINE_STR_INPUT:
+                new_input_widget = QtWidgets.QPlainTextEdit(parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(
+                    300,
+                    int(4 * constants.HEADER_HEIGHT),
                 )
-
-            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
-
-        elif self.input_datatype == "bool":
-            self.input_widget = QtWidgets.QCheckBox("False", parent=None)
-            self.input_widget.setStyleSheet(
-                "QCheckBox::indicator{border : 1px solid white;}"
-                "QCheckBox::indicator:checked{ background:rgba(255,255,200,150); }"
-                "QCheckBox{ background:transparent; color:white}"
-            )
-            self.input_widget.stateChanged.connect(
-                lambda: self.input_widget.setText(
-                    ["False", "True"][self.input_widget.isChecked()]
+                new_input_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px solid white;"
                 )
-            )
-            if self.logic_node.get_attribute_value("out_bool"):
-                self.input_widget.setChecked(
-                    self.logic_node.get_attribute_value("out_bool")
+                new_input_widget.setPlaceholderText("Text here")
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_input_widget.setText(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                new_input_widget.textChanged.connect(
+                    partial(
+                        self.update_attributes_from_widgets,
+                        attr_name,
+                    )
                 )
+                self.input_widgets.append(new_input_widget)
 
-            self.input_widget.stateChanged.connect(self.update_attribute_from_widget)
-            self.input_widget.setFixedSize(
-                150,
-                int(constants.HEADER_HEIGHT),
-            )
-
-        elif self.input_datatype == "int":
-            self.input_widget = QtWidgets.QSpinBox(parent=None)
-            self.input_widget.setMaximum(int(1e6))
-            self.input_widget.setMinimum(int(-1e6))
-            self.input_widget.setStyleSheet(
-                "background:transparent; color:white; border:1px solid white;"
-            )
-
-            if self.logic_node.get_attribute_value("out_int"):
-                self.input_widget.setValue(
-                    self.logic_node.get_attribute_value("out_int")
+            elif gui_input_type == constants.InputsGUI.DICT_INPUT:
+                new_input_widget = QtWidgets.QPlainTextEdit(parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(
+                    300,
+                    int(4 * constants.HEADER_HEIGHT),
                 )
-
-            self.input_widget.valueChanged.connect(self.update_attribute_from_widget)
-            self.input_widget.setFixedSize(
-                150,
-                int(constants.HEADER_HEIGHT),
-            )
-
-        elif self.input_datatype == "float":
-            self.input_widget = QtWidgets.QDoubleSpinBox(parent=None)
-            self.input_widget.setMaximum(1e6)
-            self.input_widget.setMinimum(-1e6)
-            self.input_widget.setStyleSheet(
-                "background:transparent; color:white; border:1px solid white;"
-            )
-
-            if self.logic_node.get_attribute_value("out_float"):
-                self.input_widget.setValue(
-                    self.logic_node.get_attribute_value("out_float")
+                new_input_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px solid white;"
                 )
-
-            self.input_widget.valueChanged.connect(self.update_attribute_from_widget)
-            self.input_widget.setFixedSize(
-                150,
-                int(constants.HEADER_HEIGHT),
-            )
-
-        elif self.input_datatype == "option":
-            self.input_widget = QtWidgets.QComboBox(parent=None)
-            self.input_widget.setStyleSheet(
-                "QComboBox { background:transparent; color:white; border:1px solid white; }"
-                "QWidget:item { color: black; background:white; }"
-            )
-            self.input_widget.addItems(self.logic_node.INPUT_OPTIONS)
-
-            if self.logic_node.get_attribute_value("out_str"):
-                self.input_widget.setCurrentText(
-                    self.logic_node.get_attribute_value("out_str")
+                new_input_widget.setPlaceholderText("Text here")
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_input_widget.setText(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                new_input_widget.textChanged.connect(
+                    partial(
+                        self.update_attributes_from_widgets,
+                        attr_name,
+                    )
                 )
+                self.input_widgets.append(new_input_widget)
 
-            self.input_widget.currentIndexChanged.connect(
-                self.update_attribute_from_widget
-            )
-            self.input_widget.setFixedSize(
-                150,
-                int(constants.HEADER_HEIGHT),
-            )
-            self.input_widget.adjustSize()
-            self.input_widget.setFixedSize(
-                self.input_widget.width() + 20, self.input_widget.height()
-            )
-
-        elif self.input_datatype == "tuple":
-            self.input_widget.setStyleSheet(
-                "background:transparent; color:white; border:1px solid white;"
-            )
-            self.input_widget.setPlaceholderText("tuple here")
-
-            if self.logic_node.get_attribute_value("out_tuple"):
-                self.input_widget.setText(
-                    self.logic_node.get_attribute_value("out_tuple")
+            elif gui_input_type == constants.InputsGUI.LIST_INPUT:
+                new_input_widget = QtWidgets.QLineEdit(parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(
+                    150,
+                    int(constants.HEADER_HEIGHT),
                 )
+                new_input_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px solid white;"
+                )
+                new_input_widget.setPlaceholderText("list here")
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_input_widget.setText(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                new_input_widget.textChanged.connect(
+                    partial(
+                        self.update_attributes_from_widgets,
+                        attr_name,
+                    )
+                )
+                self.input_widgets.append(new_input_widget)
 
-            self.input_widget.textChanged.connect(self.update_attribute_from_widget)
+            elif gui_input_type == constants.InputsGUI.BOOL_INPUT:
+                new_input_widget = QtWidgets.QCheckBox("False", parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(150, int(constants.HEADER_HEIGHT))
+                new_input_widget.setStyleSheet(
+                    "QCheckBox::indicator{border : 1px solid white;}"
+                    "QCheckBox::indicator:checked{ background:rgba(255,255,200,150); }"
+                    "QCheckBox{ background:transparent; color:white}"
+                )
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_input_widget.setChecked(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                new_input_widget.stateChanged.connect(
+                    lambda: new_input_widget.setText(
+                        ["False", "True"][new_input_widget.isChecked()]
+                    )
+                )
+                new_input_widget.clicked.connect(
+                    partial(self.update_attributes_from_widgets, attr_name)
+                )
+                self.input_widgets.append(new_input_widget)
 
-        # Set font of the widget
-        self.input_widget.setFont(
-            QtGui.QFont(constants.NODE_FONT, constants.HEADER_HEIGHT * 0.4)
-        )
+            elif gui_input_type == constants.InputsGUI.INT_INPUT:
+                new_input_widget = QtWidgets.QSpinBox(parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(
+                    150,
+                    int(constants.HEADER_HEIGHT),
+                )
+                new_input_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px solid white;"
+                )
+                new_input_widget.setMaximum(int(1e6))
+                new_input_widget.setMinimum(int(-1e6))
+                if self.logic_node.get_attribute_value("out_int"):
+                    new_input_widget.setValue(
+                        self.logic_node.get_attribute_value("out_int")
+                    )
+                new_input_widget.valueChanged.connect(
+                    partial(self.update_attributes_from_widgets, attr_name)
+                )
+                self.input_widgets.append(new_input_widget)
+
+            elif gui_input_type == constants.InputsGUI.FLOAT_INPUT:
+                new_input_widget = QtWidgets.QDoubleSpinBox(parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(
+                    150,
+                    int(constants.HEADER_HEIGHT),
+                )
+                new_input_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px solid white;"
+                )
+                new_input_widget.setMaximum(int(1e6))
+                new_input_widget.setMinimum(int(-1e6))
+                if self.logic_node.get_attribute_value("out_int"):
+                    new_input_widget.setValue(
+                        self.logic_node.get_attribute_value("out_int")
+                    )
+                new_input_widget.valueChanged.connect(
+                    partial(self.update_attributes_from_widgets, attr_name)
+                )
+                self.input_widgets.append(new_input_widget)
+
+            elif gui_input_type == constants.InputsGUI.OPTION_INPUT:
+                new_input_widget = QtWidgets.QComboBox(parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(
+                    150,
+                    int(constants.HEADER_HEIGHT),
+                )
+                new_input_widget.adjustSize()
+                new_input_widget.setFixedSize(
+                    new_input_widget.width() + 20, new_input_widget.height()
+                )
+                new_input_widget.setStyleSheet(
+                    "QComboBox { background:transparent; color:white; border:1px solid white; }"
+                    "QWidget:item { color: black; background:white; }"
+                )
+                new_input_widget.addItems(
+                    gui_internals_inputs.get(attr_name).get(
+                        "options", constants.InputsGUI.OPTION_INPUT.value
+                    )
+                )
+                if self.logic_node.get_attribute_value("out_str"):
+                    new_input_widget.setCurrentText(
+                        self.logic_node.get_attribute_value("out_str")
+                    )
+                new_input_widget.currentIndexChanged.connect(
+                    partial(self.update_attributes_from_widgets, attr_name)
+                )
+                self.input_widgets.append(new_input_widget)
+
+            elif gui_input_type == constants.InputsGUI.TUPLE_INPUT:
+                new_input_widget = QtWidgets.QLineEdit(parent=None)
+                new_input_widget.setObjectName(attr_name)
+                new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_input_widget.setFixedSize(
+                    150,
+                    int(constants.HEADER_HEIGHT),
+                )
+                new_input_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px solid white;"
+                )
+                new_input_widget.setPlaceholderText("tuple here")
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_input_widget.setText(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                new_input_widget.textChanged.connect(
+                    partial(
+                        self.update_attributes_from_widgets,
+                        attr_name,
+                    )
+                )
+                self.input_widgets.append(new_input_widget)
+
+        # Set font of the widgets
+        for w in self.input_widgets:
+            w.setFont(QtGui.QFont(constants.NODE_FONT, constants.HEADER_HEIGHT * 0.4))
 
         # Measure
-        self.extra_header = self.input_widget.height() + 5
+        self.extra_header = sum([w.height() for w in self.input_widgets]) + 5
+
+    def setup_preview_widgets(self):
+        """
+        For special nodes that can display previews, setup widgets
+        """
+        if not self.has_gui_previews:
+            return
+
+        # Separator label
+        previews_label = QtWidgets.QLabel(parent=None)
+        previews_label.setFixedSize(
+            150,
+            int(constants.STRIPE_HEIGHT),
+        )
+        previews_label.setStyleSheet(
+            "background:transparent; color:white; border:none;"
+        )
+        previews_label.setText("- PREVIEWS -")
+        self.preview_widgets.append(previews_label)
+
+        # Set type of widget depending on the type of preview needed
+        gui_internals_previews = self.logic_node.get_gui_internals_previews()
+
+        for attr_name in gui_internals_previews:
+            gui_preview_type = gui_internals_previews.get(attr_name).get("gui_type")
+
+            if gui_preview_type == constants.PreviewsGUI.STR_PREVIEW:
+                new_preview_widget = QtWidgets.QLineEdit(parent=None)
+                new_preview_widget.setObjectName(attr_name)
+                new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_preview_widget.setReadOnly(True)
+                new_preview_widget.setFixedSize(
+                    150,
+                    int(constants.STRIPE_HEIGHT),
+                )
+                new_preview_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px dotted white;"
+                )
+
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_preview_widget.setText(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                else:
+                    new_preview_widget.setText(f"[{attr_name}]")
+
+                self.preview_widgets.append(new_preview_widget)
+
+            elif gui_preview_type == constants.PreviewsGUI.MULTILINE_STR_PREVIEW:
+                new_preview_widget = QtWidgets.QPlainTextEdit(parent=None)
+                new_preview_widget.setObjectName(attr_name)
+                new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_preview_widget.setReadOnly(True)
+                new_preview_widget.setFixedSize(
+                    300,
+                    int(4 * constants.HEADER_HEIGHT),
+                )
+                new_preview_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px dotted white;"
+                )
+
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_preview_widget.setPlaceholderText(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                else:
+                    new_preview_widget.setPlaceholderText(f"[{attr_name}]")
+
+                self.preview_widgets.append(new_preview_widget)
+
+            elif gui_preview_type == constants.PreviewsGUI.IMAGE_PREVIEW:
+                new_preview_widget = QtWidgets.QLabel(parent=None)
+                new_preview_widget.setObjectName(attr_name)
+                new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_preview_widget.setFixedSize(
+                    constants.STRIPE_HEIGHT * 10,
+                    constants.STRIPE_HEIGHT * 10,
+                )
+                new_preview_widget.setAlignment(
+                    QtCore.Qt.AlignVCenter and QtCore.Qt.AlignCenter
+                )
+                new_preview_widget.setStyleSheet(
+                    "background:transparent; color:white; border:none;"
+                )
+                if self.logic_node.get_attribute_value(attr_name):
+                    pass  # TODO
+                else:
+                    new_preview_widget.setText(f"[{attr_name}]")
+
+                self.preview_widgets.append(new_preview_widget)
+
+        # Measure
+        self.extra_bottom = sum([w.height() for w in self.preview_widgets])
 
     def setup_extras(self):
         """
@@ -531,11 +739,13 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             ctx_icon.setSharedRenderer(self.extras_renderer)
             ctx_icon.setPos(0, -25)
             ctx_icon.setElementId("context")
+
         elif "InputFromCtx" in self.logic_node.class_name:
             ctx_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
             ctx_icon.setSharedRenderer(self.extras_renderer)
             ctx_icon.setPos(0, -25)
             ctx_icon.setElementId("in")
+
         elif "OutputToCtx" in self.logic_node.class_name:
             ctx_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
             ctx_icon.setSharedRenderer(self.extras_renderer)
@@ -551,7 +761,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.badge_icon.hide()
         self.error_marquee.hide()
         self.additional_info_text.hide()
-        self.update_attribute_from_widget()
+        self.update_attributes_from_widgets()
+        self.clear_previews()
 
     def show_result(self):
         """
@@ -609,70 +820,109 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
 
             self.badge_icon.setToolTip(html_text)
+
             if constants.IN_SCREEN_ERRORS:
                 self.additional_info_text.setHtml(html_text)
                 self.additional_info_text.show()
 
-    # CHANGE ATTRIBUTES ----------------------
-    def update_attribute_from_widget(self):
-        if self.input_datatype == "str":
-            text = self.proxy_input_widget.widget().text()
-            if text:
-                self.logic_node.set_special_attr_value("out_str", text)
-            else:
-                self.logic_node.clear_special_attr_value("out_str")
-        elif self.input_datatype == "multiline_str":
-            text = self.proxy_input_widget.widget().toPlainText()
-            if text:
-                self.logic_node.set_special_attr_value("out_str", text)
-            else:
-                self.logic_node.clear_special_attr_value("out_str")
-        elif self.input_datatype == "dict":
-            text = self.proxy_input_widget.widget().toPlainText()
-            if text:
-                try:
-                    eval_dict = ast.literal_eval(text)
-                    if eval_dict and isinstance(eval_dict, dict):
-                        self.logic_node.set_special_attr_value("out_dict", eval_dict)
-                except (ValueError, SyntaxError):
-                    pass
-            else:
-                self.logic_node.clear_special_attr_value("out_dict")
-        elif self.input_datatype == "list":
-            text = self.proxy_input_widget.widget().text()
-            if text:
-                try:
-                    eval_list = ast.literal_eval(text)
-                    if eval_list and isinstance(eval_list, list):
-                        self.logic_node.set_special_attr_value("out_list", eval_list)
-                except (ValueError, SyntaxError):
-                    pass
-            else:
-                self.logic_node.clear_special_attr_value("out_list")
-        elif self.input_datatype == "tuple":
-            text = self.proxy_input_widget.widget().text()
-            if text:
-                try:
-                    eval_tuple = ast.literal_eval(text)
-                    if eval_tuple and isinstance(eval_tuple, tuple):
-                        self.logic_node.set_special_attr_value("out_tuple", eval_list)
-                except (ValueError, SyntaxError):
-                    pass
-            else:
-                self.logic_node.clear_special_attr_value()
-        elif self.input_datatype == "bool":
-            checked = self.proxy_input_widget.widget().isChecked()
-            self.logic_node.set_special_attr_value("out_bool", checked)
-        elif self.input_datatype == "int":
-            val = self.proxy_input_widget.widget().value()
-            self.logic_node.set_special_attr_value("out_int", val)
-        elif self.input_datatype == "float":
-            val = self.proxy_input_widget.widget().value()
-            self.logic_node.set_special_attr_value("out_float", val)
-            self.logic_node.set_special_attr_value("out_int", int(val))
-        elif self.input_datatype == "option":
-            val = self.proxy_input_widget.widget().currentText()
-            self.logic_node.set_special_attr_value("out_str", val)
+        # Previews
+        if self.logic_node.success == constants.SUCCESSFUL:
+            self.update_previews_from_attributes()
+
+    # CHANGE ATTRIBUTES FROM INPUT WIDGETS ----------------------
+    def update_attributes_from_widgets(self, *args):
+        gui_internal_attr_name = args[0] if args else None
+        for w in self.input_widgets:
+            if (
+                w.objectName() == gui_internal_attr_name
+                or gui_internal_attr_name is None
+            ):
+                value = None
+
+                if isinstance(w, QtWidgets.QLineEdit):
+                    value = w.text() or None
+                    if value is None:
+                        self.logic_node[w.objectName()].clear()
+                        continue
+                    self.logic_node.set_attribute_from_str(w.objectName(), value)
+                elif isinstance(w, QtWidgets.QPlainTextEdit):
+                    value = w.toPlainText() or None
+                    if value is None:
+                        self.logic_node[w.objectName()].clear()
+                        continue
+                    self.logic_node.set_attribute_from_str(w.objectName(), value)
+                elif isinstance(w, QtWidgets.QCheckBox):
+                    value = w.isChecked()
+                    self.logic_node[w.objectName()].set_value(value)
+                elif isinstance(w, QtWidgets.QSpinBox):
+                    value = w.value()
+                    self.logic_node[w.objectName()].set_value(value)
+                elif isinstance(w, QtWidgets.QDoubleSpinBox):
+                    value = w.value()
+                    self.logic_node[w.objectName()].set_value(value)
+                elif isinstance(w, QtWidgets.QComboBox):
+                    value = w.currentText()
+                    self.logic_node[w.objectName()].set_value(value)
+
+        if self.scene():
+            GS.attribute_editor_refresh_node_requested.emit(self.logic_node.uuid)
+
+    # SHOW PREVIEWS ----------------------
+    def update_previews_from_attributes(self):
+        for w in self.preview_widgets:
+            if not w.objectName():
+                continue
+
+            value = self.logic_node.get_attribute_value(w.objectName())
+
+            if isinstance(w, QtWidgets.QLineEdit):
+                w.setText(value)
+            elif isinstance(w, QtWidgets.QPlainTextEdit):
+                w.setPlainText(value)
+            elif isinstance(w, QtWidgets.QCheckBox):
+                w.setChecked(value)
+            elif isinstance(w, QtWidgets.QSpinBox):
+                w.setValue(value)
+            elif isinstance(w, QtWidgets.QDoubleSpinBox):
+                w.setValue(value)
+            elif isinstance(w, QtWidgets.QComboBox):
+                w.setCurrentText(value)
+            elif isinstance(w, QtWidgets.QLabel):
+                im2 = value.convert("RGB")
+                data = im2.tobytes("raw", "RGB")
+                image = QtGui.QImage(
+                    data, im2.width, im2.height, QtGui.QImage.Format_RGB888
+                )
+                pix = QtGui.QPixmap.fromImage(image)
+                w.setPixmap(
+                    pix.scaled(w.width(), w.height(), QtCore.Qt.KeepAspectRatio)
+                )
+
+        if self.scene():
+            GS.attribute_editor_refresh_node_requested.emit(self.logic_node.uuid)
+
+    def clear_previews(self):
+        for w in self.preview_widgets:
+            if not w.objectName():
+                continue
+
+            self.logic_node[w.objectName()].clear()
+
+            if isinstance(w, QtWidgets.QLineEdit):
+                w.setText(f"[{w.objectName()}]")
+            elif isinstance(w, QtWidgets.QPlainTextEdit):
+                w.setPlainText(f"[{w.objectName()}]")
+            elif isinstance(w, QtWidgets.QCheckBox):
+                w.setChecked(False)
+            elif isinstance(w, QtWidgets.QSpinBox):
+                w.setValue(0)
+            elif isinstance(w, QtWidgets.QDoubleSpinBox):
+                w.setValue(0.0)
+            elif isinstance(w, QtWidgets.QComboBox):
+                w.setCurrentIndex(0)
+            elif isinstance(w, QtWidgets.QLabel):
+                w.clear()
+                w.setText(f"[{w.objectName()}]")
 
         if self.scene():
             GS.attribute_editor_refresh_node_requested.emit(self.logic_node.uuid)

@@ -36,7 +36,7 @@ class ClassSearcher(QtWidgets.QWidget):
 
     def make_connections(self):
         self.search_bar.textChanged.connect(self.filter_classes)
-        self.class_list.itemDoubleClicked.connect(self.send_signal)
+        self.class_list.itemDoubleClicked.connect(self.send_node_creation_signal)
 
     def reset(self):
         self.search_bar.clear()
@@ -61,10 +61,9 @@ class ClassSearcher(QtWidgets.QWidget):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
 
         if event.key() == QtCore.Qt.Key_Return and not modifiers:
-            self.send_signal()
+            self.send_node_creation_signal()
 
-    def send_signal(self):
-        # TODO rename this one
+    def send_node_creation_signal(self):
         if self.class_list.selectedItems():
             GS.node_creation_requested.emit(
                 self.pos(),

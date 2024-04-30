@@ -15,11 +15,18 @@ from all_nodes import constants
 
 
 # -------------------------------- LOGGING -------------------------------- #
-def get_logger(logger_name):
+def get_logger(logger_name: str) -> logging.Logger:
+    """Get a logger with a specific formatting
+
+    Args:
+        logger_name (str)
+
+    Returns:
+        logging.Logger
+    """
     logger = logging.getLogger(logger_name)
     logger.setLevel(constants.LOGGING_LEVEL)
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(constants.LOGGING_LEVEL)
     console_handler.setLevel(constants.LOGGING_LEVEL)
     console_handler.setFormatter(constants.CONSOLE_LOG_FORMATTER)
     logger.addHandler(console_handler)
@@ -35,9 +42,7 @@ def print_separator(message):
     Args:
         message (str): Message to display in the separator
     """
-    print("\n", end="")
-    print(message.upper())
-    print("-" * len(message))
+    LOGGER.info(f"\n{message.upper()}\n{'-' * len(message)}")
 
 
 def print_test_header(message):
@@ -46,11 +51,12 @@ def print_test_header(message):
     Args:
         message (str): Message to display in the separator
     """
-    message = "TEST STARTED - " + message
-    print("\n", end="")
-    print(f"{Fore.GREEN}+-{'-' * len(message)}-+")
-    print(f"{Fore.GREEN}| {message} | ")
-    print(f"{Fore.GREEN}+-{'-' * len(message)}-+ {Style.RESET_ALL}")
+    header = f"TEST STARTED - {message}"
+    print(
+        f"{Fore.GREEN}+-{'-' * len(header)}-+\n"
+        f"{Fore.GREEN}| {header} |\n"
+        f"{Fore.GREEN}+-{'-' * len(header)}-+ {Style.RESET_ALL}"
+    )
 
 
 # -------------------------------- UTILITY -------------------------------- #

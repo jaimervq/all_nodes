@@ -6,6 +6,7 @@ __license__ = "MIT License"
 
 import time
 
+from all_nodes.constants import PreviewsGUI
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes import utils
 
@@ -78,6 +79,10 @@ class IntAddition(GeneralLogicNode):
 
     OUTPUTS_DICT = {"out_total": {"type": int}}
 
+    INTERNALS_DICT = {
+        "internal_str": {"type": str, "gui_type": PreviewsGUI.STR_PREVIEW},
+    }
+
     def run(self):
         int_0 = self.get_attribute_value("in_int_0")
         int_1 = self.get_attribute_value("in_int_1")
@@ -88,3 +93,35 @@ class IntAddition(GeneralLogicNode):
         total = int_0 + int_1 + (int_2 or 0) + (int_3 or 0) + (int_4 or 0)
 
         self.set_output("out_total", total)
+        self.set_attribute_value("internal_str", f"Total: {total}")
+
+
+class StringPreview(GeneralLogicNode):
+    INPUTS_DICT = {
+        "in_str": {"type": str},
+    }
+
+    INTERNALS_DICT = {
+        "internal_str": {"type": str, "gui_type": PreviewsGUI.STR_PREVIEW},
+    }
+
+    def run(self):
+        self.set_attribute_value("internal_str", self.get_attribute_value("in_str"))
+
+
+class MultilineStringPreview(GeneralLogicNode):
+    INPUTS_DICT = {
+        "in_str": {"type": str},
+    }
+
+    INTERNALS_DICT = {
+        "internal_multiline_str": {
+            "type": str,
+            "gui_type": PreviewsGUI.MULTILINE_STR_PREVIEW,
+        },
+    }
+
+    def run(self):
+        self.set_attribute_value(
+            "internal_multiline_str", self.get_attribute_value("in_str")
+        )

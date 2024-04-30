@@ -1,9 +1,31 @@
 # SCENE env_variables
 # -------------------
-# Description: Example of getting env vars with fallback values
+# Description: 
 
 # Nodes section: overall list of nodes to be created
 nodes:
+- PrintToConsole_1:
+    class_name: PrintToConsole
+    x_pos: -556
+    y_pos: -341
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      internal_str: PROJECT
+    x_pos: -1410
+    y_pos: -361
+- StrInput_2:
+    class_name: StrInput
+    node_attributes:
+      internal_str: NO_PROJECT
+    x_pos: -1406
+    y_pos: -196
+- StrInput_3:
+    class_name: StrInput
+    node_attributes:
+      internal_str: USERNAME
+    x_pos: -1409
+    y_pos: -7
 - VAR_1:
     class_name: GetEnvVariable
     x_pos: -1032
@@ -12,37 +34,15 @@ nodes:
     class_name: GetEnvVariable
     x_pos: -1021
     y_pos: -56
-- PrintToConsole_1:
-    class_name: PrintToConsole
-    x_pos: -556
-    y_pos: -341
-- StrInput_1:
-    class_name: StrInput
-    node_attributes:
-      out_str: PROJECT
-    x_pos: -1353
-    y_pos: -304
-- StrInput_2:
-    class_name: StrInput
-    node_attributes:
-      out_str: NO_PROJECT
-    x_pos: -1353
-    y_pos: -204
-- StrInput_3:
-    class_name: StrInput
-    node_attributes:
-      out_str: USERNAME
-    x_pos: -1353
-    y_pos: -4
 
 # Connections section: connections to be done between nodes
 connections:
-- VAR_1.env_variable_value -> PrintToConsole_1.in_object_0
-- VAR_2.env_variable_value -> PrintToConsole_1.in_object_1
 - StrInput_1.out_str -> VAR_1.env_variable_name
 - StrInput_2.out_str -> VAR_1.fallback_value
 - StrInput_3.out_str -> VAR_2.env_variable_name
+- VAR_1.env_variable_value -> PrintToConsole_1.in_object_0
+- VAR_2.env_variable_value -> PrintToConsole_1.in_object_1
 
 
-# Scene created at: 2023-01-15 17:37:59.201005
-# Created by: jaime.rvq
+# Scene modified at: 2024-04-17 12:59:33.053113
+# Modified by: jaime.rvq

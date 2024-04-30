@@ -1,0 +1,29 @@
+# SCENE pillow_url_image
+# ----------------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- PIL_ImagePreview_1:
+    class_name: PIL_ImagePreview
+    x_pos: -1357
+    y_pos: -440
+- PIL_OpenFromUrl_1:
+    class_name: PIL_OpenFromUrl
+    x_pos: -1754
+    y_pos: -440
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      internal_str: https://birdsupplies.com/cdn/shop/articles/HORMONAL_BEHAVIOR_IN_PARROTS_HOW_TO_PET_A_PARROT.png
+    x_pos: -2126
+    y_pos: -440
+
+# Connections section: connections to be done between nodes
+connections:
+- PIL_OpenFromUrl_1.out_image -> PIL_ImagePreview_1.in_image
+- StrInput_1.out_str -> PIL_OpenFromUrl_1.in_url
+
+
+# Scene created at: 2024-04-16 10:53:38.282351
+# Created by: jaime.rvq

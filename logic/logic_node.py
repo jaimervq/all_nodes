@@ -47,14 +47,16 @@ class GeneralLogicNode:
 
     FILEPATH = ""
 
-    NICE_NAME = None
+    NICE_NAME = ""
     HELP = ""
+
+    IS_CONTEXT = False
+    CONTEXT_DEFINITION_FILE = ""
 
     INPUTS_DICT = {}
     OUTPUTS_DICT = {}
 
-    IS_CONTEXT = False
-    CONTEXT_DEFINITION_FILE = None
+    INTERNALS_DICT = {}  # Internal attrs not exposed (for GUI input / preview mostly)
 
     VALID_NAMING_PATTERN = "^[A-Z]+[a-zA-Z0-9_]*$"
 
@@ -72,11 +74,11 @@ class GeneralLogicNode:
         # Context it belongs to
         self.context = None
 
-        # Is context
+        # Specific for contexts
         self.internal_scene = None
         self.build_internal()
 
-        # Run
+        # Execution
         self.success = constants.NOT_RUN
 
         self.fail_log = []
@@ -94,12 +96,12 @@ class GeneralLogicNode:
 
     # UTILITY ----------------------
     @staticmethod
-    def name_is_valid(name):
+    def name_is_valid(name) -> bool:
         if re.match(GeneralLogicNode.VALID_NAMING_PATTERN, name):
             return True
         return False
 
-    def rename(self, new_name):
+    def rename(self, new_name: str) -> bool:
         if self.node_name == new_name:
             return True
 
@@ -112,20 +114,21 @@ class GeneralLogicNode:
 
         return False
 
-    def force_rename(self, new_name):
+    def force_rename(self, new_name: str) -> bool:
         LOGGER.debug(
             "Forcing renaming of node '{}' to '{}'".format(self.node_name, new_name)
         )
         self.node_name = new_name
         return True
 
-    def get_max_in_or_out_count(self):
+    def get_max_in_or_out_count(self) -> int:
+        """Get the biggest number of either input attributes or output attributes"""
         return max(len(self.get_input_attrs()), len(self.get_output_attrs()))
 
-    def get_node_full_dict(self):
+    def get_node_full_dict(self) -> dict:
         out_dict = dict()
 
-        # Class namde, node name...
+        # Class name, node name...
         out_dict["class_name"] = self.class_name
         out_dict["node_name"] = self.node_name
         out_dict["full_name"] = self.full_name
@@ -135,6 +138,11 @@ class GeneralLogicNode:
         # Attributes
         out_dict["node_attributes"] = dict()
         for attr in self.all_attributes:
+            if self.INTERNALS_DICT.get(attr.attribute_name, {}).get("gui_type") in set(
+                constants.PreviewsGUI
+            ):
+                continue  # No need to register preview attrs
+
             out_dict["node_attributes"][attr.dot_name] = dict()
             out_dict["node_attributes"][attr.dot_name][
                 "attribute_name"
@@ -178,7 +186,14 @@ class GeneralLogicNode:
 
         return out_dict
 
-    def get_node_basic_dict(self):
+    def get_node_basic_dict(self) -> dict:
+        """Get a dict that represents the main data needed to 'rebuild' a node.
+
+        It is retrieved as dict so it can also be serialized
+
+        Returns:
+            dict: with node main data
+        """
         out_dict = dict()
 
         out_dict[self.node_name] = dict()
@@ -186,6 +201,11 @@ class GeneralLogicNode:
 
         out_dict[self.node_name]["node_attributes"] = dict()
         for attr in self.all_attributes:
+            if self.INTERNALS_DICT.get(attr.attribute_name, {}).get("gui_type") in set(
+                constants.PreviewsGUI
+            ):
+                continue  # No need to register preview attrs
+
             if (
                 attr.attribute_name not in [constants.START, constants.COMPLETED]
                 and attr.value is not None
@@ -193,6 +213,8 @@ class GeneralLogicNode:
                 out_dict[self.node_name]["node_attributes"][
                     attr.attribute_name
                 ] = attr.value
+
+        # If no node attributes were registered, no need to keep this key
         if not out_dict[self.node_name]["node_attributes"]:
             out_dict[self.node_name].pop("node_attributes")
 
@@ -203,6 +225,7 @@ class GeneralLogicNode:
         for attr in self.get_output_attrs():
             for connected in attr.connected_attributes:
                 connections_list.append([attr.dot_name, connected.dot_name])
+
         return connections_list
 
     def out_connected_nodes(self):
@@ -210,9 +233,15 @@ class GeneralLogicNode:
         for attr in self.get_output_attrs():
             for connected_attr in attr.connected_attributes:
                 connected_nodes.add(connected_attr.parent_node)
+
         return connected_nodes
 
-    def in_connected_nodes_recursive(self):
+    def in_connected_nodes_recursive(self) -> list:
+        """Recursively get the full 'chain' of all the nodes connected to this node's inputs
+
+        Returns:
+            list: list of nodes
+        """
         in_connected_nodes = list()
 
         in_immediate_nodes = set()
@@ -227,9 +256,29 @@ class GeneralLogicNode:
 
         return in_connected_nodes
 
-    def check_cycles(self, node_to_check):
+    def check_cycles(self, node_to_check: GeneralLogicNode) -> bool:
         in_connected_nodes = self.in_connected_nodes_recursive()
         return node_to_check in in_connected_nodes
+
+    def get_gui_internals_inputs(self) -> dict:
+        gui_internals_inputs = dict()
+        for attr_name in self.INTERNALS_DICT:
+            if self.INTERNALS_DICT[attr_name].get("gui_type") in set(
+                constants.InputsGUI
+            ):
+                gui_internals_inputs[attr_name] = self.INTERNALS_DICT[attr_name]
+
+        return gui_internals_inputs
+
+    def get_gui_internals_previews(self) -> dict:
+        gui_internals_previews = dict()
+        for attr_name in self.INTERNALS_DICT:
+            if self.INTERNALS_DICT[attr_name].get("gui_type") in set(
+                constants.PreviewsGUI
+            ):
+                gui_internals_previews[attr_name] = self.INTERNALS_DICT[attr_name]
+
+        return gui_internals_previews
 
     # PROPERTIES ----------------------
     @property
@@ -257,13 +306,13 @@ class GeneralLogicNode:
         """
         Populate this node with the attributes that have been defined.
         """
+        # -------------- INPUTS -------------- #
         # Add a special "Run control" START attribute that will be in all nodes
         start_attr = GeneralLogicAttribute(
             self, constants.START, constants.INPUT, Run, is_optional=True
         )
         self.all_attributes.append(start_attr)
 
-        # Add all in and out attributes that have been defined
         for input_attribute_name in self.INPUTS_DICT:
             in_attr = GeneralLogicAttribute(
                 self,
@@ -275,6 +324,8 @@ class GeneralLogicNode:
                 ),
             )
             self.all_attributes.append(in_attr)
+
+        # -------------- OUTPUTS -------------- #
         for output_attribute_name in self.OUTPUTS_DICT:
             out_attr = GeneralLogicAttribute(
                 self,
@@ -292,6 +343,19 @@ class GeneralLogicNode:
             self, constants.COMPLETED, constants.OUTPUT, Run, is_optional=True
         )
         self.all_attributes.append(completed_attr)
+
+        # -------------- INTERNAL -------------- #
+        for internal_attribute_name in self.INTERNALS_DICT:
+            internal_attr = GeneralLogicAttribute(
+                self,
+                internal_attribute_name,
+                constants.INTERNAL,
+                self.INTERNALS_DICT[internal_attribute_name]["type"],
+                is_optional=self.INTERNALS_DICT[internal_attribute_name].get(
+                    "optional", False
+                ),
+            )
+            self.all_attributes.append(internal_attr)
 
     def get_input_attrs(self):
         """
@@ -329,7 +393,9 @@ class GeneralLogicNode:
         """
         if attribute_name not in self.all_attribute_names:
             raise RuntimeError(
-                "Error! No valid attribute {} in the node".format(attribute_name)
+                "Error! No valid attribute '{}' in the node {}".format(
+                    attribute_name, self.node_name
+                )
             )
 
         for attribute in self.all_attributes:
@@ -388,7 +454,9 @@ class GeneralLogicNode:
     def set_attribute_from_str(self, attribute_name: str, value_str: str):
         if attribute_name not in self.all_attribute_names:
             LOGGER.error(
-                "Error! No valid attribute {} in the node".format(attribute_name)
+                "Error! No valid attribute '{}' in the node {}".format(
+                    attribute_name, self.node_name
+                )
             )
             return
 
@@ -418,10 +486,12 @@ class GeneralLogicNode:
                                 "true": True,
                             }.get(value_str)
                         )
-                elif attribute.data_type in (dict, list, object):
-                    attribute.set_value(
-                        ast.literal_eval(value_str)
-                    )  # TODO revisit this for malformed lists, dicts, etc
+                elif attribute.data_type in (dict, list, object, tuple):
+                    try:
+                        attribute.set_value(ast.literal_eval(value_str))
+                    except (SyntaxError, ValueError) as e:
+                        attribute.clear()
+                        LOGGER.debug(e)
                 else:
                     LOGGER.error(
                         "Cannot set value {} to type {}, not defined how to cast from string".format(
@@ -432,7 +502,9 @@ class GeneralLogicNode:
     def get_attribute_value(self, attribute_name: str):
         if attribute_name not in self.all_attribute_names:
             LOGGER.error(
-                "Error! No valid attribute {} in the node".format(attribute_name)
+                "Error! No valid attribute '{}' in the node {}".format(
+                    attribute_name, self.node_name
+                )
             )
             return
 
@@ -584,11 +656,11 @@ class GeneralLogicNode:
             self.internal_scene.run_all_nodes(
                 spawn_thread=False
             )  # TODO maybe this can be improved? / recursive
-            internal_failures = self.internal_scene.gather_failed_nodes()
+            internal_failures = self.internal_scene.gather_failed_nodes_logs()
             if internal_failures:
                 for f in internal_failures:
                     self.fail(f)
-            internal_errors = self.internal_scene.gather_errored_nodes()
+            internal_errors = self.internal_scene.gather_errored_nodes_logs()
             if internal_errors:
                 for e in internal_errors:
                     self.error(e)
@@ -822,6 +894,15 @@ class GeneralLogicNode:
             + "</code></p>"
         )
 
+        help_text += (
+            "<h4>INTERNALS_DICT:</h4><p style='white-space:pre; background-color:black'><code>"
+            + pprint.pformat(self.INTERNALS_DICT, indent=2)
+            .replace(">", "&gt;")
+            .replace("<", "&lt;")
+            .replace("\n", "<br>")
+            + "</code></p>"
+        )
+
         return help_text
 
 
@@ -921,12 +1002,16 @@ class GeneralLogicAttribute:
         """
         # Checks -------------------------
         # Cycles check
-        if self.parent_node.check_cycles(
-            other_attribute.parent_node
-        ) or other_attribute.parent_node.check_cycles(self.parent_node):
-            connection_warning = "Cannot connect, cycle detected!"
-            LOGGER.warning(connection_warning)
-            return (False, connection_warning)
+        if self.connector_type == constants.INPUT:
+            if other_attribute.parent_node.check_cycles(self.parent_node):
+                connection_warning = "Cannot connect, cycle detected!"
+                LOGGER.warning(connection_warning)
+                return (False, connection_warning)
+        elif self.connector_type == constants.OUTPUT:
+            if self.parent_node.check_cycles(other_attribute.parent_node):
+                connection_warning = "Cannot connect, cycle detected!"
+                LOGGER.warning(connection_warning)
+                return (False, connection_warning)
 
         # Different nodes check
         if not self.parent_node != other_attribute.parent_node:
@@ -1021,8 +1106,10 @@ class GeneralLogicAttribute:
             str: with a representation fo the datatype
         """
         type = str(self.data_type)
-        if "." in str(self.data_type):
-            return re.search("'.+\.(.+)'", type).group(1)
+        if re.match("<class '.+\.(.+)'>", type):
+            return re.match("<class '.+\.(.+)'>", type).group(1)
+        elif re.match("<module '.+\.(.+)' from", type):
+            return re.match("<module '.+\.(.+)' from", type).group(1)
         return re.search("'(.+)'", type).group(1)
 
     def propagate_value(self):
@@ -1032,74 +1119,6 @@ class GeneralLogicAttribute:
     # SPECIAL METHODS ----------------------
     def __str__(self):
         return "GeneralLogicAttribute: {}, value:{}".format(self.dot_name, self.value)
-
-
-# -------------------------------- SUBCLASSES -------------------------------- #
-class SpecialInputNode(GeneralLogicNode):
-    """
-    Special type of node. When represented graphically, will accept direct input though a widget.
-    """
-
-    INPUT_TYPE = None
-
-    def run(self):
-        pass
-
-    def set_special_attr_value(self, attribute_name: str, value):
-        for attribute in self.all_attributes:
-            if attribute.attribute_name == attribute_name:
-                LOGGER.debug(
-                    "Setting special attribute {} to {}".format(
-                        attribute.dot_name, value
-                    )
-                )
-                self.set_attribute_value(attribute_name, value)
-                return
-
-    def clear_special_attr_value(self, attribute_name: str):
-        for attribute in self.all_attributes:
-            if attribute.attribute_name == attribute_name:
-                LOGGER.debug("Clearing special attribute {}".format(attribute.dot_name))
-                self[attribute_name].clear()
-                return
-
-    def get_node_full_dict(self):
-        node_dict = super().get_node_full_dict()
-        for attr in self.all_attributes:
-            if (
-                "out_" in attr.attribute_name
-                and attr.get_datatype_str() in attr.attribute_name
-            ):
-                node_dict["special_attr_value"] = attr.value
-                return node_dict
-
-    def reset(self):
-        """
-        Reset attributes of the node.
-
-        These nodes are special, we cannot reset their out attributes directly, as they are mainly established
-        and manipulated through the GUI.
-        """
-        LOGGER.info(
-            "Not resetting all of special node {} attrs, some are supposed to be modified through GUI".format(
-                self.full_name
-            )
-        )
-        for attr in self.all_attributes:
-            if attr.attribute_name in [constants.START, constants.COMPLETED]:
-                attr.clear()
-
-        self.success = constants.NOT_RUN
-
-        self.fail_log = []
-        self.error_log = []
-
-
-class OptionInput(SpecialInputNode):
-    INPUT_TYPE = "option"
-    INPUT_OPTIONS = ["A", "B", "C"]
-
-    OUTPUTS_DICT = {"out_str": {"type": str}}
 
 
 # -------------------------------- UTILITY -------------------------------- #

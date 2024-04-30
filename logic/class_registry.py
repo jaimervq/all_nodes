@@ -23,10 +23,10 @@ LOGGER = utils.get_logger(__name__)
 
 # -------------------------------- NODE CLASSES -------------------------------- #
 CLASSES_TO_SKIP = [
+    "InputsGUI",
+    "PreviewsGUI",
     "GeneralLogicNode",
     "Run",
-    "SpecialInputNode",
-    "OptionInput",
     "GrabInputFromCtx",
     "SetOutputToCtx",
 ]  # Classes to skip when gathering all usable clases, populating widgets...
@@ -68,20 +68,23 @@ def register_node_lib(full_path):
     )
     loaded_module = importlib.util.module_from_spec(loaded_spec)
     loaded_spec.loader.exec_module(loaded_module)
-    class_memebers = inspect.getmembers(loaded_module, inspect.isclass)
-    if not class_memebers:
+    class_members = inspect.getmembers(loaded_module, inspect.isclass)
+    if not class_members:
         return
 
     classes_dict[module_name] = dict()
     module_classes = list()
     class_counter = 0
-    for name, cls in class_memebers:
+    for name, cls in class_members:
         if name in CLASSES_TO_SKIP:
             continue
-
         # Icon for this class  # TODO Refactor this out
         default_icon = node_styles.get(module_name, dict()).get("default_icon")
-        icon_path = "icons:nodes.png" if not cls.IS_CONTEXT else "icons:cubes.png"
+        icon_path = "icons:nodes.png"
+        if (
+            hasattr(cls, "IS_CONTEXT") and cls.IS_CONTEXT
+        ):  # TODO inheritance not working here?
+            icon_path = "icons:cubes.png"
         if QtCore.QFile.exists(f"icons:{name}.png"):
             icon_path = f"icons:{name}.png"
         elif QtCore.QFile.exists(f"icons:{name}.svg"):
