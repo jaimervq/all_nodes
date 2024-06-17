@@ -214,9 +214,13 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
     # SCENE SETUP ----------------------
     def drawBackground(self, painter, rect):
-        pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 150), 2)
-        painter.setPen(pen)
+        solid_pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 150), 3)
+        dot_pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 150), 2)
+        dot_pen.setDashPattern([1, 8])
         for i in range(-20_000, 20_000, 200):
+            painter.setPen(solid_pen)
+            if i % 800 != 0:
+                painter.setPen(dot_pen)
             if i > rect.x() and i < rect.x() + rect.width():
                 painter.drawLine(QtCore.QLine(i, -20_000, i, 20_000))
             if i > rect.y() and i < rect.y() + rect.height():
@@ -231,8 +235,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             node_classname (str): class name to be instantiated
-            x (int): optional, coords to place the node at
-            y (int): optional, coords to place the node at
+            x (int): optional, x coord to place the node at
+            y (int): optional, y coord to place the node at
 
         Returns:
             GeneralGraphicNode: newly create node
@@ -260,8 +264,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             logic_node (GeneralLogicNode): logic node to be represented graphically
-            x (int): optional, coords to place the node at
-            y (int): optional, coords to place the node at
+            x (int): optional, x coord to place the node at
+            y (int): optional, y coord to place the node at
 
         Returns:
             GeneralGraphicNode: newly created node

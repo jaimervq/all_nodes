@@ -123,7 +123,20 @@ class LogicScene:
 
         return node.rename(new_name)
 
-    def rename_node_with_namespace(self, node, new_name: str) -> None:
+    def rename_node_with_namespace(self, node, new_name: str):
+        """
+        Rename a node with a given new name, while ensuring that the new name is unique within the scene.
+
+        Args:
+            node (LogicNode): The node to be renamed.
+            new_name (str): The new name for the node.
+
+        Raises:
+            LogicSceneError: If a node with the same name already exists in the scene.
+
+        Returns:
+            bool: True if the node could be renamed
+        """
         for n in self.all_logic_nodes:
             if n.uuid == node.uuid:
                 continue
@@ -133,10 +146,27 @@ class LogicScene:
         return node.force_rename(new_name)
 
     def set_context_to_nodes(self):
+        """
+        Set the context of each node in the logic scene to the context that this scene is in.
+        """
         for node in self.all_logic_nodes:
             node.set_context(self.context)
 
-    def connect_attrs_by_name(self, source_attr_name, target_attr_name):
+    def connect_attrs_by_name(self, source_attr_name: str, target_attr_name: str):
+        """
+        Connect two attributes in the logic scene by their names.
+
+        Args:
+            source_attr_name (str): The dot-separated name of the source attribute.
+            target_attr_name (str): The dot-separated name of the target attribute.
+
+        Raises:
+            LogicSceneError: If any of the following conditions are met:
+                - The source node does not exist.
+                - The target node does not exist.
+                - The source attribute does not exist.
+                - The target attribute does not exist.
+        """
         source_attr, target_attr = None, None
         for node in self.all_logic_nodes:
             for attr in node.all_attributes:
@@ -344,20 +374,38 @@ class LogicScene:
         return new_nodes
 
     # SCENE PROPERTIES ----------------------
-    def set_name(self, new_name):
+    def set_name(self, new_name: str):
+        """
+        Set the name of the scene.
+
+        Parameters:
+            new_name (str): The new name to set for the scene.
+        """
         self.scene_name = new_name
 
     def get_namespace(self):
+        """
+        Get a generic namespace for pasted nodes.
+
+        Returns:
+            str: The namespace string.
+        """
         self.pasted_count += 1
         return "pasted_{}::".format(self.pasted_count)
 
     # RESET NODES ----------------------
     def reset_all_nodes(self):
+        """
+        Reset all logic nodes of the scene.
+        """
         LOGGER.debug("Resetting all logic nodes of scene {}".format(self.scene_name))
         for node in self.all_logic_nodes:
             node.reset()
 
     def soft_reset_all_nodes(self):
+        """
+        Soft-reset all logic nodes of the scene.
+        """
         LOGGER.debug(
             "Soft-resetting all logic nodes of scene {}".format(self.scene_name)
         )
@@ -366,6 +414,12 @@ class LogicScene:
 
     # EXECUTION ----------------------
     def run_all_nodes(self, spawn_thread=True):
+        """
+        Run all nodes in the scene.
+
+        Parameters:
+            spawn_thread (bool, optional): Whether to spawn a new thread to run the nodes in . Defaults to True.
+        """
         if spawn_thread:
             worker = Worker(self._run_all_nodes)
             self.thread_manager.start(worker)
@@ -377,7 +431,14 @@ class LogicScene:
         # TODO investigate a better way
         self._run_all_nodes()
 
-    def run_list_of_nodes(self, nodes_to_execute, spawn_thread=True):
+    def run_list_of_nodes(self, nodes_to_execute: list, spawn_thread: bool = True):
+        """
+        Execute a list of nodes.y.
+
+        Parameters:
+            nodes_to_execute (list): A list of nodes to be executed.
+            spawn_thread (bool, optional): Whether to spawn a new thread to run the nodes in. Defaults to True.
+        """
         if spawn_thread:
             worker = Worker(self._run_list_of_nodes, nodes_to_execute)
             self.thread_manager.start(worker)
@@ -385,6 +446,9 @@ class LogicScene:
             self._run_list_of_nodes(nodes_to_execute)
 
     def _run_all_nodes(self):
+        """
+        Execute all the nodes in this logic scene.
+        """
         # Feedback
         if self.scene_name:
             utils.print_separator("Running {}".format(self.scene_name))
@@ -414,13 +478,25 @@ class LogicScene:
                     node_properties_list.append(i_node.get_node_full_dict())
         analytics.submit_bulk_analytics(node_properties_list)
 
-    def _run_list_of_nodes(self, nodes_to_execute):
+    def _run_list_of_nodes(self, nodes_to_execute: list):
+        """
+        Run a list of nodes.
+
+        Parameters:
+            nodes_to_execute (list): A list of nodes to be executed.
+        """
         for node in nodes_to_execute:
             node.run_single()
 
     # FEEDBACK GATHERING ----------------------
     # TODO make these properly recursive, mark contexts appropriately
     def gather_failed_nodes_logs(self) -> list:
+        """
+        Gather all failed logs from the logic nodes in the scene.
+
+        Returns:
+            list: A list of failed logs.
+        """
         failed_log = []
         for node in self.all_logic_nodes:
             if node.success in [constants.FAILED, constants.ERROR]:
@@ -429,6 +505,12 @@ class LogicScene:
         return failed_log
 
     def gather_errored_nodes_logs(self) -> list:
+        """
+        Gather the error logs from all nodes in the scene.
+
+        Returns:
+            list: A list of error logs.
+        """
         errored_log = []
         for node in self.all_logic_nodes:
             if node.success in [constants.FAILED, constants.ERROR]:
