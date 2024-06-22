@@ -16,11 +16,14 @@ from PySide2 import QtWidgets
 from all_nodes import constants
 from all_nodes.graphic import graphic_scene
 from all_nodes.graphic.widgets.attribute_editor import AttributeEditor
-from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
+from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 
 from all_nodes import utils
 
+
+GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -28,6 +31,9 @@ LOGGER = utils.get_logger(__name__)
 class AllNodesWindow(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
+
+        # CLASSES SCANNING
+        self.libraries_added = set()
 
         # Add UI paths
         root_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -78,42 +84,57 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         # INITIALIZE
         self.create_dock_windows()
-        LOGGER.info("all_nodes main window created")
         self.show()
+        LOGGER.debug("all_nodes main window created")
 
-        # POPULATE
+        # MENUS
         self.create_menus()
-        self.populate_tree()
+
+        # INITIAL STATE OF WIDGETS (while scanning for classes)
+        # We dont want the user to load any scene until the scanning is done, so we deactivate the menubar
+        self.menuBar().setDisabled(True)
 
     def make_connections(self):
         """
         Establish all connections between widget signals and methods.
         """
         # UI elements
-        self.ui.reset_current_btn.clicked.connect(self.reset_current_scene)
-        self.ui.run_current_btn.clicked.connect(self.run_current_scene)
         self.ui.filter_le.textChanged.connect(self.filter_nodes_by_name)
+
         self.ui.tabWidget.currentChanged.connect(self.attr_editor.clear_all)
         self.ui.tabWidget.currentChanged.connect(self.show_scene_results)
 
+        self.ui.reset_current_btn.clicked.connect(self.reset_current_scene)
+        self.ui.run_current_btn.clicked.connect(self.run_current_scene)
+
+        # Classes scanning / populating
+        for worker in CR.get_workers():
+            worker.signaler.finished.connect(self.populate_tree)
+
+        GS.signals.class_scanning_finished.connect(
+            lambda: self.menuBar().setEnabled(True)
+        )
+
         # Global signaler
-        GS.node_creation_requested.connect(self.add_node_to_current)
+        GS.signals.node_creation_requested.connect(self.add_node_to_current)
 
-        GS.tab_names_refresh_requested.connect(self.refresh_tab_names)
+        GS.signals.tab_names_refresh_requested.connect(self.refresh_tab_names)
 
-        GS.attribute_editor_node_addition_requested.connect(
+        GS.signals.attribute_editor_node_addition_requested.connect(
             self.add_node_to_attribute_editor_by_uuid
         )
-        GS.attribute_editor_refresh_node_requested.connect(
+        GS.signals.attribute_editor_refresh_node_requested.connect(
             self.refresh_node_in_attribute_editor_by_uuid
         )
-        GS.attribute_editor_remove_node_requested.connect(
+        GS.signals.attribute_editor_remove_node_requested.connect(
             self.remove_node_in_attribute_editor_by_uuid
         )
 
-        GS.context_expansion_requested.connect(self.expand_context)
+        GS.signals.context_expansion_requested.connect(self.expand_context)
 
-        GS.attribute_editor_global_refresh_requested.connect(self.attr_editor.refresh)
+        GS.signals.attribute_editor_global_refresh_requested.connect(
+            self.attr_editor.refresh
+        )
 
     # UI SETUP ----------------------
     def create_menus(self):
@@ -132,7 +153,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             """
             menu.setToolTipsVisible(True)
             for key in entries_dict:
-                nice_name = key.title().replace("_", " ")
+                nice_name = key.replace("scene_lib", "").title().replace("_", " ")
                 libs_menu = menu.addMenu(nice_name)
                 libs_menu.setIcon(QtGui.QIcon("icons:folder.png"))
                 scenes_list = entries_dict[key]
@@ -184,72 +205,80 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         """
         Populate the tree where all nodes are displayed.
         """
-        all_classes = CR.get_all_classes()
+        lib_names = CR.get_all_classes().keys()
+        for lib_name in lib_names:
+            if lib_name in self.libraries_added:
+                continue
+            self.libraries_added.add(lib_name)
 
-        top_level_items = {}
-        for m in sorted(all_classes):
-            node_lib_path = all_classes[m]["node_lib_path"]
-            node_lib_name = all_classes[m]["node_lib_name"]
-            node_lib_nice_name = node_lib_name.title().replace("_", " ")
-            module_filename = all_classes[m]["module_filename"]
-            module_full_path = all_classes[m]["module_full_path"]
-            module_nice_name = m.title().replace("_", " ")
-            color = all_classes[m].get("color", constants.DEFAULT_NODE_COLOR)
+            all_classes = CR.get_all_classes().get(lib_name)
+            if not all_classes:
+                return
 
-            if node_lib_name not in top_level_items:
-                lib_item = QtWidgets.QTreeWidgetItem()
-                lib_item.setText(0, node_lib_nice_name)
-                lib_item.setToolTip(0, "Lib: {}".format(node_lib_path))
-                top_level_items[node_lib_name] = lib_item
-            else:
-                lib_item = top_level_items[node_lib_name]
+            top_level_items = {}
+            for lib in sorted(all_classes):
+                node_lib_path = all_classes[lib]["node_lib_path"]
+                node_lib_name = all_classes[lib]["node_lib_name"]
+                node_lib_nice_name = node_lib_name.title().replace("_", " ")
+                module_filename = all_classes[lib]["module_filename"]
+                module_full_path = all_classes[lib]["module_full_path"]
+                module_nice_name = lib.title().replace("_", " ")
+                color = all_classes[lib].get("color", constants.DEFAULT_NODE_COLOR)
 
-            module_item = QtWidgets.QTreeWidgetItem()
-            module_item.setText(0, module_nice_name)
-            module_item.setToolTip(0, "Module: {}".format(module_filename))
+                if node_lib_name not in top_level_items:
+                    lib_item = QtWidgets.QTreeWidgetItem()
+                    lib_item.setText(0, node_lib_nice_name)
+                    lib_item.setToolTip(0, "Lib: {}".format(node_lib_path))
+                    top_level_items[node_lib_name] = lib_item
+                else:
+                    lib_item = top_level_items[node_lib_name]
 
-            for name, cls in all_classes[m]["classes"]:
-                class_item = QtWidgets.QTreeWidgetItem()
-                class_item.setText(0, name)
-                class_item.setToolTip(
-                    0,
-                    "<h2>Class:&nbsp;<b>{}</b></h2><p style='white-space:pre'>{}".format(
-                        name, module_full_path
-                    ),
-                )
-                class_item.setData(0, QtCore.Qt.UserRole, name)
-                if (
-                    hasattr(cls, "NICE_NAME") and cls.NICE_NAME
-                ):  # TODO inheritance not working here?
-                    class_item.setText(0, cls.NICE_NAME)
+                module_item = QtWidgets.QTreeWidgetItem()
+                module_item.setText(0, module_nice_name)
+                module_item.setToolTip(0, "Module: {}".format(module_filename))
 
-                icon = QtGui.QIcon(cls.ICON_PATH)
-                class_item.setIcon(0, icon)
-                item_color = QtGui.QColor(color)
-                item_color.setAlphaF(0.25)
-                class_item.setBackgroundColor(0, item_color)
-                module_item.addChild(class_item)
+                for name, cls in all_classes[lib]["classes"]:
+                    class_item = QtWidgets.QTreeWidgetItem()
+                    class_item.setText(0, name)
+                    class_item.setToolTip(
+                        0,
+                        "<h2>Class:&nbsp;<b>{}</b></h2><p style='white-space:pre'>{}".format(
+                            name, module_full_path
+                        ),
+                    )
+                    class_item.setData(0, QtCore.Qt.UserRole, name)
+                    if (
+                        hasattr(cls, "NICE_NAME") and cls.NICE_NAME
+                    ):  # TODO inheritance not working here?
+                        class_item.setText(0, cls.NICE_NAME)
 
-            module_item_color = QtGui.QColor(color)
-            module_item_color.setAlphaF(0.4)
-            module_item.setBackgroundColor(0, module_item_color)
+                    icon = QtGui.QIcon(cls.ICON_PATH)
+                    class_item.setIcon(0, icon)
+                    item_color = QtGui.QColor(color)
+                    item_color.setAlphaF(0.25)
+                    class_item.setBackgroundColor(0, item_color)
+                    module_item.addChild(class_item)
 
-            lib_item.addChild(module_item)
+                module_item_color = QtGui.QColor(color)
+                module_item_color.setAlphaF(0.4)
+                module_item.setBackgroundColor(0, module_item_color)
 
-        for t in top_level_items:
-            lib_item = top_level_items[t]
-            self.ui.nodes_tree.addTopLevelItem(lib_item)
-            lib_item.setExpanded(True)
-            lib_item.setFont(0, QtGui.QFont("arial", 16))
-            for i in range(lib_item.childCount()):
-                node_file_item = lib_item.child(i)
-                node_file_item.setExpanded(True)
-                node_file_item.setFont(0, QtGui.QFont("arial", 14))
-                for i in range(node_file_item.childCount()):
-                    node_class = node_file_item.child(i)
-                    node_class.setFont(0, QtGui.QFont("arial", 14))
+                lib_item.addChild(module_item)
 
-        self.ui.nodes_tree.sortByColumn(0, QtCore.Qt.AscendingOrder)
+            for t in top_level_items:
+                lib_item = top_level_items[t]
+                self.ui.nodes_tree.addTopLevelItem(lib_item)
+                lib_item.setExpanded(True)
+                lib_item.setFont(0, QtGui.QFont("arial", 16))
+                for i in range(lib_item.childCount()):
+                    node_file_item = lib_item.child(i)
+                    node_file_item.setExpanded(True)
+                    node_file_item.setFont(0, QtGui.QFont("arial", 14))
+                    for i in range(node_file_item.childCount()):
+                        node_class = node_file_item.child(i)
+                        node_class.setFont(0, QtGui.QFont("arial", 14))
+
+            self.ui.nodes_tree.sortByColumn(0, QtCore.Qt.AscendingOrder)
 
     def filter_nodes_by_name(self):
         """

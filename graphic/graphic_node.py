@@ -15,8 +15,10 @@ from PySide2 import QtSvg
 
 from all_nodes import constants
 from all_nodes import utils
-from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
+from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 
+
+GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -447,7 +449,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 new_input_widget.setPlaceholderText("Text here")
                 if self.logic_node.get_attribute_value(attr_name):
-                    new_input_widget.setText(
+                    new_input_widget.setPlainText(
                         self.logic_node.get_attribute_value(attr_name)
                     )
                 new_input_widget.textChanged.connect(
@@ -865,7 +867,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                     self.logic_node[w.objectName()].set_value(value)
 
         if self.scene():
-            GS.attribute_editor_refresh_node_requested.emit(self.logic_node.uuid)
+            GS.signals.attribute_editor_refresh_node_requested.emit(
+                self.logic_node.uuid
+            )
 
     # SHOW PREVIEWS ----------------------
     def update_previews_from_attributes(self):
@@ -899,7 +903,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
 
         if self.scene():
-            GS.attribute_editor_refresh_node_requested.emit(self.logic_node.uuid)
+            GS.signals.attribute_editor_refresh_node_requested.emit(
+                self.logic_node.uuid
+            )
 
     def clear_previews(self):
         for w in self.preview_widgets:
@@ -925,7 +931,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 w.setText(f"[{w.objectName()}]")
 
         if self.scene():
-            GS.attribute_editor_refresh_node_requested.emit(self.logic_node.uuid)
+            GS.signals.attribute_editor_refresh_node_requested.emit(
+                self.logic_node.uuid
+            )
 
     # ITEM CHANGE EVENT ----------------------
     def itemChange(self, change, value):

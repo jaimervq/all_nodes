@@ -9,9 +9,12 @@ from PySide2 import QtGui
 from PySide2 import QtWidgets, QtCore
 
 from all_nodes import utils
-from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
+from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 
+
+GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -74,7 +77,7 @@ class ClassSearcher(QtWidgets.QWidget):
         Send a signal to request the creation of a node based on selection
         """
         if self.class_list.selectedItems():
-            GS.node_creation_requested.emit(
+            GS.signals.node_creation_requested.emit(
                 self.pos(),
                 self.class_list.selectedItems()[0].text(),
             )

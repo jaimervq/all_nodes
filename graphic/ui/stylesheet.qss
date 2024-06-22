@@ -28,6 +28,12 @@ QWidget
 	color: #fff;
 }
 
+/* ---------------------------- QMenuBar ---------------------------- */
+QMenuBar:disabled{
+	background-color: #303340;
+	color: dark-gray;
+}
+
 /* ---------------------------- QMenu ---------------------------- */
 QMenu
 {

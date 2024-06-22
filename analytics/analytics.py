@@ -33,7 +33,7 @@ mongo_client = None
 try:
     mongo_client = MongoClient(CONNECTION_STRING)
     LOGGER.debug(mongo_client.admin.command("ping"))
-    LOGGER.info(f"Connected to MongoDB for analytics, username: {DB_USERNAME}")
+    LOGGER.debug(f"Connected to MongoDB for analytics, username: {DB_USERNAME}")
 except Exception:
     LOGGER.debug("No statistics will be submitted")
 

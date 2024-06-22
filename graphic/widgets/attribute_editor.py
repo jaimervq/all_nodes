@@ -47,14 +47,15 @@ class NodePanel(QtWidgets.QWidget):
         """
         all_classes = CR.get_all_classes()
         node_color = QtGui.QColor(constants.DEFAULT_NODE_COLOR)
-        for module in all_classes:
-            classes = all_classes[module]["classes"]
-            for c in classes:
-                c_name, _ = c
-                if c_name == self.logic_node.class_name:
-                    node_color = QtGui.QColor(all_classes[module]["color"])
-                    node_color.setAlphaF(0.8)
-                    return node_color
+        for lib in all_classes:
+            for module in all_classes[lib]:
+                classes = all_classes[lib][module]["classes"]
+                for c in classes:
+                    c_name, _ = c
+                    if c_name == self.logic_node.class_name:
+                        node_color = QtGui.QColor(all_classes[lib][module]["color"])
+                        node_color.setAlphaF(0.8)
+                        return node_color
 
         return node_color
 

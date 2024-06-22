@@ -1,3 +1,9 @@
+__author__ = "Jaime Rivera <jaime.rvq@gmail.com>"
+__copyright__ = "Copyright 2022, Jaime Rivera"
+__credits__ = []
+__license__ = "MIT License"
+
+
 import os
 from pprint import pprint
 import tempfile
