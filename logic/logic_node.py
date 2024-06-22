@@ -97,11 +97,33 @@ class GeneralLogicNode:
     # UTILITY ----------------------
     @staticmethod
     def name_is_valid(name) -> bool:
+        """
+        Check if the given name is valid according to a defined pattern.
+
+        Parameters:
+            name (str): The name to be checked.
+
+        Returns:
+            bool: True if the name is valid, False otherwise.
+        """
         if re.match(GeneralLogicNode.VALID_NAMING_PATTERN, name):
             return True
         return False
 
     def rename(self, new_name: str) -> bool:
+        """
+        Rename the node to the given new name.
+
+        Args:
+            new_name (str): The new name for the node.
+
+        Returns:
+            bool: True if the node is successfully renamed, False otherwise.
+
+        Example:
+            node.rename("Node2")  # returns True
+            node.rename("1Node")  # returns False
+        """
         if self.node_name == new_name:
             return True
 
@@ -115,6 +137,15 @@ class GeneralLogicNode:
         return False
 
     def force_rename(self, new_name: str) -> bool:
+        """
+        Rename the node to the given new name, ignoring any validation rules.
+
+        Args:
+            new_name (str): The new name for the node.
+
+        Returns:
+            bool: True always.
+        """
         LOGGER.debug(
             "Forcing renaming of node '{}' to '{}'".format(self.node_name, new_name)
         )
@@ -122,10 +153,21 @@ class GeneralLogicNode:
         return True
 
     def get_max_in_or_out_count(self) -> int:
-        """Get the biggest number of either input attributes or output attributes"""
+        """
+        Get the maximum number of input or output attributes.
+
+        Returns:
+            int: The maximum number of input or output attributes.
+        """
         return max(len(self.get_input_attrs()), len(self.get_output_attrs()))
 
     def get_node_full_dict(self) -> dict:
+        """
+        Get a dictionary containing the full representation of the node, including class name, node name, attributes, connections, success, logs, execution info, and extra information.
+
+        Returns:
+            dict: A dictionary representing the full node.
+        """
         out_dict = dict()
 
         # Class name, node name...
@@ -221,6 +263,12 @@ class GeneralLogicNode:
         return out_dict
 
     def get_out_connections(self):
+        """
+        Get a list of connections coming from output attributes of this node.
+
+        Returns:
+            list: of lists, where each list contains the dot names of two connected attributes.
+        """
         connections_list = list()
         for attr in self.get_output_attrs():
             for connected in attr.connected_attributes:
@@ -229,6 +277,12 @@ class GeneralLogicNode:
         return connections_list
 
     def out_connected_nodes(self):
+        """
+        Return a set of nodes that are connected to this node's output attributes.
+
+        Returns:
+            set: A set of nodes that are connected to this node's output attributes.
+        """
         connected_nodes = set()
         for attr in self.get_output_attrs():
             for connected_attr in attr.connected_attributes:
@@ -257,10 +311,25 @@ class GeneralLogicNode:
         return in_connected_nodes
 
     def check_cycles(self, node_to_check: GeneralLogicNode) -> bool:
+        """
+        Check if a given node is part of a cycle in the connected nodes of this node.
+
+        Args:
+            node_to_check (GeneralLogicNode): The node to check for cycles.
+
+        Returns:
+            bool: True if the given node is part of a cycle, False otherwise.
+        """
         in_connected_nodes = self.in_connected_nodes_recursive()
         return node_to_check in in_connected_nodes
 
     def get_gui_internals_inputs(self) -> dict:
+        """
+        Return a dictionary of internal attributes that are used as GUI inputs.
+
+        Returns:
+            dict: A dictionary of internal attributes used as GUI inputs.
+        """
         gui_internals_inputs = dict()
         for attr_name in self.INTERNALS_DICT:
             if self.INTERNALS_DICT[attr_name].get("gui_type") in set(
@@ -271,6 +340,12 @@ class GeneralLogicNode:
         return gui_internals_inputs
 
     def get_gui_internals_previews(self) -> dict:
+        """
+        Returns a dictionary of internal attributes that are used as GUI previews.
+
+        Returns:
+            dict: A dictionary of internal attributes used as GUI previews.
+        """
         gui_internals_previews = dict()
         for attr_name in self.INTERNALS_DICT:
             if self.INTERNALS_DICT[attr_name].get("gui_type") in set(
@@ -283,6 +358,10 @@ class GeneralLogicNode:
     # PROPERTIES ----------------------
     @property
     def full_name(self):
+        """
+        Property method to get the full name of the node by combining the context full name and node name.
+        Returns the full name as a string.
+        """
         if self.context:
             return self.context.full_name + "/" + self.node_name
         else:
@@ -290,10 +369,20 @@ class GeneralLogicNode:
 
     @property
     def all_attribute_names(self):
+        """
+        Property method to get all attribute names by extracting attribute names from all attributes.
+        Returns a list of attribute names.
+        """
         return [a.attribute_name for a in self.all_attributes]
 
     # ATTRIBUTES ----------------------
     def check_attributes_validity(self):
+        """
+        Check the validity of the attributes in the node.
+
+        Raises:
+            RuntimeError: If an input attribute name is also present in the OUTPUTS_DICT.
+        """
         for in_name in self.INPUTS_DICT.keys():
             if in_name in self.OUTPUTS_DICT.keys():
                 raise RuntimeError(
@@ -452,6 +541,17 @@ class GeneralLogicNode:
         )
 
     def set_attribute_from_str(self, attribute_name: str, value_str: str):
+        """
+        Set the value of an attribute from a string.
+
+        Args:
+            attribute_name (str): The name of the attribute to set.
+            value_str (str): The string value to set the attribute to.
+
+        Notes:
+            - If the attribute name is not valid, an error message is logged and the function returns.
+            - If the value string is empty, the attribute is cleared.
+        """
         if attribute_name not in self.all_attribute_names:
             LOGGER.error(
                 "Error! No valid attribute '{}' in the node {}".format(
@@ -500,6 +600,15 @@ class GeneralLogicNode:
                     )
 
     def get_attribute_value(self, attribute_name: str):
+        """
+        Get the value of an attribute with the given name.
+
+        Args:
+            attribute_name (str): The name of the attribute to retrieve the value of.
+
+        Returns:
+            The value of the attribute, or None if the attribute does not exist.
+        """
         if attribute_name not in self.all_attribute_names:
             LOGGER.error(
                 "Error! No valid attribute '{}' in the node {}".format(
@@ -516,6 +625,17 @@ class GeneralLogicNode:
         other_node: GeneralLogicNode,
         other_attribute_name: str,
     ):
+        """
+        Connect the given attribute of this node to the given attribute of another node.
+
+        Args:
+            attribute_name (str): The name of the attribute in this node.
+            other_node (GeneralLogicNode): The other node to connect to.
+            other_attribute_name (str): The name of the attribute in the other node.
+
+        Returns:
+            The result of the connection between the source attribute and the target attribute.
+        """
         source_attr = self[attribute_name]
         target_attr = other_node[other_attribute_name]
         return source_attr.connect_to_other(target_attr)
@@ -546,6 +666,12 @@ class GeneralLogicNode:
         return False
 
     def check_all_inputs_have_value(self) -> bool:
+        """
+        Check if all needed input attributes have a value.
+
+        Returns:
+            bool: True if all needed input attributes have a value, False otherwise.
+        """
         not_set_attrs = []
         for attr in self.get_input_attrs():
             if attr.is_optional and attr.is_empty():
@@ -565,6 +691,12 @@ class GeneralLogicNode:
         return True
 
     def check_all_outputs_have_value(self) -> bool:
+        """
+        Check if all needed output attributes have a value.
+
+        Returns:
+            bool: True if all output attributes have a value, False otherwise.
+        """
         not_set_attrs = []
         for attr in self.get_output_attrs():
             if attr.is_empty() and not attr.is_optional:
@@ -582,9 +714,20 @@ class GeneralLogicNode:
 
     # CONTEXT ----------------------
     def is_in_root(self):
+        """
+        Check if the node is in the root context.
+
+        Returns:
+            bool
+        """
         return self.context is None
 
     def build_internal(self):
+        """
+        Build the internal scene for the context node.
+
+        If the node is not a context node, the function returns without doing anything.
+        """
         if not self.IS_CONTEXT:
             return
 
@@ -613,11 +756,23 @@ class GeneralLogicNode:
                 )
             )
 
-    def set_context(self, context):
+    def set_context(self, context: GeneralLogicNode):
+        """
+        Set the context for this node.
+
+        Args:
+            context (GeneralLogicNode): The context to set this node as part of
+        """
         self.context = context
 
     # RUN ----------------------
     def _run(self, execute_connected=True):
+        """
+        Run the node.
+
+        Parameters:
+            execute_connected (bool): Whether to execute connected nodes. Default is True
+        """
         # Status
         if self.success != constants.NOT_RUN:
             LOGGER.warning(
@@ -792,6 +947,9 @@ class GeneralLogicNode:
             self.error_log.append(message)
 
     def mark_skipped(self):
+        """
+        Mark this node as skipped.
+        """
         self.success = constants.SKIPPED
         self.signaler.finished.emit()
 
@@ -950,17 +1108,40 @@ class GeneralLogicAttribute:
         return self.value
 
     def is_empty(self) -> bool:
+        """
+        Check if the value of the attribute is None.
+
+        Returns:
+            bool
+        """
         return self.value is None
 
     def set_value(self, new_value):
+        """
+        Set the value of the attribute to the given new value.
+
+        Args:
+            new_value (Any): The new value to set the object to.
+        """
         self.value = new_value
         LOGGER.debug("Setting {} to new value {}".format(self.full_name, self.value))
 
     def clear(self):
+        """
+        Clear the value of the attribute.
+
+        This method sets the value of the attribute to None, effectively clearing its current value.
+        """
         self.value = None
 
     # CONNECTIONS ----------------------
     def get_connections_list(self):
+        """
+        Get a list of connections where this attribute is involved.
+
+        Returns:
+            list: A list of lists, where each list contains the dot names of two connected attributes.
+        """
         connections = []
         if self.has_connections():
             for connected_attr in self.connected_attributes:
@@ -990,7 +1171,7 @@ class GeneralLogicAttribute:
         """
         return len(self.connected_attributes) > 0
 
-    def connect_to_other(self, other_attribute: GeneralLogicAttribute) -> bool:
+    def connect_to_other(self, other_attribute: GeneralLogicAttribute) -> tuple:
         """
         Connect this attribute to another.
 
@@ -1113,6 +1294,9 @@ class GeneralLogicAttribute:
         return re.search("'(.+)'", type).group(1)
 
     def propagate_value(self):
+        """
+        Propagate the value of this attribute to all its connected attributes.
+        """
         for connected_attr in self.connected_attributes:
             connected_attr.set_value(self.value)
 

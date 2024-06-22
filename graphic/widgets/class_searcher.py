@@ -17,7 +17,7 @@ LOGGER = utils.get_logger(__name__)
 
 
 class ClassSearcher(QtWidgets.QWidget):
-    """TODO"""
+    """TODO this description"""
 
     def __init__(self, *args, **kwargs):
         QtWidgets.QWidget.__init__(self, *args, **kwargs)
@@ -39,12 +39,18 @@ class ClassSearcher(QtWidgets.QWidget):
         self.class_list.itemDoubleClicked.connect(self.send_node_creation_signal)
 
     def reset(self):
+        """
+        Reset the state of the widget.
+        """
         self.search_bar.clear()
         self.class_list.clear()
-        self.show()
+        self.show()  # TODO should this be separate?
         self.search_bar.setFocus()
 
     def filter_classes(self):
+        """
+        Filter the list of classes based on the text entered in the search bar.
+        """
         self.class_list.clear()
         current_text = self.search_bar.text()
         if not current_text:
@@ -64,6 +70,9 @@ class ClassSearcher(QtWidgets.QWidget):
             self.send_node_creation_signal()
 
     def send_node_creation_signal(self):
+        """
+        Send a signal to request the creation of a node based on selection
+        """
         if self.class_list.selectedItems():
             GS.node_creation_requested.emit(
                 self.pos(),

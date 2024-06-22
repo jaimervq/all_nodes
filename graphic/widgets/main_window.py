@@ -78,6 +78,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         # INITIALIZE
         self.create_dock_windows()
+        LOGGER.info("all_nodes main window created")
         self.show()
 
         # POPULATE
@@ -278,6 +279,11 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
     # TABS ----------------------
     def clear_workspace(self):
+        """
+        Clear the workspace by displaying a confirmation dialog to the user.
+
+        If the user confirms, all unsaved progress will be lost. It clears the tabs and adds a new scene to the workspace.
+        """
         dlg = QtWidgets.QMessageBox(parent=None)
         dlg.setWindowTitle("Clear workspace")
         dlg.setText(
