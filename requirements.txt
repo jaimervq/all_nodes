@@ -1,8 +1,9 @@
 colorama
-matplotlib
-pandas
+numpy<2
+matplotlib<3.9
 Pillow
-pymongo[srv]
-PySide2>5, <6
+PySide2<6
 PyYAML
+pandas
+pymongo[srv]
 ruff==0.1.6
