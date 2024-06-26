@@ -1,8 +1,8 @@
-name: Weekly analytics
+name: Monthly analytics
 
 on:
   schedule:
-    - cron: '23 0 * * 1'
+    - cron: '0 0 1 * *'
 
 jobs:
   publish_analytics:

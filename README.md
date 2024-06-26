@@ -258,7 +258,7 @@ logic_scene.run_all_nodes()
 ```
 
 # 📈 Analytics
-Automatically generated once a week
+Automatically generated once a month
 (For personal use, they are not gathered from any other user)
 ![](docs/analytics/recent_usage.png)
 ![](docs/analytics/most_used.png)
