@@ -7,6 +7,7 @@ from all_nodes import constants
 from all_nodes.lib.base_node_lib.nodes_general_library import debug_nodes
 from all_nodes.lib.base_node_lib.nodes_general_library import file_reading_nodes
 from all_nodes.lib.base_node_lib.nodes_general_library import file_writing_nodes
+from all_nodes.lib.base_node_lib.nodes_general_library import folder_management_nodes
 from all_nodes.lib.base_node_lib.nodes_general_library import general_nodes
 from all_nodes.lib.base_node_lib.nodes_general_library import general_input_nodes
 from all_nodes import utils
@@ -28,7 +29,7 @@ class NodeTesting(unittest.TestCase):
         self.assertIsNotNone(n_1)
         n_2 = general_nodes.GetDictKey()
         self.assertIsNotNone(n_2)
-        n_3 = general_nodes.CopyFoldersRecursive()
+        n_3 = folder_management_nodes.CopyFoldersRecursive()
         self.assertIsNotNone(n_3)
 
     def test_attribute_name(self):
