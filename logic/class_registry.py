@@ -31,6 +31,7 @@ CLASSES_TO_SKIP = [
     "PreviewsGUI",
     "GeneralLogicNode",
     "Run",
+    "RunLoop",
     "GrabInputFromCtx",
     "SetOutputToCtx",
 ]  # Classes to skip when gathering all usable clases, populating widgets...

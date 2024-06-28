@@ -10,6 +10,7 @@ import ast
 import datetime
 import getpass
 import os
+from pathlib import Path
 import pprint
 import re
 import time
@@ -81,6 +82,7 @@ class GeneralLogicNode:
         # Execution
         self.active = True
         self.success = constants.NOT_RUN
+        self.execution_counter = 0
 
         self.fail_log = []
         self.error_log = []
@@ -164,10 +166,12 @@ class GeneralLogicNode:
 
     def get_node_full_dict(self) -> dict:
         """
-        Get a dictionary containing the full representation of the node, including class name, node name, attributes, connections, success, logs, execution info, and extra information.
+        Get a dictionary containing the full representation of the node,
+        including class name, node name, attributes, connections, success, logs,
+        execution info, and extra information.
 
         Returns:
-            dict: A dictionary representing the full node.
+            dict: A dictionary fully representing the node.
         """
         out_dict = dict()
 
@@ -176,7 +180,7 @@ class GeneralLogicNode:
         out_dict["node_name"] = self.node_name
         out_dict["full_name"] = self.full_name
         out_dict["uuid"] = self.uuid
-        out_dict["origin_file"] = os.path.basename(os.path.abspath(self.FILEPATH))
+        out_dict["origin_file"] = Path(self.FILEPATH).name
 
         # Attributes
         out_dict["node_attributes"] = dict()
@@ -456,13 +460,33 @@ class GeneralLogicNode:
         Get all the input attributes of the node.
 
         Returns:
-            list: with all the input attributes
+            list: with all the input attributesf
         """
         return [
             attr
             for attr in self.all_attributes
             if attr.connector_type == constants.INPUT
         ]
+
+    def clear_input_attrs(self):
+        for attr in self.get_input_attrs():
+            attr.clear()
+
+    def recursive_clear_connected_input_attrs(self):
+        for attr in self.get_input_attrs():
+            if attr.has_input_connected():
+                attr.clear()
+
+        for node in self.out_connected_nodes():
+            node.recursive_clear_connected_input_attrs()
+
+    def recursive_set_in_loop(self):
+        self.success = constants.IN_LOOP
+
+        for node in self.out_connected_nodes():
+            if node.class_name == "ForEachEnd":  # TODO cleanup this
+                continue
+            node.recursive_set_in_loop()
 
     def get_output_attrs(self):
         """
@@ -780,7 +804,7 @@ class GeneralLogicNode:
         """
         # ------------------- PRE-CHECKS ------------------- #
         # --------------- Status
-        if self.success != constants.NOT_RUN:
+        if self.success not in [constants.NOT_RUN, constants.IN_LOOP]:
             LOGGER.warning(
                 "Cannot execute node {} it has already been executed!".format(
                     self.full_name
@@ -816,7 +840,7 @@ class GeneralLogicNode:
 
         # --------------- Check inputs
         if not self.check_all_inputs_have_value():
-            LOGGER.warning(
+            LOGGER.debug(
                 "Cannot execute node {} now, some input attributes are not set".format(
                     self.full_name
                 )
@@ -828,10 +852,11 @@ class GeneralLogicNode:
         LOGGER.info(
             "Starting execution of {} ({})".format(self.full_name, self.class_name)
         )
+        self.execution_counter += 1
+
         t1 = time.time()
         self.run_date = datetime.datetime.now()
-        self.success = constants.EXECUTING
-        self.signaler.status_changed.emit()
+        self.signaler.is_executing.emit()
 
         # --------------- Clear any previous logging
         self.fail_log = []
@@ -911,12 +936,13 @@ class GeneralLogicNode:
         # --------------- Execute connected
         if execute_connected:
             for node in self.out_connected_nodes():
-                LOGGER.info(
-                    "From {}, launching execution of {}".format(
-                        self.full_name, node.full_name
+                if node.success not in [constants.FAILED, constants.ERROR]:
+                    LOGGER.info(
+                        "From {}, launching execution of {}".format(
+                            self.full_name, node.full_name
+                        )
                     )
-                )
-                node._run()
+                    node._run()
 
     def run_single(self):
         """
@@ -1104,6 +1130,7 @@ class LogicNodeSignaler(QtCore.QObject):
     """
 
     status_changed = QtCore.Signal()
+    is_executing = QtCore.Signal()
     finished = QtCore.Signal()
 
 
@@ -1347,3 +1374,12 @@ class Run:
 
     def __str__(self):
         return "Run"
+
+
+class RunLoop:
+    """
+    Utility class with no functionality
+    """
+
+    def __str__(self):
+        return "RunLoop"

@@ -40,8 +40,15 @@ class FailAndErrorNode(GeneralLogicNode):
 
 
 class TimedNode(GeneralLogicNode):
+    NICE_NAME = "Timed node"
+    HELP = "Node that sleeps for an amount of time"
+
+    INPUTS_DICT = {
+        "sleep_time": {"type": float, "optional": True},
+    }
+
     def run(self):
-        time.sleep(1.5)
+        time.sleep(self.get_attribute_value("sleep_time") or 1.5)
 
 
 class PrintToConsole(GeneralLogicNode):

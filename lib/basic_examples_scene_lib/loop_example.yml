@@ -1,0 +1,71 @@
+# SCENE loop_example
+# ------------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- ConcatStr_2:
+    class_name: ConcatStr
+    node_attributes:
+      in_str_0: This
+      in_str_1: ' and that'
+    x_pos: -1167
+    y_pos: -172
+- EmptyNode_1:
+    class_name: EmptyNode
+    x_pos: -441
+    y_pos: -451
+- EmptyNode_2:
+    class_name: EmptyNode
+    x_pos: 492
+    y_pos: -622
+- ForEachBegin_1:
+    class_name: ForEachBegin
+    x_pos: -1986
+    y_pos: -475
+- ForEachEnd_1:
+    class_name: ForEachEnd
+    x_pos: -34
+    y_pos: -621
+- ListInput_1:
+    class_name: ListInput
+    node_attributes:
+      internal_list:
+      - A
+      - B
+      - C
+    x_pos: -2393
+    y_pos: -550
+- PrintToConsole_1:
+    class_name: PrintToConsole
+    x_pos: -1543
+    y_pos: -253
+- PrintToConsole_2:
+    class_name: PrintToConsole
+    x_pos: -822
+    y_pos: -324
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      internal_str: TEST
+    x_pos: -1559
+    y_pos: 76
+
+# Connections section: connections to be done between nodes
+connections:
+- ConcatStr_2.out_str -> PrintToConsole_2.in_object_2
+- EmptyNode_1.COMPLETED -> ForEachEnd_1.START
+- ForEachBegin_1.COMPLETED -> StrInput_1.START
+- ForEachBegin_1.element -> PrintToConsole_1.in_object_0
+- ForEachBegin_1.element -> PrintToConsole_2.in_object_0
+- ForEachBegin_1.foreach_end -> ForEachEnd_1.foreach_end
+- ForEachEnd_1.COMPLETED -> EmptyNode_2.START
+- ListInput_1.out_list -> ForEachBegin_1.iterable
+- PrintToConsole_1.COMPLETED -> ConcatStr_2.START
+- PrintToConsole_1.COMPLETED -> PrintToConsole_2.START
+- PrintToConsole_2.COMPLETED -> EmptyNode_1.START
+- StrInput_1.out_str -> PrintToConsole_2.in_object_1
+
+
+# Scene modified at: 2024-06-30 22:36:12.141286
+# Modified by: Jaime

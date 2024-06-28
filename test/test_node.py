@@ -5,7 +5,6 @@ __license__ = "MIT License"
 
 
 import os
-from pprint import pprint
 import tempfile
 import unittest
 
@@ -93,7 +92,7 @@ class NodeTesting(unittest.TestCase):
 
         assert n_2["out"].get_value() == 100
 
-        pprint(n_2.get_node_full_dict())
+        assert n_2.get_node_full_dict()
 
     def test_inputs_checked_run(self):
         """

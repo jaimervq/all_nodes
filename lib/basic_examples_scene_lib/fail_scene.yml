@@ -37,8 +37,8 @@ nodes:
     y_pos: -357
 - TimedNode_1:
     class_name: TimedNode
-    x_pos: -806
-    y_pos: -600
+    x_pos: -805
+    y_pos: -601
 
 # Connections section: connections to be done between nodes
 connections:

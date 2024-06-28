@@ -31,25 +31,27 @@ It also aims to prevent re-duplication and re-writing of code inside of a projec
     <td align="center"><img src="docs/drop.gif" width=60%></td>
     <td align="center"><img src="docs/search.gif" width=60%></td>
   </tr>
-</table>
-<table align="center">
   <tr> 
       <td>✅ Visual feedback of execution</td>
-    <td>✅ Execution in separate thread</td>
+      <td>✅ Execution in separate thread</td>
   </tr>
   <tr>
     <td align="center"><img src="docs/execution.gif" width=60%></td>
     <td align="center"><img src="docs/threading.gif" width=60%></td>
   </tr>
-</table>
-<table align="center">
   <tr> 
       <td>✅ Preview of images and other elements</td>
-    <td>✅ Attribute editor</td>
+      <td>✅ Attribute editor</td>
   </tr>
   <tr>
     <td align="center"><img src="docs/previews.gif" width=60%></td>
     <td align="center"><img src="docs/attribute_editor.gif" width=60%></td>
+  </tr>
+  <tr> 
+      <td>✅ Deactivation of nodes</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/deactivate.gif" width=60%></td>
   </tr>
 </table>
 
