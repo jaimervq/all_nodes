@@ -13,6 +13,7 @@
 	.st7{fill:#ED1C24;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
 	.st8{font-family:'Century';}
 	.st9{font-size:18.85px;}
+	.st10{fill:#1FC3EA;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
 </style>
 <g id="okay">
 	<path class="st0" d="M25,2.5v7.8c0,2.9-2.4,13.6-10,16.6c-7.6-3-10-13.8-10-16.6V2.5H25z"/>
@@ -35,5 +36,10 @@
 <g id="error">
 	<path class="st7" d="M24.9,2.5v7.6c0,2.8-2.4,13.4-9.9,16.4C7.6,23.6,5.2,13,5.2,10.1V2.5H24.9z"/>
 	<text transform="matrix(1 0 0 1 11.93 20.28)" class="st6 st8 st9">!</text>
+</g>
+<g id="loop">
+	<path class="st10" d="M25,2.5v7.6c0,2.8-2.4,13.4-9.9,16.4C7.7,23.6,5.3,13,5.3,10.1V2.5H25z"/>
+	<path class="st6" d="M16.9,8.4l0.5-1.9l-5,1.4l3.7,3.6l0.4-1.8c1.5,0.6,2.5,2,2.5,3.6c0,2.2-1.8,3.9-3.9,3.9s-3.9-1.8-3.9-3.9
+		c0-0.6,0.2-1.2,0.4-1.8l-1.2-1c-0.5,0.8-0.8,1.7-0.8,2.7c0,3,2.4,5.4,5.4,5.4c3,0,5.4-2.4,5.4-5.4C20.5,11.1,19,9.1,16.9,8.4z"/>
 </g>
 </svg>

@@ -109,6 +109,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.setup_extras()
 
         # Connect
+        self.logic_node.signaler.is_executing.connect(self.show_executing)
         self.logic_node.signaler.status_changed.connect(self.show_result)
         self.logic_node.signaler.finished.connect(self.show_result)
 
@@ -498,7 +499,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 new_input_widget.setPlaceholderText("list here")
                 if self.logic_node.get_attribute_value(attr_name):
                     new_input_widget.setText(
-                        self.logic_node.get_attribute_value(attr_name)
+                        str(self.logic_node.get_attribute_value(attr_name))
                     )
                 new_input_widget.textChanged.connect(
                     partial(
@@ -766,6 +767,17 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.update_attributes_from_widgets()
         self.clear_previews()
 
+    def show_executing(self):
+        """
+        Display visual indications around the node to show it is running.
+        """
+        self.badge_icon.show()
+
+        self.badge_icon.setElementId("executing")
+        self.badge_icon.setToolTip('<p style="color: magenta">Executing...<br>')
+
+        self.error_marquee.hide()
+
     def show_result(self):
         """
         Display visual indications around the node to show the result of its execution.
@@ -776,9 +788,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.badge_icon.hide()
             self.error_marquee.hide()
 
-        elif self.logic_node.success == constants.EXECUTING:
-            self.badge_icon.setElementId("executing")
-            self.badge_icon.setToolTip('<p style="color: gray">Executing...<br>')
+        elif self.logic_node.success == constants.IN_LOOP:
+            self.badge_icon.setElementId("loop")
+            self.badge_icon.setToolTip('<p style="color: cyan">In loop<br>')
 
             self.error_marquee.hide()
 
