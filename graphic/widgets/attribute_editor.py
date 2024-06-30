@@ -284,6 +284,8 @@ class AttributeEditor(QtWidgets.QScrollArea):
             ),
         )
 
+        self.setMinimumWidth(360)
+
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
     def add_node_panel(self, logic_node):
