@@ -17,11 +17,14 @@ from PySide2 import QtCore
 from all_nodes import constants
 from all_nodes import utils
 from all_nodes.analytics import analytics
-from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
+from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+
 from all_nodes.logic import class_registry
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 from all_nodes.logic.logic_node import GeneralLogicNode
 
+
+GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -46,31 +49,49 @@ class LogicScene:
     def add_node_by_name(
         self, node_classname: str, rename_on_create=True
     ) -> GeneralLogicNode:
-        all_classes = CR.get_all_classes()
-        for m in sorted(all_classes):
-            for name, cls in all_classes[m]["classes"]:
-                if node_classname == name:
-                    new_logic_node = cls()
-                    self.all_logic_nodes.add(new_logic_node)
-                    if node_classname not in self.class_counter:
-                        self.class_counter[node_classname] = 1
-                    else:
-                        self.class_counter[node_classname] += 1
-                        if rename_on_create:
-                            self.rename_node(
-                                new_logic_node,
-                                node_classname
-                                + "_"
-                                + str(self.class_counter[node_classname]),
-                            )
+        """
+        Add a new node to the logic scene based on the given node class name.
 
-                    if self.context:
-                        new_logic_node.set_context(self.context)
-                    return new_logic_node
+        Args:
+            node_classname (str): The name of the class of the node to be added.
+            rename_on_create (bool, optional): Whether to rename the node if it already exists. Defaults to True.
+
+        Returns:
+            GeneralLogicNode: The newly created node.
+
+        Raises:
+            LogicSceneError: If no class with the given name is found.
+        """
+        all_classes = CR.get_all_classes()
+
+        for lib in sorted(all_classes):
+            for m in all_classes[lib]:
+                for name, cls in all_classes[lib][m]["classes"]:
+                    if node_classname == name:
+                        new_logic_node = cls()
+                        self.all_logic_nodes.add(new_logic_node)
+                        if node_classname not in self.class_counter:
+                            self.class_counter[node_classname] = 1
+                        else:
+                            self.class_counter[node_classname] += 1
+                            if rename_on_create:
+                                self.rename_node(
+                                    new_logic_node,
+                                    node_classname
+                                    + "_"
+                                    + str(self.class_counter[node_classname]),
+                                )
+
+                        if self.context:
+                            new_logic_node.set_context(self.context)
+                        return new_logic_node
 
         raise LogicSceneError("No class {} was found!".format(node_classname))
 
     def clear(self):
+        """
+        Clear the logic scene, removing all logic nodes
+        """
         self.all_logic_nodes = set()
         LOGGER.info("Cleared logic scene")
 
@@ -526,10 +547,6 @@ class LogicSceneError(Exception):
 
 # -------------------------------- WORKER -------------------------------- #
 class Worker(QtCore.QRunnable):
-    """
-    Worker thread.
-    """
-
     def __init__(self, fn, *args, **kwargs):
         super(Worker, self).__init__()
         # Store constructor arguments (re-used for processing)
@@ -542,5 +559,5 @@ class Worker(QtCore.QRunnable):
         Initialise the runner function with passed args, kwargs.
         """
         self.fn(*self.args, **self.kwargs)
-        GS.execution_finished.emit()
-        GS.attribute_editor_global_refresh_requested.emit()
+        GS.signals.execution_finished.emit()
+        GS.signals.attribute_editor_global_refresh_requested.emit()

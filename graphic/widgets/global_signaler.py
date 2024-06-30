@@ -7,8 +7,9 @@ __license__ = "MIT License"
 from PySide2 import QtCore
 
 
-class GlobalSignaler(QtCore.QObject):
-    _instance = None
+class GlobalSignals(QtCore.QObject):
+    # CLASS SCANNING ----------------------
+    class_scanning_finished = QtCore.Signal()
 
     # WIDGET MOVE ----------------------
     class_searcher_move = QtCore.Signal(int, int)
@@ -33,10 +34,13 @@ class GlobalSignaler(QtCore.QObject):
     execution_started = QtCore.Signal()
     execution_finished = QtCore.Signal()
 
+
+class GlobalSignaler:
+    # TODO should this signaler be somewhere else? It is not a widget
+    __instance = None
+
     def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(GlobalSignaler, cls).__new__(cls)
-        return cls._instance
-
-
-GLOBAL_SIGNALER = GlobalSignaler()
+        if cls.__instance is None:
+            cls.__instance = super(GlobalSignaler, cls).__new__(cls)
+            cls.signals = GlobalSignals()
+        return cls.__instance

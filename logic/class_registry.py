@@ -9,6 +9,7 @@ import concurrent.futures
 import importlib
 import inspect
 import os
+from pathlib import Path
 import time
 
 from PySide2 import QtCore
@@ -16,7 +17,10 @@ import yaml
 
 from all_nodes import constants
 from all_nodes import utils
+from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 
+
+GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -32,99 +36,125 @@ CLASSES_TO_SKIP = [
 ]  # Classes to skip when gathering all usable clases, populating widgets...
 
 
-def register_node_lib(full_path):
+def register_node_lib(lib_path):
     classes_dict = dict()
 
-    node_lib_path = os.path.dirname(full_path)
-    node_lib_name = os.path.basename(node_lib_path)
-    module_filename = os.path.basename(full_path)
-    module_name = os.path.splitext(module_filename)[0]
-    icons_path = os.path.join(node_lib_path, "icons")
-    styles_path = os.path.join(node_lib_path, "styles.yml")
+    all_py = []
+    for root, _, files in os.walk(lib_path, topdown=True):
+        for file in files:
+            p = os.path.join(root, file)
+            if p.endswith(".py") and "__init__" not in p:
+                all_py.append(p)
 
-    # ICONS - registering the icons so they can be found
-    if not os.path.isdir(icons_path):
-        LOGGER.warning(
-            f"No icons folder available for {module_filename}, icons for this module should be saved at: {icons_path}"
-        )
-    if os.path.isdir(icons_path) and icons_path not in QtCore.QDir.searchPaths("icons"):
-        QtCore.QDir.addSearchPath("icons", icons_path)
-        LOGGER.debug("Registered path {} to 'icons'".format(icons_path))
+    for py_path in all_py:
+        node_library_path = os.path.dirname(py_path)
+        node_library_name = os.path.basename(node_library_path)
+        module_filename = os.path.basename(py_path)
+        module_name = os.path.splitext(module_filename)[0]
+        icons_path = os.path.join(node_library_path, "icons")
+        styles_path = os.path.join(node_library_path, "styles.yml")
 
-    # STYLES
-    node_styles = dict()
-    if not os.path.isfile(styles_path):
-        LOGGER.warning(
-            f"No styles file available for {node_lib_name}, styles for this library should be saved at: {styles_path}"
-        )
-    else:
-        with open(styles_path, "r") as stream:
-            node_styles = yaml.safe_load(stream)
+        if classes_dict.get(node_library_name) is None:
+            classes_dict[node_library_name] = dict()
 
-    # CLASSES SCANNING
-    loaded_spec = importlib.util.spec_from_file_location(
-        module_name,
-        full_path,
-    )
-    loaded_module = importlib.util.module_from_spec(loaded_spec)
-    loaded_spec.loader.exec_module(loaded_module)
-    class_members = inspect.getmembers(loaded_module, inspect.isclass)
-    if not class_members:
-        return
-
-    classes_dict[module_name] = dict()
-    module_classes = list()
-    class_counter = 0
-    for name, cls in class_members:
-        if name in CLASSES_TO_SKIP:
-            continue
-        # Icon for this class  # TODO Refactor this out
-        default_icon = node_styles.get(module_name, dict()).get("default_icon")
-        icon_path = "icons:nodes.png"
-        if (
-            hasattr(cls, "IS_CONTEXT") and cls.IS_CONTEXT
-        ):  # TODO inheritance not working here?
-            icon_path = "icons:cubes.png"
-        if QtCore.QFile.exists(f"icons:{name}.png"):
-            icon_path = f"icons:{name}.png"
-        elif QtCore.QFile.exists(f"icons:{name}.svg"):
-            icon_path = f"icons:{name}.svg"
-        elif default_icon:
-            if QtCore.QFile.exists("icons:" + default_icon + ".png"):
-                icon_path = f"icons:{default_icon}.png"
-            elif QtCore.QFile.exists("icons:" + default_icon + ".svg"):
-                icon_path = f"icons:{default_icon}.svg"
-        setattr(cls, "ICON_PATH", icon_path)
-
-        # Class name and object
-        setattr(cls, "FILEPATH", full_path)  # TODO not ideal?
-        module_classes.append((name, cls))
-        class_counter += 1
-
-    classes_dict[module_name]["node_lib_path"] = node_lib_path
-    classes_dict[module_name]["node_lib_name"] = node_lib_name
-    classes_dict[module_name]["module_filename"] = module_filename
-    classes_dict[module_name]["module_full_path"] = full_path
-    classes_dict[module_name]["classes"] = module_classes
-
-    classes_dict[module_name]["color"] = constants.DEFAULT_NODE_COLOR
-    for module_style in node_styles:
-        if module_style in module_name:
-            classes_dict[module_name]["color"] = node_styles[module_style].get(
-                "color", constants.DEFAULT_NODE_COLOR
+        # ICONS - registering the icons so they can be found
+        if not os.path.isdir(icons_path):
+            LOGGER.warning(
+                f"No icons folder available for {module_filename}, icons for this module should be saved at: {icons_path}"
             )
-    LOGGER.debug(
-        "Scanned {} for classes: found {}".format(
-            os.path.basename(full_path), class_counter
+        if os.path.isdir(icons_path) and icons_path not in QtCore.QDir.searchPaths(
+            "icons"
+        ):
+            QtCore.QDir.addSearchPath("icons", icons_path)
+            LOGGER.debug("Registered path {} to 'icons'".format(icons_path))
+
+        # STYLES
+        node_styles = dict()
+        if not os.path.isfile(styles_path):
+            LOGGER.warning(
+                f"No styles file available for {node_library_name}, styles for this library should be saved at: {styles_path}"
+            )
+        else:
+            with open(styles_path, "r") as stream:
+                node_styles = yaml.safe_load(stream)
+
+        # CLASSES SCANNING
+        loaded_spec = importlib.util.spec_from_file_location(
+            module_name,
+            py_path,
         )
-    )
+        loaded_module = importlib.util.module_from_spec(loaded_spec)
+        loaded_spec.loader.exec_module(loaded_module)
+        class_members = inspect.getmembers(loaded_module, inspect.isclass)
+        if not class_members:
+            return
+
+        classes_dict[node_library_name][module_name] = dict()
+        module_classes = list()
+        class_counter = 0
+        for name, cls in class_members:
+            if name in CLASSES_TO_SKIP:
+                continue
+            # Icon for this class  # TODO Refactor this out
+            default_icon = node_styles.get(module_name, dict()).get("default_icon")
+            icon_path = "icons:nodes.png"
+            if (
+                hasattr(cls, "IS_CONTEXT") and cls.IS_CONTEXT
+            ):  # TODO inheritance not working here?
+                icon_path = "icons:cubes.png"
+            if QtCore.QFile.exists(f"icons:{name}.png"):
+                icon_path = f"icons:{name}.png"
+            elif QtCore.QFile.exists(f"icons:{name}.svg"):
+                icon_path = f"icons:{name}.svg"
+            elif default_icon:
+                if QtCore.QFile.exists("icons:" + default_icon + ".png"):
+                    icon_path = f"icons:{default_icon}.png"
+                elif QtCore.QFile.exists("icons:" + default_icon + ".svg"):
+                    icon_path = f"icons:{default_icon}.svg"
+            setattr(cls, "ICON_PATH", icon_path)
+
+            # Class name and object
+            setattr(cls, "FILEPATH", py_path)  # TODO not ideal?
+            module_classes.append((name, cls))
+            class_counter += 1
+
+        classes_dict[node_library_name][module_name][
+            "node_lib_path"
+        ] = node_library_path
+        classes_dict[node_library_name][module_name][
+            "node_lib_name"
+        ] = node_library_name
+        classes_dict[node_library_name][module_name][
+            "module_filename"
+        ] = module_filename
+        classes_dict[node_library_name][module_name]["module_full_path"] = py_path
+        classes_dict[node_library_name][module_name]["classes"] = module_classes
+
+        classes_dict[node_library_name][module_name][
+            "color"
+        ] = constants.DEFAULT_NODE_COLOR
+        for module_style in node_styles:
+            if module_style in module_name:
+                classes_dict[node_library_name][module_name]["color"] = node_styles[
+                    module_style
+                ].get("color", constants.DEFAULT_NODE_COLOR)
+        LOGGER.debug(
+            "Scanned {} for classes: found {}".format(
+                os.path.basename(py_path), class_counter
+            )
+        )
 
     return classes_dict
 
 
-def get_all_node_classes():
+def get_all_node_libs():
+    # TODO clarify this naming better (maybe project->lib->module?)
     # Paths to be examined
-    libraries_path = os.getenv("ALL_NODES_LIB_PATH", "").split(os.pathsep)
+    libraries_path = [
+        lib_path
+        for lib_path in os.getenv("ALL_NODES_LIB_PATH", "").split(os.pathsep)
+        if lib_path
+    ]
     if not os.getenv("ALL_NODES_LIB_PATH"):
         root = os.path.abspath(__file__)
         root_dir_path = os.path.dirname(os.path.dirname(root))
@@ -135,33 +165,7 @@ def get_all_node_classes():
             "will just scan for node libraries at default location: " + default_lib_path
         )
 
-    # Iterate through paths
-    all_py = list()
-    for path in libraries_path:
-        path = path.strip()
-        if not path:
-            continue
-        elif not os.path.isdir(path):
-            LOGGER.warning("Folder {} does not exist".format(path))
-        for root, dirs, files in os.walk(path, topdown=True):
-            for file in files:
-                p = os.path.join(root, file)
-                if p.endswith(".py") and "__init__" not in p:
-                    all_py.append(p)
-
-    all_classes_dict = dict()
-    t1 = time.time()
-    executor = concurrent.futures.ThreadPoolExecutor()
-    with concurrent.futures.ThreadPoolExecutor(10) as executor:
-        futures = [
-            executor.submit(register_node_lib, full_path) for full_path in all_py
-        ]
-        for future in concurrent.futures.as_completed(futures):
-            all_classes_dict.update(future.result())
-    LOGGER.info(f"Total time scanning classes: {time.time()-t1} s.")
-
-    # TODO examine classes to make sure there are no repeated names?
-    return all_classes_dict
+    return libraries_path
 
 
 # -------------------------------- SCENES -------------------------------- #
@@ -171,7 +175,9 @@ def get_all_scenes_recursive(libraries_path=None, scenes_dict=None):
         if not os.getenv("ALL_NODES_LIB_PATH"):
             root = os.path.abspath(__file__)
             root_dir_path = os.path.dirname(os.path.dirname(root))
-            default_lib_path = os.path.join(root_dir_path, "lib", "example_scene_lib")
+            default_lib_path = os.path.join(
+                root_dir_path, "lib", "basic_examples_scene_lib"
+            )
             libraries_path.append(default_lib_path)
             LOGGER.warning(
                 "Env variable 'ALL_NODES_LIB_PATH' is not defined, "
@@ -249,23 +255,63 @@ def get_scene_from_alias(scenes_dict, alias):
 
 # -------------------------------- Class Registry -------------------------------- #
 class ClassRegistry:
+    # Instance
     _instance = None
 
+    # Attributes
     _all_classes = None
     _all_scenes = None
 
     _all_classes_simplified = None
+
+    # Workers
+    _lib_workers = []
+    _time_start = time.time()
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(ClassRegistry, cls).__new__(cls)
         return cls._instance
 
+    def get_workers(cls):
+        return cls._lib_workers
+
+    def scan_for_classes_GUI(cls):
+        """
+        Scan for classes in GUI mode.
+
+        In this approach, all the node libraries are scanned in parallel by using worker threads. The signals of these
+        will tell the UI when to populate its elements, so the main UI thread is not blocked while scanning.
+        """
+        LOGGER.info("Gathering all classes (GUI mode)...")
+        cls._all_classes = dict()
+
+        node_libs = get_all_node_libs()
+        cls._lib_workers = [LibWorker(node_lib) for node_lib in node_libs]
+        for worker in cls._lib_workers:
+            QtCore.QThreadPool.globalInstance().start(worker)
+            worker.signaler.finished.connect(cls.update_classes_dict)
+
+    def scan_for_classes(cls):
+        LOGGER.info("Gathering all classes...")
+        t1 = time.time()  # TODO find something more precise
+        cls._all_classes = dict()
+
+        executor = concurrent.futures.ThreadPoolExecutor()
+        with concurrent.futures.ThreadPoolExecutor(10) as executor:
+            futures = [
+                executor.submit(register_node_lib, full_path)
+                for full_path in get_all_node_libs()
+            ]
+            for future in concurrent.futures.as_completed(futures):
+                cls._all_classes.update(future.result())
+
+        LOGGER.info(f"Total time scanning classes: {time.time() -t1} s.")
+        GS.signals.class_scanning_finished.emit()
+
     def get_all_classes(cls):
         if cls._all_classes is None:
-            LOGGER.info("Gathering all classes...")
-            cls._all_classes = get_all_node_classes()
-
+            cls.scan_for_classes()
         return cls._all_classes
 
     def get_all_scenes(cls):
@@ -275,19 +321,85 @@ class ClassRegistry:
         return cls._all_scenes
 
     def get_all_classes_simplified(cls):
+        """
+        Get a simplified list of all classes and their corresponding icon paths.
+
+        Returns:
+            list: A list of tuples containing the class name and its icon path.
+        """
         if cls._all_classes_simplified is None:
             cls._all_classes_simplified = list()
             all_classes = cls.get_all_classes()
-            for m in sorted(all_classes):
-                for name, class_object in all_classes[m]["classes"]:
-                    cls._all_classes_simplified.append((name, class_object.ICON_PATH))
+            for lib in sorted(all_classes):
+                for m in all_classes[lib]:
+                    for name, class_object in all_classes[lib][m]["classes"]:
+                        cls._all_classes_simplified.append(
+                            (name, class_object.ICON_PATH)
+                        )
 
         return cls._all_classes_simplified
 
-    def get_icon_path(cls, class_name_to_search):
+    def get_icon_path(cls, class_name_to_search: str):
+        """
+        Get the icon path for a given class name.
+
+        Args:
+            class_name_to_search (str): The name of the class to search for.
+
+        Returns:
+            str: The icon path of the class if found, None otherwise.
+        """
         for class_name, icon_path in cls.get_all_classes_simplified():
             if class_name_to_search == class_name:
                 return icon_path
 
+    def update_classes_dict(cls):
+        for worker in cls._lib_workers:
+            if worker.finished:
+                cls._all_classes.update(worker.dict_lib)
+                cls._lib_workers.remove(worker)
 
-CLASS_REGISTRY = ClassRegistry()
+        if not len(cls._lib_workers):
+            LOGGER.info(
+                f"Total time scanning classes: {time.time() - cls._time_start} s."
+            )
+            GS.signals.class_scanning_finished.emit()
+
+    def flush(cls):
+        """
+        Resets all class-related attributes to None.
+        """
+        cls._all_classes = None
+        cls._all_scenes = None
+        cls._all_classes_simplified = None
+
+        cls._lib_workers = []
+
+
+CLASS_REGISTRY = ClassRegistry()  # Singleton to use
+
+
+# -------------------------------- WORKER -------------------------------- #
+class LibWorkerSignaler(QtCore.QObject):
+    finished = QtCore.Signal()
+
+
+class LibWorker(QtCore.QRunnable):
+    def __init__(self, lib_path: str):
+        super(LibWorker, self).__init__()
+
+        self.lib_path = lib_path
+        self.lib_name = Path(lib_path).name
+        self.dict_lib = None
+
+        self.signaler = LibWorkerSignaler()
+
+        self.finished = False
+
+    def run(self):
+        path = self.lib_path.strip()
+
+        # TODO examine classes to make sure there are no repeated names?
+        self.dict_lib = register_node_lib(path)
+        self.finished = True
+        self.signaler.finished.emit()

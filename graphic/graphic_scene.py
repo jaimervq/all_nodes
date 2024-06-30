@@ -23,8 +23,10 @@ from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_scene import LogicScene
 from all_nodes import utils
 from all_nodes.graphic.widgets.class_searcher import ClassSearcher
-from all_nodes.graphic.widgets.global_signaler import GLOBAL_SIGNALER as GS
+from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 
+
+GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -63,13 +65,13 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 
         self.class_searcher = ClassSearcher(parent=self)
         self.class_searcher.hide()
-        GS.class_searcher_move.connect(self.move_search_bar)
+        GS.signals.class_searcher_move.connect(self.move_search_bar)
 
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
 
         # Signals connection
-        GS.execution_started.connect(self.hourglass_animation.show)
-        GS.execution_finished.connect(self.hourglass_animation.hide)
+        GS.signals.execution_started.connect(self.hourglass_animation.show)
+        GS.signals.execution_finished.connect(self.hourglass_animation.hide)
 
     # UTILITY ----------------------
     def show_feedback(self, message, level=logging.INFO):
@@ -214,13 +216,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
     # SCENE SETUP ----------------------
     def drawBackground(self, painter, rect):
-        solid_pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 150), 3)
-        dot_pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 150), 2)
-        dot_pen.setDashPattern([1, 8])
+        pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 150), 2)
+        painter.setPen(pen)
         for i in range(-20_000, 20_000, 200):
-            painter.setPen(solid_pen)
-            if i % 800 != 0:
-                painter.setPen(dot_pen)
             if i > rect.x() and i < rect.x() + rect.width():
                 painter.drawLine(QtCore.QLine(i, -20_000, i, 20_000))
             if i > rect.y() and i < rect.y() + rect.height():
@@ -235,26 +233,30 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             node_classname (str): class name to be instantiated
-            x (int): optional, x coord to place the node at
-            y (int): optional, y coord to place the node at
+            x (int): optional, coords to place the node at
+            y (int): optional, coords to place the node at
 
         Returns:
             GeneralGraphicNode: newly create node
         """
         all_classes = CR.get_all_classes()
-        for m in sorted(all_classes):
-            color = all_classes[m]["color"]
-            for name, _ in all_classes[m]["classes"]:
-                if node_classname == name:
-                    new_logic_node = self.logic_scene.add_node_by_name(node_classname)
-                    new_graph_node = GeneralGraphicNode(new_logic_node, color)
-                    self.addItem(new_graph_node)
-                    self.all_graphic_nodes.add(new_graph_node)
-                    new_graph_node.setPos(x, y)
-                    self.in_screen_feedback.emit(
-                        "Created graphic node {}".format(node_classname), logging.INFO
-                    )
-                    return new_graph_node
+        for lib in sorted(all_classes):
+            for m in all_classes[lib]:
+                color = all_classes[lib][m]["color"]
+                for name, _ in all_classes[lib][m]["classes"]:
+                    if node_classname == name:
+                        new_logic_node = self.logic_scene.add_node_by_name(
+                            node_classname
+                        )
+                        new_graph_node = GeneralGraphicNode(new_logic_node, color)
+                        self.addItem(new_graph_node)
+                        self.all_graphic_nodes.add(new_graph_node)
+                        new_graph_node.setPos(x, y)
+                        self.in_screen_feedback.emit(
+                            "Created graphic node {}".format(node_classname),
+                            logging.INFO,
+                        )
+                        return new_graph_node
 
     def add_graphic_node_from_logic_node(
         self, logic_node, x: int = 0, y: int = 0
@@ -264,27 +266,28 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         Args:
             logic_node (GeneralLogicNode): logic node to be represented graphically
-            x (int): optional, x coord to place the node at
-            y (int): optional, y coord to place the node at
+            x (int): optional, coords to place the node at
+            y (int): optional, coords to place the node at
 
         Returns:
             GeneralGraphicNode: newly created node
         """
         all_classes = CR.get_all_classes()
-        for m in sorted(all_classes):
-            color = all_classes[m]["color"]
-            for name, cls in all_classes[m]["classes"]:
-                if logic_node.class_name == name:
-                    new_graph_node = GeneralGraphicNode(logic_node, color)
-                    self.addItem(new_graph_node)
-                    self.all_graphic_nodes.add(new_graph_node)
-                    LOGGER.info(
-                        "Created graphic node from logic node {} at x:{} y:{}".format(
-                            logic_node.node_name, x, y
+        for lib in sorted(all_classes):
+            for m in all_classes[lib]:
+                color = all_classes[lib][m]["color"]
+                for name, _ in all_classes[lib][m]["classes"]:
+                    if logic_node.class_name == name:
+                        new_graph_node = GeneralGraphicNode(logic_node, color)
+                        self.addItem(new_graph_node)
+                        self.all_graphic_nodes.add(new_graph_node)
+                        LOGGER.info(
+                            "Created graphic node from logic node {} at x:{} y:{}".format(
+                                logic_node.node_name, x, y
+                            )
                         )
-                    )
-                    new_graph_node.moveBy(x, y)
-                    return new_graph_node
+                        new_graph_node.moveBy(x, y)
+                        return new_graph_node
 
     def delete_node(self, graphic_node: GeneralGraphicNode):
         """
@@ -394,7 +397,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
             graphic_attr_2 (GeneralGraphicAttribute)
         """
         graphic_attr_1.disconnect_from(graphic_attr_2)
-        GS.attribute_editor_global_refresh_requested.emit()
+        GS.signals.attribute_editor_global_refresh_requested.emit()
 
     def clear_node_lines(self, node: GeneralGraphicNode):
         """
@@ -540,8 +543,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
         if ok and new_name:
             if self.logic_scene.rename_node(logic_node, new_name):
                 graphic_node.update_name()
-                GS.attribute_editor_refresh_node_requested.emit(logic_node.uuid)
-                GS.tab_names_refresh_requested.emit()
+                GS.signals.attribute_editor_refresh_node_requested.emit(logic_node.uuid)
+                GS.signals.tab_names_refresh_requested.emit()
             else:
                 if logic_node.node_name == new_name:
                     self.in_screen_feedback.emit(
@@ -590,7 +593,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Args:
             graphic_node (GeneralGraphicNode): node to be expanded
         """
-        GS.context_expansion_requested.emit(graphic_node.logic_node.uuid)
+        GS.signals.context_expansion_requested.emit(graphic_node.logic_node.uuid)
 
     def show_log(self, graphic_node: GeneralGraphicNode):
         """
@@ -616,7 +619,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         """
         logic_node = graphic_node.logic_node
         self.in_screen_feedback.emit("Running only selected node(s)", logging.INFO)
-        GS.execution_started.emit()
+        GS.signals.execution_started.emit()
         self.logic_scene.run_list_of_nodes([logic_node])
 
     def reset_single_node(self, graphic_node: GeneralGraphicNode):
@@ -630,7 +633,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         graphic_node.reset()
         graphic_node.logic_node.reset()
         self.in_screen_feedback.emit("Resetting selected node(s)", logging.INFO)
-        GS.attribute_editor_global_refresh_requested.emit()
+        GS.signals.attribute_editor_global_refresh_requested.emit()
 
     def soft_reset_single_node(self, graphic_node: GeneralGraphicNode):
         """
@@ -643,7 +646,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         graphic_node.reset()
         graphic_node.logic_node.soft_reset()
         self.in_screen_feedback.emit("Soft-resetting selected node(s)", logging.INFO)
-        GS.attribute_editor_global_refresh_requested.emit()
+        GS.signals.attribute_editor_global_refresh_requested.emit()
 
     def deselect_all(self):
         """
@@ -674,13 +677,13 @@ class CustomScene(QtWidgets.QGraphicsScene):
         """
         self.reset_all_graphic_nodes()
         self.logic_scene.reset_all_nodes()
-        GS.attribute_editor_global_refresh_requested.emit()
+        GS.signals.attribute_editor_global_refresh_requested.emit()
 
     def run_graphic_scene(self):
         """
         Run all the nodes in this graphic scene.
         """
-        GS.execution_started.emit()
+        GS.signals.execution_started.emit()
         self.reset_all_graphic_nodes()
         self.logic_scene.run_all_nodes()
 
@@ -822,7 +825,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         if event.key() == QtCore.Qt.Key_Delete:
             for n in self.selected_nodes():
-                GS.attribute_editor_remove_node_requested.emit(n.logic_node.uuid)
+                GS.signals.attribute_editor_remove_node_requested.emit(
+                    n.logic_node.uuid
+                )
                 self.delete_node(n)
         elif event.key() == QtCore.Qt.Key_F:
             self.fit_in_view()
@@ -845,7 +850,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
             for n in self.selected_nodes():
                 self.expand_context(n)
         elif event.key() == QtCore.Qt.Key_Slash and not modifiers:
-            GS.class_searcher_move.emit(
+            GS.signals.class_searcher_move.emit(
                 QtGui.QCursor.pos().x(), QtGui.QCursor.pos().y()
             )
 
@@ -898,7 +903,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
         test_items = self.items(selection_rect)
         for item in test_items:
             if item and item.data(0) == constants.GRAPHIC_NODE:
-                GS.attribute_editor_node_addition_requested.emit(item.logic_node.uuid)
+                GS.signals.attribute_editor_node_addition_requested.emit(
+                    item.logic_node.uuid
+                )
                 break
 
     def mouseMoveEvent(self, event):
@@ -1015,7 +1022,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         self.testing_graphic_attr = None
         self.testing_path.hide()
 
-        GS.attribute_editor_global_refresh_requested.emit()
+        GS.signals.attribute_editor_global_refresh_requested.emit()
 
     # DRAG AND DROP EVENT ----------------------
     def dragEnterEvent(self, event):
@@ -1033,6 +1040,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
     def dropEvent(self, event):
         event_data = event.mimeData()
         if event_data.hasUrls():
+            # TODO make sure this can only happen after GS emits signal of all classes scanned
             event_urls = event_data.urls()
             for url in event_urls:
                 if os.path.isfile(url.toLocalFile()):
