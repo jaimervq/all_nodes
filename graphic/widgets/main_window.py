@@ -48,10 +48,10 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.ui)
 
         # Dock
-        self.dock = QtWidgets.QDockWidget()
-        self.dock.setWindowTitle("Attribute Editor")
+        self.attr_editr_dock = QtWidgets.QDockWidget()
+        self.attr_editr_dock.setWindowTitle("Attribute Editor")
         self.attr_editor = AttributeEditor()
-        self.dock.setWidget(self.attr_editor)
+        self.attr_editr_dock.setWidget(self.attr_editor)
 
         # STYLE
         self.setMinimumWidth(850)
@@ -192,14 +192,15 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         window_menu = menu.addMenu("&Window")
         show_attr_editor = QtWidgets.QAction("Show attribute editor", self)
         show_attr_editor.setIcon(QtGui.QIcon("icons:eye.png"))
-        show_attr_editor.triggered.connect(self.dock.show)
+        show_attr_editor.triggered.connect(self.attr_editr_dock.show)
         window_menu.addAction(show_attr_editor)
 
     def create_dock_windows(self):
-        self.dock.setAllowedAreas(
+        self.attr_editr_dock.setAllowedAreas(
             QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea
         )
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.attr_editr_dock)
+        self.attr_editr_dock.hide()
 
     def populate_tree(self):
         """
@@ -473,6 +474,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         """
         n = self.get_node_by_uuid(uuid)
         self.attr_editor.add_node_panel(n)
+        self.attr_editr_dock.show()
 
     # SAVE AND LOAD ----------------------
     def save_scene(self):
