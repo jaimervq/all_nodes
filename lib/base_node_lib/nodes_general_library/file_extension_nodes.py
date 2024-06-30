@@ -20,7 +20,7 @@ class ImageFileExtensionSelect(GeneralLogicNode):
         "internal_str": {
             "type": str,
             "gui_type": InputsGUI.OPTION_INPUT,
-            "options": [".png", ".exr", ".jpg"],
+            "options": sorted([".png", ".exr", ".jpg", ".tif"]),
         },
     }
 
@@ -37,7 +37,26 @@ class TextFileExtensionSelect(GeneralLogicNode):
         "internal_str": {
             "type": str,
             "gui_type": InputsGUI.OPTION_INPUT,
-            "options": [".txt", ".json", ".yml"],
+            "options": sorted([".txt", ".json", ".yml", ".toml", ".csv", ".xml"]),
+        },
+    }
+
+    OUTPUTS_DICT = {"out_str": {"type": str}}
+
+    def run(self):
+        self.set_output("out_str", self.get_attribute_value("internal_str"))
+
+
+class CodeFileExtensionSelect(GeneralLogicNode):
+    NICE_NAME = "Code file extension select"
+
+    INTERNALS_DICT = {
+        "internal_str": {
+            "type": str,
+            "gui_type": InputsGUI.OPTION_INPUT,
+            "options": sorted(
+                [".py", ".cpp", ".h", ".rs", ".sh", ".ipynb", ".ps1", ".bat"]
+            ),
         },
     }
 

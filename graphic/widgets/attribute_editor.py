@@ -170,6 +170,13 @@ class NodePanel(QtWidgets.QWidget):
             self.grid_layout.addWidget(error_label, self.row_count, 0, 1, 3)
             self.row_count += 1
 
+        # Execution time
+        exec_time = QtWidgets.QLabel(
+            f"Execution time: {self.logic_node.execution_time:.4f} s."
+        )
+        self.grid_layout.addWidget(exec_time, self.row_count, 0, 1, 3)
+        self.row_count += 1
+
         # Spacer
         verticalSpacer = QtWidgets.QSpacerItem(
             20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding

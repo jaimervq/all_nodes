@@ -181,11 +181,14 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 self.proxy_input_widgets[i].setPos(
                     constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
                 )
+                self.proxy_input_widgets[i].setZValue(
+                    200
+                )  # TODO maybe put all the setZValue together?
                 if i:
-                    prev_widget = self.proxy_input_widgets[i - 1].widget()
+                    in_widget = self.proxy_input_widgets[i - 1].widget()
                     self.proxy_input_widgets[i].setPos(
                         constants.CHAMFER_RADIUS,
-                        prev_widget.pos().y() + prev_widget.height(),
+                        in_widget.pos().y() + in_widget.height(),
                     )
 
         if self.has_gui_previews:
@@ -275,7 +278,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         i = 0
         for attr in self.logic_node.get_input_attrs():
             attr = GeneralGraphicAttribute(attr, self, i)
-            attr.setZValue(100)
+            attr.setZValue(100)  # TODO maybe put all the setZValue together?
             self.graphic_attributes.append(attr)
             i += 1
 
