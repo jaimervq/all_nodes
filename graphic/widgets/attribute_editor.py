@@ -288,26 +288,25 @@ class AttributeEditor(QtWidgets.QScrollArea):
 
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
-    def add_node_panel(self, logic_node):
+    def add_node_panel(self, logic_node: GeneralLogicNode):
         """
         Add a logic node to the attribute editor.
 
         Args:
             logic_node (GeneralLogicNode): logic node to be represented
-
-        Returns:
-            bool: whether or not the node could be added
-
         """
         for i in range(self.layout.count()):
             w = self.layout.itemAt(i).widget()
             if w:
                 if w.logic_node == logic_node:
-                    return False
-        self.layout.insertWidget(0, NodePanel(logic_node))
-        return True
+                    self.layout.takeAt(i)
+                    self.layout.insertWidget(0, w)
+                    self.verticalScrollBar().setValue(0)
+                    return
 
-    def refresh_node_panel(self, logic_node):
+        self.layout.insertWidget(0, NodePanel(logic_node))
+
+    def refresh_node_panel(self, logic_node: GeneralLogicNode):
         """
         Refresh the representation/widget of a logic node in attribute editor.
 
@@ -322,7 +321,7 @@ class AttributeEditor(QtWidgets.QScrollArea):
                     w.represent_node()
                     return
 
-    def remove_node_panel(self, logic_node):
+    def remove_node_panel(self, logic_node: GeneralLogicNode):
         """
         Remove the representation/widget of a logic node in attribute editor.
 
