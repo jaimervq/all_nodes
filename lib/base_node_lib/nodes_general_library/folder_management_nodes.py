@@ -25,7 +25,8 @@ class MirrorFolders(GeneralLogicNode):
         src_folder = self.get_attribute_value("src_folder")
         dest_folder = self.get_attribute_value("dest_folder")
 
-        subprocess.Popen(["robocopy", src_folder, dest_folder, "/E", "/MIR"])
+        s = subprocess.Popen(["robocopy", src_folder, dest_folder, "/E", "/MIR"])
+        s.wait()
 
 
 class GetFolderFromFilepath(GeneralLogicNode):
