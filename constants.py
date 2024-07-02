@@ -37,6 +37,7 @@ NODE_CONTOUR_THICKNESS = 1.0
 NODE_SELECTED_PEN = QtGui.QPen(QtCore.Qt.white, 2.5)
 NODE_SELECTED_GLOW_THICKNESS = NODE_SELECTED_PEN.width() * 2.5
 NODE_ERROR_PEN = QtGui.QPen(QtCore.Qt.red, 2, QtCore.Qt.DashDotDotLine)
+NODE_DEACTIVATED_PEN = QtGui.QPen(QtGui.QColor(15, 15, 10, 235), 10)
 NODE_ERROR_BRUSH = QtGui.QBrush(QtCore.Qt.red, QtCore.Qt.BDiagPattern)
 NODE_FAILED_PEN = QtGui.QPen(QtGui.QColor("orange"), 2, QtCore.Qt.DashDotDotLine)
 NODE_FAILED_BRUSH = QtGui.QBrush(QtGui.QColor("orange"), QtCore.Qt.BDiagPattern)

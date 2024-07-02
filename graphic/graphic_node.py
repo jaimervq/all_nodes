@@ -62,6 +62,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.selection_marquee = QtWidgets.QGraphicsPathItem(parent=self)
         self.selection_marquee.hide()
 
+        self.deactivated_cross = QtWidgets.QGraphicsPathItem(parent=self)
+        self.deactivated_cross.hide()
+
         self.error_marquee = QtWidgets.QGraphicsPathItem(parent=self)
         self.error_marquee.setFlag(QtWidgets.QGraphicsItem.ItemStacksBehindParent)
         self.error_marquee.hide()
@@ -358,6 +361,27 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.selection_marquee.setPath(new_path)
         self.selection_marquee.setPen(constants.NODE_SELECTED_PEN)
         self.selection_marquee.setZValue(50)
+
+        # DEACTIVATED CROSS
+        x_path = QtGui.QPainterPath()
+        x_path.lineTo(
+            QtCore.QPoint(
+                self.node_width,
+                self.node_height,
+            ),
+        )
+        x_path.moveTo(
+            QtCore.QPoint(0, self.node_height),
+        )
+        x_path.lineTo(
+            QtCore.QPoint(
+                self.node_width,
+                0,
+            ),
+        )
+        self.deactivated_cross.setPath(x_path)
+        self.deactivated_cross.setPen(constants.NODE_DEACTIVATED_PEN)
+        self.deactivated_cross.setZValue(50)
 
         # ERROR MARQUEE
         error_path = QtGui.QPainterPath()
@@ -981,6 +1005,15 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             info_window.setStyleSheet(s.read())
 
         info_window.exec_()
+
+    def toggle_activated(self):
+        """Toggle the activated state of the node."""
+        active = self.logic_node.toggle_activated()
+        self.deactivated_cross.setVisible(not active)
+
+    def show_deactivated(self):
+        """Force to show deactivated."""
+        self.deactivated_cross.setVisible(True)
 
     # UTILITY ----------------------
     def update_name(self):
