@@ -79,6 +79,7 @@ class GeneralLogicNode:
         self.build_internal()
 
         # Execution
+        self.active = True
         self.success = constants.NOT_RUN
 
         self.fail_log = []
@@ -222,6 +223,8 @@ class GeneralLogicNode:
         )
         out_dict["execution_time"] = self.execution_time
         out_dict["user"] = self.user
+        if not self.active:
+            out_dict["active"] = self.active
 
         # Extra
         out_dict["IS_CONTEXT"] = self.IS_CONTEXT
@@ -240,6 +243,8 @@ class GeneralLogicNode:
 
         out_dict[self.node_name] = dict()
         out_dict[self.node_name]["class_name"] = self.class_name
+        if not self.active:
+            out_dict[self.node_name]["active"] = self.active
 
         out_dict[self.node_name]["node_attributes"] = dict()
         for attr in self.all_attributes:
@@ -783,6 +788,39 @@ class GeneralLogicNode:
             self.signaler.finished.emit()
             return
 
+        # If inactive, lets try to just skip it
+        if not self.active:
+            LOGGER.warning(
+                "Skipping execution of {}".format(
+                    self.full_name,
+                )
+            )
+
+            self.success = constants.NOT_RUN
+            self.set_output(constants.COMPLETED, Run())
+
+            # Propagate results
+            LOGGER.debug(
+                "From {}, propagating out attributes to connected nodes".format(
+                    self.full_name
+                )
+            )
+            self.propagate_results()
+
+            # Signal
+            self.signaler.finished.emit()
+
+            # Execute connected
+            if execute_connected:
+                for node in self.out_connected_nodes():
+                    LOGGER.info(
+                        "From {}, launching execution of {}".format(
+                            self.full_name, node.full_name
+                        )
+                    )
+                    node._run()
+                return
+
         # Check inputs
         if not self.check_all_inputs_have_value():
             LOGGER.warning(
@@ -998,6 +1036,11 @@ class GeneralLogicNode:
 
         if self.IS_CONTEXT:
             self.internal_scene.soft_reset_all_nodes()
+
+    def toggle_activated(self):
+        """Toggle the activated state of the node."""
+        self.active = not self.active
+        return self.active
 
     # SPECIAL METHODS ----------------------
     def __getitem__(self, item: str):

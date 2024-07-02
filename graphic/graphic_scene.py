@@ -287,6 +287,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
                             )
                         )
                         new_graph_node.moveBy(x, y)
+                        if not logic_node.active:
+                            new_graph_node.show_deactivated()
                         return new_graph_node
 
     def delete_node(self, graphic_node: GeneralGraphicNode):
@@ -648,6 +650,16 @@ class CustomScene(QtWidgets.QGraphicsScene):
         self.in_screen_feedback.emit("Soft-resetting selected node(s)", logging.INFO)
         GS.signals.attribute_editor_global_refresh_requested.emit()
 
+    def toggle_activated_node(self, graphic_node: GeneralGraphicNode):
+        """
+        Toggle whether or not a graphic node is activated.
+
+        Args:
+            graphic_node (GeneralGraphicNode): node to soft-reset
+        """
+        graphic_node.toggle_activated()
+        # GS.signals.attribute_editor_global_refresh_requested.emit()  # TODO consider this in attribute editor?
+
     def deselect_all(self):
         """
         Deselect all graphic nodes.
@@ -752,6 +764,13 @@ class CustomScene(QtWidgets.QGraphicsScene):
         reset_single_node_action = menu.addAction(" Reset only this node (R)")
         reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
         reset_single_node_action.triggered.connect(lambda: self.reset_single_node(node))
+        deactivate_single_node_action = menu.addAction(
+            " Activate/deactivate only this node (D)"
+        )
+        deactivate_single_node_action.setIcon(QtGui.QIcon("icons:close.svg"))
+        deactivate_single_node_action.triggered.connect(
+            lambda: self.toggle_activated_node(node)
+        )
 
         # Context-specific
         if node.logic_node.IS_CONTEXT:
@@ -840,6 +859,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
         elif event.key() == QtCore.Qt.Key_S:
             for n in self.selected_nodes():
                 self.soft_reset_single_node(n)
+        elif event.key() == QtCore.Qt.Key_D:
+            for n in self.selected_nodes():
+                self.toggle_activated_node(n)
         elif event.key() == QtCore.Qt.Key_E:
             for n in self.selected_nodes():
                 self.examine_code(n)
