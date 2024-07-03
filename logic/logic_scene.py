@@ -383,6 +383,10 @@ class LogicScene:
                 for attr in attrs_to_set:
                     n.set_attribute_value(attr, attrs_to_set[attr])
 
+            active = node[node_name].get("active", True)
+            if not active:
+                n.toggle_activated()
+
         # Create connections
         for connection in scene_dict.get("connections", []):
             attrs_to_connect = connection.split("->")

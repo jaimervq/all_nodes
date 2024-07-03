@@ -79,6 +79,7 @@ class GeneralLogicNode:
         self.build_internal()
 
         # Execution
+        self.active = True
         self.success = constants.NOT_RUN
 
         self.fail_log = []
@@ -222,6 +223,8 @@ class GeneralLogicNode:
         )
         out_dict["execution_time"] = self.execution_time
         out_dict["user"] = self.user
+        if not self.active:
+            out_dict["active"] = self.active
 
         # Extra
         out_dict["IS_CONTEXT"] = self.IS_CONTEXT
@@ -240,6 +243,8 @@ class GeneralLogicNode:
 
         out_dict[self.node_name] = dict()
         out_dict[self.node_name]["class_name"] = self.class_name
+        if not self.active:
+            out_dict[self.node_name]["active"] = self.active
 
         out_dict[self.node_name]["node_attributes"] = dict()
         for attr in self.all_attributes:
@@ -773,7 +778,8 @@ class GeneralLogicNode:
         Parameters:
             execute_connected (bool): Whether to execute connected nodes. Default is True
         """
-        # Status
+        # ------------------- PRE-CHECKS ------------------- #
+        # --------------- Status
         if self.success != constants.NOT_RUN:
             LOGGER.warning(
                 "Cannot execute node {} it has already been executed!".format(
@@ -783,7 +789,32 @@ class GeneralLogicNode:
             self.signaler.finished.emit()
             return
 
-        # Check inputs
+        # --------------- If inactive, lets just skip it
+        if not self.active:
+            LOGGER.warning(
+                "Skipping execution of {}".format(
+                    self.full_name,
+                )
+            )
+
+            self.success = constants.NOT_RUN
+            self.set_output(constants.COMPLETED, Run())
+            self.propagate_results()
+
+            self.signaler.finished.emit()
+
+            # Execute connected, if they can (might be missing inputs from this one)
+            if execute_connected:
+                for node in self.out_connected_nodes():
+                    LOGGER.info(
+                        "From {} (skipped), launching execution of {}".format(
+                            self.full_name, node.full_name
+                        )
+                    )
+                    node._run()
+                return
+
+        # --------------- Check inputs
         if not self.check_all_inputs_have_value():
             LOGGER.warning(
                 "Cannot execute node {} now, some input attributes are not set".format(
@@ -793,7 +824,7 @@ class GeneralLogicNode:
             self.signaler.finished.emit()
             return
 
-        # ------ START EXECUTION ------ #
+        # ------------------- START EXECUTION ------------------- #
         LOGGER.info(
             "Starting execution of {} ({})".format(self.full_name, self.class_name)
         )
@@ -802,11 +833,11 @@ class GeneralLogicNode:
         self.success = constants.EXECUTING
         self.signaler.status_changed.emit()
 
-        # Clear any previous logging
+        # --------------- Clear any previous logging
         self.fail_log = []
         self.error_log = []
 
-        # Run
+        # --------------- Run
         if self.IS_CONTEXT:
             self.internal_scene.run_all_nodes(
                 spawn_thread=False
@@ -830,7 +861,7 @@ class GeneralLogicNode:
                 self.execution_time = time.time() - t1
                 return
 
-        # Result of Run
+        # --------------- Result of Run
         if self.success == constants.FAILED:
             LOGGER.error(
                 "Execution of {} FAILED, cannot keep executing from this node".format(
@@ -851,7 +882,7 @@ class GeneralLogicNode:
             self.execution_time = time.time() - t1
             return
 
-        # Check outputs were all set during Run
+        # --------------- Check outputs were all set during Run
         if not self.check_all_outputs_have_value():
             LOGGER.error(
                 "Something went wrong, not all output attributes are set in {}, "
@@ -861,11 +892,11 @@ class GeneralLogicNode:
             self.execution_time = time.time() - t1
             return
 
-        # Mark successful
+        # --------------- Mark successful
         self.success = constants.SUCCESSFUL
         self.set_output(constants.COMPLETED, Run())
 
-        # Propagate results
+        # --------------- Propagate results
         LOGGER.debug(
             "From {}, propagating out attributes to connected nodes".format(
                 self.full_name
@@ -873,13 +904,11 @@ class GeneralLogicNode:
         )
         self.propagate_results()
 
-        # Stop timer
+        # --------------- Stop timer and emit signal
         self.execution_time = time.time() - t1
-
-        # Signal
         self.signaler.finished.emit()
 
-        # Execute connected
+        # --------------- Execute connected
         if execute_connected:
             for node in self.out_connected_nodes():
                 LOGGER.info(
@@ -998,6 +1027,11 @@ class GeneralLogicNode:
 
         if self.IS_CONTEXT:
             self.internal_scene.soft_reset_all_nodes()
+
+    def toggle_activated(self):
+        """Toggle the activated state of the node."""
+        self.active = not self.active
+        return self.active
 
     # SPECIAL METHODS ----------------------
     def __getitem__(self, item: str):

@@ -98,6 +98,17 @@ class LogicSceneTesting(unittest.TestCase):
         n_2 = logic_scene.to_node(full_name)
         self.assertEqual(n_1, n_2)
 
+    def test_run_scene_with_disabled(self):
+        utils.print_test_header("test_run_scene_with_disabled")
+
+        logic_scene = LogicScene()
+        logic_scene.load_from_file("fail_scene")
+        logic_scene.run_all_nodes()
+
+        n = logic_scene.to_node("EmptyNode_2")
+        assert n.success == constants.NOT_RUN
+        assert not n.active
+
     def test_write_scene_to_file(self):
         utils.print_test_header("test_write_scene_to_file")
 
@@ -185,8 +196,8 @@ class LogicSceneTesting(unittest.TestCase):
         logic_scene.load_from_file("fail_scene")
         logic_scene.run_all_nodes_batch()
 
-        assert len(logic_scene.gather_failed_nodes_logs()) == 2
-        assert len(logic_scene.gather_errored_nodes_logs()) == 4
+        assert len(logic_scene.gather_failed_nodes_logs()) == 3
+        assert len(logic_scene.gather_errored_nodes_logs()) == 3
 
     def test_execute_scene_from_alias_4(self):
         utils.print_test_header("test_execute_scene_from_alias_4")
