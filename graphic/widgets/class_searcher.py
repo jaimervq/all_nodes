@@ -39,7 +39,7 @@ class ClassSearcher(QtWidgets.QWidget):
 
     def make_connections(self):
         self.search_bar.textChanged.connect(self.filter_classes)
-        self.class_list.itemDoubleClicked.connect(self.send_node_creation_signal)
+        self.class_list.itemClicked.connect(self.send_node_creation_signal)
 
     def reset(self):
         """
@@ -64,13 +64,8 @@ class ClassSearcher(QtWidgets.QWidget):
                 i.setIcon(QtGui.QIcon(icon_path))
                 self.class_list.addItem(i)
 
-    def keyPressEvent(self, event: QtWidgets.QWidget.event):
-        QtWidgets.QWidget.keyPressEvent(self, event)
-
-        modifiers = QtWidgets.QApplication.keyboardModifiers()
-
-        if event.key() == QtCore.Qt.Key_Return and not modifiers:
-            self.send_node_creation_signal()
+        if self.class_list.item(0):
+            self.class_list.item(0).setSelected(True)
 
     def send_node_creation_signal(self):
         """
@@ -82,3 +77,29 @@ class ClassSearcher(QtWidgets.QWidget):
                 self.class_list.selectedItems()[0].text(),
             )
         self.hide()
+
+    def keyPressEvent(self, event: QtWidgets.QWidget.event):
+        QtWidgets.QWidget.keyPressEvent(self, event)
+
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+
+        if event.key() == QtCore.Qt.Key_Return and not modifiers:
+            self.send_node_creation_signal()
+
+        elif event.key() == QtCore.Qt.Key_Down and not modifiers:
+            index = self.class_list.indexFromItem(self.class_list.selectedItems()[0])
+            row = index.row()
+            new_selected = self.class_list.item(row + 1)
+            if new_selected:
+                self.class_list.selectedItems()[0].setSelected(False)
+                new_selected.setSelected(True)
+
+        elif event.key() == QtCore.Qt.Key_Up and not modifiers:
+            index = self.class_list.indexFromItem(self.class_list.selectedItems()[0])
+            row = index.row()
+            new_selected = self.class_list.item(row - 1)
+            if new_selected:
+                self.class_list.selectedItems()[0].setSelected(False)
+                new_selected.setSelected(True)
+
+        event.setAccepted(True)

@@ -37,7 +37,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         # Add UI paths
         root_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        QtCore.QDir.addSearchPath("icons", os.path.join(root_dir_path, "icons"))
+        QtCore.QDir.addSearchPath("icons", os.path.join(root_dir_path, "general_icons"))
         QtCore.QDir.addSearchPath("ui", os.path.join(root_dir_path, "ui"))
 
         # Load UI
@@ -155,7 +155,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             for key in entries_dict:
                 nice_name = key.replace("scene_lib", "").title().replace("_", " ")
                 libs_menu = menu.addMenu(nice_name)
-                libs_menu.setIcon(QtGui.QIcon("icons:folder.png"))
+                libs_menu.setIcon(QtGui.QIcon("icons:folder.svg"))
                 scenes_list = entries_dict[key]
                 for elem in scenes_list:
                     if isinstance(elem, dict):
@@ -174,7 +174,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         file_menu = menu.addMenu("&File")
         new_scene_action = QtWidgets.QAction("Clear workspace", self)
-        new_scene_action.setIcon(QtGui.QIcon("icons:clear.png"))
+        new_scene_action.setIcon(
+            QtGui.QIcon("icons:clear.png")
+        )  # TODO investigate if extensions can be removed
         new_scene_action.triggered.connect(self.clear_workspace)
         file_menu.addAction(new_scene_action)
         save_scene_action = QtWidgets.QAction("Save current scene as", self)
@@ -186,12 +188,12 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         load_scene_action.triggered.connect(self.load_scene)
         file_menu.addAction(load_scene_action)
 
-        scene_menu = menu.addMenu("&Scene")
+        scene_menu = menu.addMenu("&Scene library")
         add_scenes_recursive(all_scenes, scene_menu)
 
         window_menu = menu.addMenu("&Window")
         show_attr_editor = QtWidgets.QAction("Show attribute editor", self)
-        show_attr_editor.setIcon(QtGui.QIcon("icons:eye.png"))
+        show_attr_editor.setIcon(QtGui.QIcon("icons:eye.svg"))
         show_attr_editor.triggered.connect(self.attr_editr_dock.show)
         window_menu.addAction(show_attr_editor)
 

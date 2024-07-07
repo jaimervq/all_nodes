@@ -9,12 +9,12 @@ import tempfile
 import unittest
 
 from all_nodes import constants
-from all_nodes.lib.base_node_lib.nodes_general_library import debug_nodes
-from all_nodes.lib.base_node_lib.nodes_general_library import file_reading_nodes
-from all_nodes.lib.base_node_lib.nodes_general_library import file_writing_nodes
-from all_nodes.lib.base_node_lib.nodes_general_library import folder_management_nodes
-from all_nodes.lib.base_node_lib.nodes_general_library import general_nodes
-from all_nodes.lib.base_node_lib.nodes_general_library import general_input_nodes
+from all_nodes.lib.base_node_lib.nodes_general_library import debug
+from all_nodes.lib.base_node_lib.nodes_general_library import file_reading
+from all_nodes.lib.base_node_lib.nodes_general_library import file_writing
+from all_nodes.lib.base_node_lib.nodes_general_library import folder_management
+from all_nodes.lib.base_node_lib.nodes_general_library import miscellaneous
+from all_nodes.lib.base_node_lib.nodes_general_library import general_input
 from all_nodes import utils
 
 
@@ -30,11 +30,11 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_creation")
 
-        n_1 = debug_nodes.EmptyNode()
+        n_1 = debug.EmptyNode()
         self.assertIsNotNone(n_1)
-        n_2 = general_nodes.GetDictKey()
+        n_2 = miscellaneous.GetDictKey()
         self.assertIsNotNone(n_2)
-        n_3 = folder_management_nodes.CopyFoldersRecursive()
+        n_3 = folder_management.CopyFoldersRecursive()
         self.assertIsNotNone(n_3)
 
     def test_attribute_name(self):
@@ -43,7 +43,7 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_attribute_name")
 
-        n_1 = general_nodes.GetDictKey()
+        n_1 = miscellaneous.GetDictKey()
         in_dict_attr = n_1["in_dict"]
         self.assertRegex(in_dict_attr.dot_name, "GetDictKey_\d+\.in_dict")
 
@@ -53,8 +53,8 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_connection")
 
-        n_1 = file_reading_nodes.JsonToDict()
-        n_2 = general_nodes.GetDictKey()
+        n_1 = file_reading.JsonToDict()
+        n_2 = miscellaneous.GetDictKey()
         self.assertTrue(n_1.connect_attribute("out_dict", n_2, "in_dict")[0])
         self.assertFalse(n_1["out_dict"].connect_to_other(n_2["key"])[0])
         self.assertFalse(n_2["in_dict"].connect_to_other(n_2["key"])[0])
@@ -66,9 +66,9 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_connection_cycle")
 
-        n_1 = debug_nodes.EmptyNode()
-        n_2 = debug_nodes.EmptyNode()
-        n_3 = debug_nodes.EmptyNode()
+        n_1 = debug.EmptyNode()
+        n_2 = debug.EmptyNode()
+        n_3 = debug.EmptyNode()
         n_1.connect_attribute(constants.COMPLETED, n_2, constants.START)
         n_2.connect_attribute(constants.COMPLETED, n_3, constants.START)
         connection_status, _ = n_3.connect_attribute(
@@ -82,8 +82,8 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_getting_internal_dict")
 
-        n_1 = general_input_nodes.StrInput()
-        n_2 = general_nodes.GetDictKey()
+        n_1 = general_input.StrInput()
+        n_2 = miscellaneous.GetDictKey()
 
         n_1.set_attribute_value("internal_str", "test")
         n_1.connect_attribute("out_str", n_2, "key")
@@ -100,19 +100,19 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_inputs_checked_run")
 
-        n_1 = debug_nodes.EmptyNode()
+        n_1 = debug.EmptyNode()
         n_1.run_single()
         self.assertEqual(n_1.success, constants.SUCCESSFUL)
 
-        n_2 = file_reading_nodes.JsonToDict()
+        n_2 = file_reading.JsonToDict()
         n_2.run_single()
         self.assertEqual(n_2.success, constants.NOT_RUN)
 
-        n_3 = file_writing_nodes.CreateTempFile()
+        n_3 = file_writing.CreateTempFile()
         n_3.run_single()
         self.assertEqual(n_3.success, constants.SUCCESSFUL)
 
-        n_4 = file_writing_nodes.CreateTempFile()
+        n_4 = file_writing.CreateTempFile()
         n_4["suffix"].set_value(".txt")
         n_4.run_single()
         self.assertEqual(n_4.success, constants.SUCCESSFUL)
@@ -125,7 +125,7 @@ class NodeTesting(unittest.TestCase):
 
         temp = tempfile.NamedTemporaryFile(suffix=".yaml", delete=False)
         temp.close()
-        n_1 = file_writing_nodes.DictToYaml()
+        n_1 = file_writing.DictToYaml()
         n_1.set_attribute_value("in_dict", NodeTesting.DICT_EXAMPLE)
         n_1.set_attribute_value("yaml_filepath_to_write", temp.name)
         n_1._run()
@@ -139,7 +139,7 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_run_node_2")
 
-        n_1 = file_writing_nodes.CreateTempFile()
+        n_1 = file_writing.CreateTempFile()
         n_1._run()
         out_temp_path = n_1.get_attribute_value("tempfile_path")
         self.assertTrue(os.path.exists(out_temp_path))
@@ -152,7 +152,7 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_node_fails")
 
-        n_1 = general_nodes.GetDictKey()
+        n_1 = miscellaneous.GetDictKey()
         n_1.set_attribute_value("in_dict", NodeTesting.DICT_EXAMPLE)
         n_1.set_attribute_value("key", "FAKE")
         n_1._run()
@@ -165,7 +165,7 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_node_exception")
 
-        n_1 = debug_nodes.ErrorNode()
+        n_1 = debug.ErrorNode()
         n_1._run()
 
         self.assertEqual(n_1.success, constants.ERROR)
@@ -176,7 +176,7 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_node_execution_time")
 
-        n_1 = debug_nodes.TimedNode()
+        n_1 = debug.TimedNode()
         n_1.run_single()
 
         self.assertGreater(n_1.execution_time, 1.0)

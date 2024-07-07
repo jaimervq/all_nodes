@@ -91,6 +91,7 @@ class InputsGUI(Enum):
 class PreviewsGUI(Enum):
     STR_PREVIEW = auto()
     MULTILINE_STR_PREVIEW = auto()
+    DICT_PREVIEW = auto()
     IMAGE_PREVIEW = auto()
 
 

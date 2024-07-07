@@ -98,11 +98,11 @@ def register_node_lib(lib_path):
                 continue
             # Icon for this class  # TODO Refactor this out
             default_icon = node_styles.get(module_name, dict()).get("default_icon")
-            icon_path = "icons:nodes.png"
+            icon_path = "icons:nodes.svg"
             if (
                 hasattr(cls, "IS_CONTEXT") and cls.IS_CONTEXT
             ):  # TODO inheritance not working here?
-                icon_path = "icons:cubes.png"
+                icon_path = "icons:cubes.svg"
             if QtCore.QFile.exists(f"icons:{name}.png"):
                 icon_path = f"icons:{name}.png"
             elif QtCore.QFile.exists(f"icons:{name}.svg"):

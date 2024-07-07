@@ -30,3 +30,18 @@ class StringSplit(GeneralLogicNode):
             split_list = in_str.splitlines()
 
         self.set_output("out_list", split_list)
+
+
+class StringFormat(GeneralLogicNode):
+    INPUTS_DICT = {
+        "in_str": {"type": str},
+        "format_dict": {"type": dict},
+    }
+
+    OUTPUTS_DICT = {"out_str": {"type": str}}
+
+    def run(self):
+        in_str = self.get_attribute_value("in_str")
+        format_dict = self.get_attribute_value("format_dict")
+
+        self.set_output("out_str", in_str.format(**format_dict))

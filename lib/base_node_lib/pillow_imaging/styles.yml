@@ -1,5 +1,5 @@
 ## Registry of the styles (colors and icons) for this lib
 
-pillow_general_nodes:
+pillow_general:
     color: '#007513'
     default_icon: image
