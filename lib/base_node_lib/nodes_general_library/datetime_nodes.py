@@ -14,11 +14,13 @@ from all_nodes import utils
 LOGGER = utils.get_logger(__name__)
 
 
-DATE_FORMATS = [
-    "%d/%m/%Y,  %H:%M:%S",  # European
-    "%m/%d/%Y, %H:%M:%S",  # American
-    "%Y.%m.%d_%H.%M.%S",  # Technical
-]
+DATE_FORMATS = sorted(
+    [
+        "%d/%m/%Y,  %H:%M:%S",  # European
+        "%m/%d/%Y, %H:%M:%S",  # American
+        "%Y.%m.%d_%H.%M.%S",  # Technical
+    ]
+)
 
 
 class StrfDatetime(GeneralLogicNode):

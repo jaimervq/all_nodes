@@ -224,3 +224,29 @@ class LogicSceneTesting(unittest.TestCase):
         n_1 = logic_scene.add_node_by_name("PrintToConsole")
         n_2 = logic_scene.add_node_by_name("YamlToDict")
         self.assertFalse(logic_scene.rename_node(n_1, n_2.node_name))
+
+    def test_scene_with_loop(self):
+        utils.print_test_header("test_scene_with_loop")
+
+        # The loops are quite tricky, lets run this test a
+        # few times to make sure it works, accounting for
+        # randomization in execution order of nodes
+        for _ in range(5):
+            logic_scene = LogicScene()
+            logic_scene.load_from_file("loop_example")
+            logic_scene.run_all_nodes_batch()
+
+            foreach_begin = logic_scene.to_node("ForEachBegin_1")
+            assert foreach_begin.execution_counter == 1
+
+            print_1 = logic_scene.to_node("PrintToConsole_1")
+            assert print_1.execution_counter == 3
+
+            print_2 = logic_scene.to_node("PrintToConsole_2")
+            assert print_2.execution_counter == 3
+
+            foreach_end = logic_scene.to_node("ForEachEnd_1")
+            assert foreach_end.execution_counter == 1
+
+            empty_node_2 = logic_scene.to_node("EmptyNode_2")
+            assert empty_node_2.execution_counter == 1

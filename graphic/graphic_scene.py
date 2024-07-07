@@ -8,6 +8,7 @@ __license__ = "MIT License"
 import logging
 import math
 import os
+import platform
 import pprint
 import subprocess
 
@@ -579,14 +580,28 @@ class CustomScene(QtWidgets.QGraphicsScene):
             graphic_node (GeneralGraphicNode): node to examine code from
         """
         logic_node = graphic_node.logic_node
-        try:
-            subprocess.Popen(["notepad", logic_node.FILEPATH])
-            if logic_node.IS_CONTEXT:
-                subprocess.Popen(["notepad", logic_node.CONTEXT_DEFINITION_FILE])
-        except Exception as e:
-            msg = "Could not open the code in editor: {}".format(e)
-            LOGGER.error(msg)
-            self.in_screen_feedback.emit(msg, logging.ERROR)
+
+        commands = ["code"]
+
+        if platform.system() == "Windows":
+            commands.extend(["notepad", "notepad++"])
+        elif platform.system() == "Linux":
+            commands.extend(["gedit", "pluma"])
+        for command in commands:
+            try:
+                subprocess.run([command, logic_node.FILEPATH])
+                if logic_node.IS_CONTEXT:
+                    subprocess.run([command, logic_node.CONTEXT_DEFINITION_FILE])
+
+                return
+
+            except Exception as e:
+                msg = "Could not use editor '{}': {}".format(command, e)
+                LOGGER.info(msg)
+
+        msg = "Could not open the code in editor!"
+        LOGGER.error(msg)
+        self.in_screen_feedback.emit(msg, logging.ERROR)
 
     def expand_context(self, graphic_node: GeneralGraphicNode):
         """

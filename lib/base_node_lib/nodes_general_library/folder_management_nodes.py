@@ -20,13 +20,16 @@ class MirrorFolders(GeneralLogicNode):
     }
 
     def run(self):
+        import platform
         import subprocess
 
         src_folder = self.get_attribute_value("src_folder")
         dest_folder = self.get_attribute_value("dest_folder")
 
-        s = subprocess.Popen(["robocopy", src_folder, dest_folder, "/E", "/MIR"])
-        s.wait()
+        if platform.system() == "Windows":
+            subprocess.Popen(["robocopy", src_folder, dest_folder, "/E", "/MIR"])
+        else:
+            self.fail("Not implemented!")
 
 
 class GetFolderFromFilepath(GeneralLogicNode):

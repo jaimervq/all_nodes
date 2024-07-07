@@ -112,6 +112,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.setup_extras()
 
         # Connect
+        self.logic_node.signaler.is_executing.connect(self.show_executing)
         self.logic_node.signaler.status_changed.connect(self.show_result)
         self.logic_node.signaler.finished.connect(self.show_result)
 
@@ -183,11 +184,14 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 self.proxy_input_widgets[i].setPos(
                     constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
                 )
+                self.proxy_input_widgets[i].setZValue(
+                    200
+                )  # TODO maybe put all the setZValue together?
                 if i:
-                    prev_widget = self.proxy_input_widgets[i - 1].widget()
+                    in_widget = self.proxy_input_widgets[i - 1].widget()
                     self.proxy_input_widgets[i].setPos(
                         constants.CHAMFER_RADIUS,
-                        prev_widget.pos().y() + prev_widget.height(),
+                        in_widget.pos().y() + in_widget.height(),
                     )
 
         if self.has_gui_previews:
@@ -277,7 +281,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         i = 0
         for attr in self.logic_node.get_input_attrs():
             attr = GeneralGraphicAttribute(attr, self, i)
-            attr.setZValue(100)
+            attr.setZValue(100)  # TODO maybe put all the setZValue together?
             self.graphic_attributes.append(attr)
             i += 1
 
@@ -381,7 +385,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         )
         self.deactivated_cross.setPath(x_path)
         self.deactivated_cross.setPen(constants.NODE_DEACTIVATED_PEN)
-        self.deactivated_cross.setZValue(50)
+        self.deactivated_cross.setZValue(300)
 
         # ERROR MARQUEE
         error_path = QtGui.QPainterPath()
@@ -522,7 +526,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 new_input_widget.setPlaceholderText("list here")
                 if self.logic_node.get_attribute_value(attr_name):
                     new_input_widget.setText(
-                        self.logic_node.get_attribute_value(attr_name)
+                        str(self.logic_node.get_attribute_value(attr_name))
                     )
                 new_input_widget.textChanged.connect(
                     partial(
@@ -790,6 +794,17 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.update_attributes_from_widgets()
         self.clear_previews()
 
+    def show_executing(self):
+        """
+        Display visual indications around the node to show it is running.
+        """
+        self.badge_icon.show()
+
+        self.badge_icon.setElementId("executing")
+        self.badge_icon.setToolTip('<p style="color: magenta">Executing...<br>')
+
+        self.error_marquee.hide()
+
     def show_result(self):
         """
         Display visual indications around the node to show the result of its execution.
@@ -800,9 +815,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.badge_icon.hide()
             self.error_marquee.hide()
 
-        elif self.logic_node.success == constants.EXECUTING:
-            self.badge_icon.setElementId("executing")
-            self.badge_icon.setToolTip('<p style="color: gray">Executing...<br>')
+        elif self.logic_node.success == constants.IN_LOOP:
+            self.badge_icon.setElementId("loop")
+            self.badge_icon.setToolTip('<p style="color: cyan">In loop<br>')
 
             self.error_marquee.hide()
 
