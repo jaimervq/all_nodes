@@ -7,6 +7,7 @@ __license__ = "MIT License"
 
 from functools import partial
 import math
+import pprint
 
 from PySide2 import QtWidgets
 from PySide2 import QtCore
@@ -49,11 +50,20 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.bright_color_name = utils.get_bright_color(color_name)
 
         # SUB-ITEMS
-        class_pixmap = QtGui.QPixmap(self.logic_node.ICON_PATH)
-        class_pixmap = class_pixmap.scaledToHeight(
-            constants.STRIPE_HEIGHT, QtCore.Qt.TransformationMode.SmoothTransformation
-        )
-        self.class_icon = QtWidgets.QGraphicsPixmapItem(class_pixmap, parent=self)
+        if "svg" in self.logic_node.ICON_PATH:
+            self.class_icon_renderer = QtSvg.QSvgRenderer(self.logic_node.ICON_PATH)
+            self.class_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
+            self.class_icon.setSharedRenderer(self.class_icon_renderer)
+            self.class_icon.setScale(
+                constants.STRIPE_HEIGHT / self.class_icon.boundingRect().height()
+            )
+        else:
+            class_pixmap = QtGui.QPixmap(self.logic_node.ICON_PATH)
+            class_pixmap = class_pixmap.scaledToWidth(
+                constants.STRIPE_HEIGHT,
+                QtCore.Qt.TransformationMode.SmoothTransformation,
+            )
+            self.class_icon = QtWidgets.QGraphicsPixmapItem(class_pixmap, parent=self)
 
         self.class_text = QtWidgets.QGraphicsTextItem(parent=self)
 
@@ -74,9 +84,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.glow = QtWidgets.QGraphicsPathItem(parent=self)
         self.glow.hide()
 
-        self.svg_renderer = QtSvg.QSvgRenderer("icons:badges.svg")
+        self.badge_renderer = QtSvg.QSvgRenderer("icons:badges.svg")
         self.badge_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
-        self.badge_icon.setSharedRenderer(self.svg_renderer)
+        self.badge_icon.setSharedRenderer(self.badge_renderer)
         self.badge_icon.setElementId("neutral")
         self.badge_icon.hide()
 
@@ -573,9 +583,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 new_input_widget.setMaximum(int(1e6))
                 new_input_widget.setMinimum(int(-1e6))
-                if self.logic_node.get_attribute_value("out_int"):
+                if self.logic_node.get_attribute_value(attr_name):
                     new_input_widget.setValue(
-                        self.logic_node.get_attribute_value("out_int")
+                        self.logic_node.get_attribute_value(attr_name)
                     )
                 new_input_widget.valueChanged.connect(
                     partial(self.update_attributes_from_widgets, attr_name)
@@ -595,9 +605,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 new_input_widget.setMaximum(int(1e6))
                 new_input_widget.setMinimum(int(-1e6))
-                if self.logic_node.get_attribute_value("out_int"):
+                if self.logic_node.get_attribute_value(attr_name):
                     new_input_widget.setValue(
-                        self.logic_node.get_attribute_value("out_int")
+                        self.logic_node.get_attribute_value(attr_name)
                     )
                 new_input_widget.valueChanged.connect(
                     partial(self.update_attributes_from_widgets, attr_name)
@@ -625,9 +635,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                         "options", constants.InputsGUI.OPTION_INPUT.value
                     )
                 )
-                if self.logic_node.get_attribute_value("out_str"):
+                if self.logic_node.get_attribute_value(attr_name):
                     new_input_widget.setCurrentText(
-                        self.logic_node.get_attribute_value("out_str")
+                        self.logic_node.get_attribute_value(attr_name)
                     )
                 new_input_widget.currentIndexChanged.connect(
                     partial(self.update_attributes_from_widgets, attr_name)
@@ -713,6 +723,28 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 self.preview_widgets.append(new_preview_widget)
 
             elif gui_preview_type == constants.PreviewsGUI.MULTILINE_STR_PREVIEW:
+                new_preview_widget = QtWidgets.QPlainTextEdit(parent=None)
+                new_preview_widget.setObjectName(attr_name)
+                new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_preview_widget.setReadOnly(True)
+                new_preview_widget.setFixedSize(
+                    300,
+                    int(4 * constants.HEADER_HEIGHT),
+                )
+                new_preview_widget.setStyleSheet(
+                    "background:transparent; color:white; border:1px dotted white;"
+                )
+
+                if self.logic_node.get_attribute_value(attr_name):
+                    new_preview_widget.setPlaceholderText(
+                        self.logic_node.get_attribute_value(attr_name)
+                    )
+                else:
+                    new_preview_widget.setPlaceholderText(f"[{attr_name}]")
+
+                self.preview_widgets.append(new_preview_widget)
+
+            elif gui_preview_type == constants.PreviewsGUI.DICT_PREVIEW:
                 new_preview_widget = QtWidgets.QPlainTextEdit(parent=None)
                 new_preview_widget.setObjectName(attr_name)
                 new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -913,7 +945,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
     # SHOW PREVIEWS ----------------------
     def update_previews_from_attributes(self):
         for w in self.preview_widgets:
-            if not w.objectName():
+            if not w.objectName():  # That is the label that starts the previews
                 continue
 
             value = self.logic_node.get_attribute_value(w.objectName())
@@ -921,7 +953,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             if isinstance(w, QtWidgets.QLineEdit):
                 w.setText(value)
             elif isinstance(w, QtWidgets.QPlainTextEdit):
-                w.setPlainText(value)
+                w.setPlainText(pprint.pformat(value))
             elif isinstance(w, QtWidgets.QCheckBox):
                 w.setChecked(value)
             elif isinstance(w, QtWidgets.QSpinBox):
@@ -1207,7 +1239,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             )
             plug_path.addPolygon(plug_polygon)
 
-        elif self.logic_attribute.get_datatype_str() == "Run":
+        elif self.logic_attribute.get_datatype_str() in ["Run", "RunLoop"]:
             plug_polygon = QtGui.QPolygon(
                 [
                     QtCore.QPoint(-constants.PLUG_RADIUS, constants.PLUG_RADIUS),
@@ -1292,7 +1324,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             )
 
     # CONNECT/DISCONNECT ----------------------
-    def connect_graphic_attr(self, other_graphic_attr, check_logic=True):
+    def connect_graphic_attr(self, other_graphic_attr, check_logic=True) -> tuple:
         """
         Connect this graphic attribute to another one.
 
@@ -1300,7 +1332,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
             other_graphic_attr (GeneralGraphicAttribute): attribute to try to connect
             check_logic (bool): check the connection of logic attributes
 
-        Returns: bool, whether the attribute could be connected
+        Returns: tuple(bool, str), whether the attribute could be connected and a message with the reason
         """
         can_connect = True
         reason = ""

@@ -8,7 +8,7 @@ import os
 import re
 
 import matplotlib.pyplot as plt
-import pandas as pd
+import polars as pl
 from pymongo import MongoClient
 
 from all_nodes import constants
@@ -113,7 +113,7 @@ def process_analytics():
     )
 
     if res:
-        df = pd.DataFrame(list(res))
+        df = pl.DataFrame(list(res))
 
         dates = df["_id"].tolist()
         uses = df["count"].tolist()
@@ -151,7 +151,7 @@ def process_analytics():
     )
 
     if res:
-        df = pd.DataFrame(list(res))
+        df = pl.DataFrame(list(res))
 
         node_names = df["_id"].tolist()
         uses = df["count"].tolist()
@@ -191,7 +191,7 @@ def process_analytics():
     )
 
     if res:
-        df = pd.DataFrame(list(res))
+        df = pl.DataFrame(list(res))
 
         node_names = df["_id"].tolist()
         avg_time = df["average_time"].tolist()
@@ -222,7 +222,7 @@ def process_analytics():
     )
 
     if res:
-        df = pd.DataFrame(list(res))
+        df = pl.DataFrame(list(res))
 
         df_grouped = (
             df.groupby(["class_name", "run_date"])
@@ -272,7 +272,7 @@ def process_analytics():
     )
 
     if res:
-        df = pd.DataFrame(list(res))
+        df = pl.DataFrame(list(res))
 
         df_grouped = (
             df.groupby(["class_name", "run_date"])

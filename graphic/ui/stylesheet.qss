@@ -10,6 +10,13 @@ QWidget
 }
 
 /* ---------------------------- QMenuBar ---------------------------- */
+QMenuBar::item{
+	background-color: transparent;
+}
+QMenuBar::item:selected{
+	background-color: rgba(240, 100, 10, 25);
+}
+
 QMenuBar:disabled{
 	background-color: #303340;
 	color: dark-gray;
@@ -18,7 +25,6 @@ QMenuBar:disabled{
 /* ---------------------------- QMenu ---------------------------- */
 QMenu
 {
-	background-color: #303340;
 	color: #fff;
 }
 
@@ -130,6 +136,14 @@ QTreeView::item:hover
 }
 
 QTreeView::item:selected, QTreeView::item:hover:selected
+{
+	color: #fff;
+	border:2px solid #eb7a02;
+	margin-right:10px;
+}
+
+/* ---------------------------- QListWidget ---------------------------- */
+QListWidget::item:selected, QListWidget::item:hover:selected
 {
 	color: #fff;
 	border:2px solid #eb7a02;

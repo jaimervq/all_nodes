@@ -78,10 +78,8 @@ class NodePanel(QtWidgets.QWidget):
         )
 
         # Shadow
-        qp.setPen(QtGui.QPen(QtGui.QColor("black"), 2))
-        qp.drawLine(
-            QtCore.QLine(12, self.height() - 2, self.width() - 12, self.height() - 2)
-        )
+        qp.setPen(QtGui.QPen(QtGui.QColor(0, 0, 0, 130), 5))
+        qp.drawLine(QtCore.QLine(12, self.height(), self.width() - 12, self.height()))
 
         # End
         qp.end()
@@ -253,13 +251,19 @@ class NodePanel(QtWidgets.QWidget):
 
         self.grid_layout.addWidget(attrib_value_le, self.row_count, 1, 1, 1)
 
-        copy_btn = QtWidgets.QToolButton()
-        copy_btn.setIcon(QtGui.QIcon("icons:CopyFile.png"))
-        copy_btn.setToolTip("Copy this value to clipboard")
-        copy_btn.clicked.connect(
-            lambda: QtWidgets.QApplication.clipboard().setText(attrib_value_le.text())
-        )
-        self.grid_layout.addWidget(copy_btn, self.row_count, 2, 1, 1)
+        if attr.get_datatype_str() not in [
+            "Run",
+            "RunLoop",
+        ]:
+            copy_btn = QtWidgets.QToolButton()
+            copy_btn.setIcon(QtGui.QIcon("icons:clipboard.svg"))
+            copy_btn.setToolTip("Copy this value to clipboard")
+            copy_btn.clicked.connect(
+                lambda: QtWidgets.QApplication.clipboard().setText(
+                    attrib_value_le.text()
+                )
+            )
+            self.grid_layout.addWidget(copy_btn, self.row_count, 2, 1, 1)
 
         self.row_count += 1
 
