@@ -25,7 +25,7 @@ It also aims to prevent re-duplication and re-writing of code inside of a projec
 <table align="center">
   <tr>
     <td>✅ Drag and drop creation of nodes<br></td>
-    <td>✅ Class search (<tt>/</tt> key)</td>
+    <td>✅ Class search</td>
   </tr>
   <tr>
     <td align="center"><img src="docs/drop.gif" width=60%></td>

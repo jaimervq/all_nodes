@@ -17,6 +17,7 @@ from all_nodes import constants
 from all_nodes.graphic import graphic_scene
 from all_nodes.graphic.widgets.attribute_editor import AttributeEditor
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+from all_nodes.graphic.widgets.shortcuts_help import ShortcutsHelp
 
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 
@@ -35,13 +36,16 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         # CLASSES SCANNING
         self.libraries_added = set()
 
-        # Add UI paths
+        # Add search paths
         root_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         QtCore.QDir.addSearchPath("icons", os.path.join(root_dir_path, "general_icons"))
         QtCore.QDir.addSearchPath("ui", os.path.join(root_dir_path, "ui"))
+        QtCore.QDir.addSearchPath(
+            "resources", os.path.join(root_dir_path, "../logic/resources")
+        )
 
         # Load UI
-        file = QtCore.QFile(os.path.join(root_dir_path, "ui/all_nodes.ui"))
+        file = QtCore.QFile(r"ui:all_nodes.ui")
         file.open(QtCore.QFile.ReadOnly)
         loader = QtUiTools.QUiLoader()
         self.ui = loader.load(file, self)
@@ -101,7 +105,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         # UI elements
         self.ui.filter_le.textChanged.connect(self.filter_nodes_by_name)
 
-        self.ui.tabWidget.currentChanged.connect(self.attr_editor.clear_all)
         self.ui.tabWidget.currentChanged.connect(self.show_scene_results)
 
         self.ui.reset_current_btn.clicked.connect(self.reset_current_scene)
@@ -180,13 +183,23 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         new_scene_action.triggered.connect(self.clear_workspace)
         file_menu.addAction(new_scene_action)
         save_scene_action = QtWidgets.QAction("Save current scene as", self)
-        save_scene_action.setIcon(QtGui.QIcon("icons:save.png"))
-        save_scene_action.triggered.connect(self.save_scene)
+        save_scene_action.setIcon(QtGui.QIcon("icons:save_as.svg"))
+        save_scene_action.triggered.connect(self.save_scene_as)
         file_menu.addAction(save_scene_action)
+        save_scene_changes_action = QtWidgets.QAction("Save changes", self)
+        save_scene_changes_action.setIcon(QtGui.QIcon("icons:save.svg"))
+        save_scene_changes_action.triggered.connect(self.save_scene)
+        file_menu.addAction(save_scene_changes_action)
         load_scene_action = QtWidgets.QAction("Load scene from file", self)
         load_scene_action.setIcon(QtGui.QIcon("icons:load.png"))
         load_scene_action.triggered.connect(self.load_scene)
         file_menu.addAction(load_scene_action)
+
+        node_menu = menu.addMenu("&Node library")
+        re_scan_classes_action = QtWidgets.QAction("Re-scan classes", self)
+        re_scan_classes_action.setIcon(QtGui.QIcon("icons:examine.png"))
+        re_scan_classes_action.triggered.connect(self.reload_classes)
+        node_menu.addAction(re_scan_classes_action)
 
         scene_menu = menu.addMenu("&Scene library")
         add_scenes_recursive(all_scenes, scene_menu)
@@ -196,6 +209,11 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         show_attr_editor.setIcon(QtGui.QIcon("icons:eye.svg"))
         show_attr_editor.triggered.connect(self.attr_editr_dock.show)
         window_menu.addAction(show_attr_editor)
+
+        help_menu = menu.addMenu("&Help")
+        shortcuts_action = QtWidgets.QWidgetAction(help_menu)
+        shortcuts_action.setDefaultWidget(ShortcutsHelp())
+        help_menu.addAction(shortcuts_action)
 
     def create_dock_windows(self):
         self.attr_editr_dock.setAllowedAreas(
@@ -309,6 +327,25 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             if not lib_visible_count:
                 lib_item.setHidden(True)
 
+    def reload_classes(self):
+        """
+        Reload the classes displayed in the nodes tree widget.
+
+        This function clears the nodes tree widget and the libraries added list.
+        It then flushes the class registry and starts the classes scanning.
+        """
+        # Clear the UI
+        self.menuBar().setEnabled(False)
+        self.ui.nodes_tree.clear()
+        self.libraries_added.clear()
+
+        # Re-scan classes
+        CR.flush()
+        CR.scan_for_classes_GUI()
+
+        for worker in CR.get_workers():
+            worker.signaler.finished.connect(self.populate_tree)
+
     # TABS ----------------------
     def clear_workspace(self):
         """
@@ -361,7 +398,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         graphics_scene.dropped_node.connect(
             self.add_node_to_current
         )  # TODO use the GS?
-        graphics_scene.in_screen_feedback.connect(graphics_view.show_feedback)
+        GS.signals.main_screen_feedback.connect(
+            graphics_view.show_feedback
+        )  # TODO use the GS?
 
         if context:
             graphics_scene.load_from_file(context.CONTEXT_DEFINITION_FILE, False)
@@ -419,11 +458,12 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             GeneralLogicNode: logic node associated to the uuid
 
         """
-        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-        current_logic_scene = current_gw.scene().logic_scene
-        for n in current_logic_scene.all_nodes():
-            if n.uuid == uuid:
-                return n
+        for i in range(self.ui.tabWidget.count()):
+            current_gw = self.ui.tabWidget.widget(i)
+            current_logic_scene = current_gw.scene().logic_scene
+            for n in current_logic_scene.all_nodes():
+                if n.uuid == uuid:
+                    return n
 
     def add_node_to_current(self, pos, class_name=None):
         """
@@ -480,6 +520,17 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
     # SAVE AND LOAD ----------------------
     def save_scene(self):
+        """
+        Launch process of saving changes of current scene to a file, or just save as.
+        """
+        current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        current_scene = current_gw.scene()
+        if current_scene.filepath:
+            current_scene.save_to_file(current_scene.filepath)
+        else:
+            current_scene.save_to_file()
+
+    def save_scene_as(self):
         """
         Launch process of saving current scene to a file.
         """

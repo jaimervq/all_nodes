@@ -9,6 +9,13 @@ QWidget
 	color: #fff;
 }
 
+/* ---------------------------- QInputDialog  ---------------------------- */
+QInputDialog
+{
+	background-color: #303340;
+	color: red;
+}
+
 /* ---------------------------- QMenuBar ---------------------------- */
 QMenuBar::item{
 	background-color: transparent;

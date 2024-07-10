@@ -6,6 +6,7 @@ __license__ = "MIT License"
 
 
 import logging
+import re
 import sys
 
 from colorama import Fore, Style
@@ -59,7 +60,16 @@ def print_test_header(message):
     )
 
 
-# -------------------------------- UTILITY -------------------------------- #
+# -------------------------------- LOGIC UTILITY -------------------------------- #
+def parse_datatype(datatype_str):
+    if re.match("<class '.+\.(.+)'>", datatype_str):
+        return re.match("<class '.+\.(.+)'>", datatype_str).group(1)
+    elif re.match("<module '.+\.(.+)' from", datatype_str):
+        return re.match("<module '.+\.(.+)' from", datatype_str).group(1)
+    return re.search("'(.+)'", datatype_str).group(1)
+
+
+# -------------------------------- GUI UTILITY -------------------------------- #
 def get_bright_color(color_name):
     """Given a color name, get a fully saturated and bright version of it
 

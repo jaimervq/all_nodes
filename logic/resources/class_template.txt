@@ -1,0 +1,14 @@
+class {class_name}(GeneralLogicNode):
+    NICE_NAME = ""
+    HELP = ""
+
+    IS_CONTEXT = {is_context}
+
+    INPUTS_DICT = {inputs_dict}
+    OUTPUTS_DICT = {outputs_dict}
+
+    INTERNALS_DICT = {internals_dict}
+
+    def run(self):
+        LOGGER.error("Not implemented!")
+        raise NotImplementedError()

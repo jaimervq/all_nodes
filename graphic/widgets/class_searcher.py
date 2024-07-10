@@ -5,12 +5,12 @@ __credits__ = []
 __license__ = "MIT License"
 
 
+from PySide2 import QtCore
 from PySide2 import QtGui
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets
 
 from all_nodes import utils
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
-
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 
 

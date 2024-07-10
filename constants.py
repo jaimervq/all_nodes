@@ -5,7 +5,7 @@ __credits__ = []
 __license__ = "MIT License"
 
 
-from enum import auto, Enum
+from enum import Enum
 import logging
 import os
 
@@ -77,22 +77,25 @@ ERROR = "ERROR"
 
 # -------------------------------- GUI INPUT / PREVIEW TYPES -------------------------------- #
 class InputsGUI(Enum):
-    STR_INPUT = auto()
-    MULTILINE_STR_INPUT = auto()
-    INT_INPUT = auto()
-    FLOAT_INPUT = auto()
-    BOOL_INPUT = auto()
-    OPTION_INPUT = ["A", "B", "C"]
-    TUPLE_INPUT = auto()
-    DICT_INPUT = auto()
-    LIST_INPUT = auto()
+    STR_INPUT = "String input"
+    MULTILINE_STR_INPUT = "Multiline string input"
+    INT_INPUT = "Integer input"
+    FLOAT_INPUT = "Float input"
+    BOOL_INPUT = "Boolean input"
+    OPTION_INPUT = "Option input"
+    TUPLE_INPUT = "Tuple input"
+    DICT_INPUT = "Dictionary input"
+    LIST_INPUT = "List input"
 
 
 class PreviewsGUI(Enum):
-    STR_PREVIEW = auto()
-    MULTILINE_STR_PREVIEW = auto()
-    DICT_PREVIEW = auto()
-    IMAGE_PREVIEW = auto()
+    STR_PREVIEW = "String preview"
+    MULTILINE_STR_PREVIEW = "Multiline string preview"
+    DICT_PREVIEW = "Dictionary preview"
+    IMAGE_PREVIEW = "Image preview"
+
+
+# -------------------------------- KEYBOARD SHORTCUTS -------------------------------- #
 
 
 # -------------------------------- LOGGING PREFS -------------------------------- #

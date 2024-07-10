@@ -5,12 +5,15 @@ __credits__ = []
 __license__ = "MIT License"
 
 
+import datetime
 import logging
 import math
 import os
 import platform
 import pprint
+import re
 import subprocess
+import sys
 
 from PySide2 import QtWidgets
 from PySide2 import QtCore
@@ -23,6 +26,7 @@ from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_scene import LogicScene
 from all_nodes import utils
+from all_nodes.graphic.widgets.attribute_picker import AttributePicker
 from all_nodes.graphic.widgets.class_searcher import ClassSearcher
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 
@@ -73,6 +77,9 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         # Signals connection
         GS.signals.execution_started.connect(self.hourglass_animation.show)
         GS.signals.execution_finished.connect(self.hourglass_animation.hide)
+        GS.signals.class_scanning_finished.connect(
+            lambda: self.show_feedback("Finished scanning classes", level=logging.INFO)
+        )
 
     # UTILITY ----------------------
     def show_feedback(self, message, level=logging.INFO):
@@ -195,7 +202,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 class CustomScene(QtWidgets.QGraphicsScene):
     # TODO rethink if these could go in the GLOBAL_SIGNALER
     dropped_node = QtCore.Signal(QtCore.QPoint)
-    in_screen_feedback = QtCore.Signal(str, int)
 
     def __init__(self, context=None):
         QtWidgets.QGraphicsScene.__init__(self)
@@ -253,7 +259,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                         self.addItem(new_graph_node)
                         self.all_graphic_nodes.add(new_graph_node)
                         new_graph_node.setPos(x, y)
-                        self.in_screen_feedback.emit(
+                        GS.signals.main_screen_feedback.emit(
                             "Created graphic node {}".format(node_classname),
                             logging.INFO,
                         )
@@ -341,13 +347,13 @@ class CustomScene(QtWidgets.QGraphicsScene):
             graphic_attr_2, check_logic
         )
         if can_connect:
-            self.in_screen_feedback.emit(
+            GS.signals.main_screen_feedback.emit(
                 reason,
                 logging.DEBUG,
             )
             self.draw_valid_line(graphic_attr_1, graphic_attr_2)
         else:
-            self.in_screen_feedback.emit(
+            GS.signals.main_screen_feedback.emit(
                 reason,
                 logging.WARNING,
             )
@@ -542,7 +548,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
             None,
             "Rename node " + logic_node.node_name,
             "New name:",
-        )
+        )  # TODO find how to style this
+
         if ok and new_name:
             if self.logic_scene.rename_node(logic_node, new_name):
                 graphic_node.update_name()
@@ -550,7 +557,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 GS.signals.tab_names_refresh_requested.emit()
             else:
                 if logic_node.node_name == new_name:
-                    self.in_screen_feedback.emit(
+                    GS.signals.main_screen_feedback.emit(
                         "Cannot rename to '{}', it is the same name as now".format(
                             new_name
                         ),
@@ -558,59 +565,66 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     )
                 else:
                     if not GeneralLogicNode.name_is_valid(new_name):
-                        self.in_screen_feedback.emit(
+                        GS.signals.main_screen_feedback.emit(
                             "Cannot rename to '{}', naming must start with uppercase and "
                             "cannot include special characters".format(new_name),
                             logging.WARNING,
                         )
                     else:
-                        self.in_screen_feedback.emit(
+                        GS.signals.main_screen_feedback.emit(
                             "Cannot rename to '{}', "
                             "check that no other node has that name".format(new_name),
                             logging.WARNING,
                         )
 
-    def examine_code(self, graphic_node: GeneralGraphicNode):
+    def examine_code(self, graphic_node_list: list = None):
         """
         Show the code of a node in an external editor.
 
         If the node is a context, show its .yml definition file as well.
 
         Args:
-            graphic_node (GeneralGraphicNode): node to examine code from
+            graphic_node_list (list): node to examine code from
         """
-        logic_node = graphic_node.logic_node
+        if not graphic_node_list:
+            graphic_node_list = self.selected_nodes()
 
-        commands = ["code"]
+        commands = []
 
         if platform.system() == "Windows":
             commands.extend(["notepad", "notepad++"])
         elif platform.system() == "Linux":
             commands.extend(["gedit", "pluma"])
-        for command in commands:
-            try:
-                subprocess.run([command, logic_node.FILEPATH])
-                if logic_node.IS_CONTEXT:
-                    subprocess.run([command, logic_node.CONTEXT_DEFINITION_FILE])
 
-                return
+        for graphic_node in graphic_node_list:
+            logic_node = graphic_node.logic_node
 
-            except Exception as e:
-                msg = "Could not use editor '{}': {}".format(command, e)
-                LOGGER.info(msg)
+            for command in commands:
+                try:
+                    subprocess.Popen([command, logic_node.FILEPATH])
+                    if logic_node.IS_CONTEXT:
+                        subprocess.Popen([command, logic_node.CONTEXT_DEFINITION_FILE])
 
-        msg = "Could not open the code in editor!"
-        LOGGER.error(msg)
-        self.in_screen_feedback.emit(msg, logging.ERROR)
+                    break
 
-    def expand_context(self, graphic_node: GeneralGraphicNode):
+                except Exception as e:
+                    msg = "Could not use editor '{}': {}".format(command, e)
+                    LOGGER.debug(msg)
+
+    def expand_contexts(self, graphic_node_list: list = None):
         """
         Launch signal to expand a selected context node.
 
         Args:
-            graphic_node (GeneralGraphicNode): node to be expanded
+            graphic_node_list (list): nodes to be expanded
         """
-        GS.signals.context_expansion_requested.emit(graphic_node.logic_node.uuid)
+        if not graphic_node_list:
+            graphic_node_list = self.selected_nodes()
+        for graphic_node in graphic_node_list:
+            if graphic_node.logic_node.IS_CONTEXT:
+                GS.signals.context_expansion_requested.emit(
+                    graphic_node.logic_node.uuid
+                )
 
     def show_log(self, graphic_node: GeneralGraphicNode):
         """
@@ -627,53 +641,128 @@ class CustomScene(QtWidgets.QGraphicsScene):
         )
         pprint.pprint(graphic_node.logic_node.get_node_full_dict())
 
-    def run_single_node(self, graphic_node: GeneralGraphicNode):
+    def run_nodes(self, graphic_node_list: list = None):
         """
         Execute a graphic node.
 
         Args:
-            graphic_node (GeneralGraphicNode): node to execute
+             graphic_node_list (list): nodes to execute
         """
-        logic_node = graphic_node.logic_node
-        self.in_screen_feedback.emit("Running only selected node(s)", logging.INFO)
+        GS.signals.main_screen_feedback.emit(
+            "Running only selected node(s)", logging.INFO
+        )
         GS.signals.execution_started.emit()
-        self.logic_scene.run_list_of_nodes([logic_node])
 
-    def reset_single_node(self, graphic_node: GeneralGraphicNode):
+        if not graphic_node_list:
+            graphic_node_list = self.selected_nodes()
+        for graphic_node in graphic_node_list:
+            logic_node = graphic_node.logic_node
+            self.logic_scene.run_list_of_nodes([logic_node])
+
+    def reset_nodes(self, graphic_node_list: list = None):
         """
         Reset appearance of a graphic node and then also reset its
         internal logic node.
 
         Args:
-            graphic_node (GeneralGraphicNode): node to reset
+             graphic_node_list (list): nodes to reset
         """
-        graphic_node.reset()
-        graphic_node.logic_node.reset()
-        self.in_screen_feedback.emit("Resetting selected node(s)", logging.INFO)
+        if not graphic_node_list:
+            graphic_node_list = self.selected_nodes()
+        for graphic_node in graphic_node_list:
+            graphic_node.reset()
+            graphic_node.logic_node.reset()
+
+        GS.signals.main_screen_feedback.emit("Resetting selected node(s)", logging.INFO)
         GS.signals.attribute_editor_global_refresh_requested.emit()
 
-    def soft_reset_single_node(self, graphic_node: GeneralGraphicNode):
+    def soft_reset_nodes(self, graphic_node_list: list = None):
         """
         Reset appearance of a graphic node and then also soft-reset its
         internal logic node.
 
         Args:
-            graphic_node (GeneralGraphicNode): node to soft-reset
+            graphic_node_list (list): nodes to soft-reset
         """
-        graphic_node.reset()
-        graphic_node.logic_node.soft_reset()
-        self.in_screen_feedback.emit("Soft-resetting selected node(s)", logging.INFO)
+        if not graphic_node_list:
+            graphic_node_list = self.selected_nodes()
+        for graphic_node in graphic_node_list:
+            graphic_node.reset()
+            graphic_node.logic_node.soft_reset()
+
+        GS.signals.main_screen_feedback.emit(
+            "Soft-resetting selected node(s)", logging.INFO
+        )
         GS.signals.attribute_editor_global_refresh_requested.emit()
 
-    def toggle_activated_node(self, graphic_node: GeneralGraphicNode):
+    def toggle_activated_nodes(self, graphic_node_list: list = None):
         """
         Toggle whether or not a graphic node is activated.
 
         Args:
-            graphic_node (GeneralGraphicNode): node to soft-reset
+            graphic_node_list (list): nodes to toggle activation of
         """
-        graphic_node.toggle_activated()
+        if not graphic_node_list:
+            graphic_node_list = self.selected_nodes()
+        for graphic_node in graphic_node_list:
+            graphic_node.toggle_activated()
+
         # GS.signals.attribute_editor_global_refresh_requested.emit()  # TODO consider this in attribute editor?
+
+    def add_attr_to_node(self, graphic_node: GeneralGraphicNode):
+        a_picker = AttributePicker()
+        graphic_node.add_single_graphic_attribute(*a_picker.get_results())
+
+    def export_nodes_code(self, graphic_node_list: list):
+        if not graphic_node_list:
+            graphic_node_list = self.selected_nodes()
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        py_contents = (
+            f"# ------ File written by 'all_nodes' {timestamp} ------ # \n\n"
+            "from all_nodes.constants import InputsGUI, PreviewsGUI \n"
+            "from all_nodes.logic.logic_node import GeneralLogicNode \n"
+            "from all_nodes import utils \n\n\n"
+            "LOGGER = utils.get_logger(__name__)\n\n\n"
+        )
+
+        dialog = QtWidgets.QFileDialog()
+        result = dialog.getExistingDirectory(
+            caption="Specify target file", filter="*.yml *.ctx"
+        )
+        if not result:
+            return
+
+        out_path = os.path.join(result, f"all_nodes_{timestamp}.py")
+
+        with open(out_path, "w") as f:
+            f.write(py_contents)
+
+        for g_node in graphic_node_list:
+            code = g_node.get_as_code()
+            code = re.sub(
+                "<class '(?P<datatype>[a-zA-Z_.0-9]+)'>", "\g<datatype>", code
+            )
+            code = re.sub(
+                "<(?P<guitype>[a-zA-Z0-9._]+): '[a-zA-Z ]+'+>",
+                "\g<guitype>",
+                code,
+            )
+            with open(out_path, "a") as f:
+                f.write(code)
+                f.write("\n\n\n")
+
+        try:
+            subprocess.Popen([sys.executable, "-m", "ruff", "format", out_path])
+        except Exception as e:
+            msg = "Could not use ruff: {}".format(e)
+            LOGGER.info(msg)
+
+        LOGGER.info(f"Exported code to {out_path}")
+        GS.signals.main_screen_feedback.emit(
+            f"Exported code to {out_path}", logging.INFO
+        )
 
     def deselect_all(self):
         """
@@ -770,39 +859,57 @@ class CustomScene(QtWidgets.QGraphicsScene):
         rename_action = menu.addAction(" Rename this node")
         rename_action.setIcon(QtGui.QIcon("icons:rename.png"))
         rename_action.triggered.connect(lambda: self.rename_graphic_node(node))
-        examine_code_action = menu.addAction(" Examine code (E)")
+
+        examine_code_action = menu.addAction(" Examine code")
         examine_code_action.setIcon(QtGui.QIcon("icons:examine.png"))
-        examine_code_action.triggered.connect(lambda: self.examine_code(node))
-        run_single_node_action = menu.addAction(" Run only this node (Return ⏎)")
-        run_single_node_action.setIcon(QtGui.QIcon("icons:run_one.svg"))
-        run_single_node_action.triggered.connect(lambda: self.run_single_node(node))
-        reset_single_node_action = menu.addAction(" Reset only this node (R)")
-        reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
-        reset_single_node_action.triggered.connect(lambda: self.reset_single_node(node))
+        examine_code_action.triggered.connect(lambda: self.examine_code([node]))
+
+        # Execution-related  actions
+        menu.addSeparator()
+
+        run_nodes_action = menu.addAction(" Run only this node")
+        run_nodes_action.setIcon(QtGui.QIcon("icons:run_one.svg"))
+        run_nodes_action.triggered.connect(lambda: self.run_nodes([node]))
+
+        reset_nodes_action = menu.addAction(" Reset only this node")
+        reset_nodes_action.setIcon(QtGui.QIcon("icons:reset.png"))
+        reset_nodes_action.triggered.connect(lambda: self.reset_nodes([node]))
+
         deactivate_single_node_action = menu.addAction(
-            " Activate/deactivate only this node (D)"
+            " Activate/deactivate only this node"
         )
         deactivate_single_node_action.setIcon(QtGui.QIcon("icons:close.svg"))
         deactivate_single_node_action.triggered.connect(
-            lambda: self.toggle_activated_node(node)
+            lambda: self.toggle_activated_nodes([node])
         )
 
         # Context-specific
         if node.logic_node.IS_CONTEXT:
             menu.addSeparator()
-            expand_context_action = menu.addAction(" Expand context (Ctrl + Return ⏎)")
-            expand_context_action.setIcon(QtGui.QIcon("icons:cube.png"))
-            expand_context_action.triggered.connect(lambda: self.expand_context(node))
+            expand_context_action = menu.addAction(" Expand context")
+            expand_context_action.setIcon(QtGui.QIcon("icons:cubes.svg"))
+            expand_context_action.triggered.connect(
+                lambda: self.expand_contexts([node])
+            )
+
+        # Add attributes
+        menu.addSeparator()
+        add_attr_to_node_action = menu.addAction(" Add new attribute to this node")
+        add_attr_to_node_action.setIcon(QtGui.QIcon("icons:plus.svg"))
+        add_attr_to_node_action.triggered.connect(lambda: self.add_attr_to_node(node))
+
+        # Export code
+        export_nodes_code_action = menu.addAction(" Export this node's code")
+        export_nodes_code_action.setIcon(QtGui.QIcon("icons:wand.svg"))
+        export_nodes_code_action.triggered.connect(
+            lambda: self.export_nodes_code([node])
+        )
 
         # Debug
         menu.addSeparator()
-        soft_reset_single_node_action = menu.addAction(
-            " [DEBUG] Soft-reset only this node (S)"
-        )
-        soft_reset_single_node_action.setIcon(QtGui.QIcon("icons:reset.png"))
-        soft_reset_single_node_action.triggered.connect(
-            lambda: self.soft_reset_single_node(node)
-        )
+        soft_reset_nodes_action = menu.addAction(" [DEBUG] Soft-reset only this node")
+        soft_reset_nodes_action.setIcon(QtGui.QIcon("icons:reset.png"))
+        soft_reset_nodes_action.triggered.connect(lambda: self.soft_reset_nodes([node]))
 
         # DEV-specific
         if constants.IN_DEV:
@@ -833,11 +940,11 @@ class CustomScene(QtWidgets.QGraphicsScene):
             save_action = menu.addAction(
                 f" Save changes to {os.path.basename(self.filepath)}"
             )
-            save_action.setIcon(QtGui.QIcon("icons:save.png"))
+            save_action.setIcon(QtGui.QIcon("icons:save.svg"))
             save_action.triggered.connect(lambda: self.save_to_file(self.filepath))
         else:
             save_action = menu.addAction(" Save scene as")
-            save_action.setIcon(QtGui.QIcon("icons:save.png"))
+            save_action.setIcon(QtGui.QIcon("icons:save_as.svg"))
             save_action.triggered.connect(self.save_to_file)
 
         # Style
@@ -849,51 +956,72 @@ class CustomScene(QtWidgets.QGraphicsScene):
         menu.exec_(event.screenPos(), parent=self)
 
     # KEYBOARD EVENTS ----------------------
-    def keyPressEvent(self, event: QtWidgets.QGraphicsScene.event):
-        QtWidgets.QGraphicsScene.keyPressEvent(self, event)
+    def event(self, event: QtWidgets.QGraphicsScene.event):
+        # Only use keyboard events
+        if not (event.type() == QtCore.QEvent.KeyPress):
+            return QtWidgets.QGraphicsScene.event(self, event)
 
-        modifiers = QtWidgets.QApplication.keyboardModifiers()
-
+        # See that we are not working on a node widget
         if self.focusItem():  # Means we are editing a widget in some input node
             return
 
-        if event.key() == QtCore.Qt.Key_Delete:
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+
+        # --- Examine code
+        if event.key() == QtCore.Qt.Key_E and not modifiers:
+            self.examine_code(self.selected_nodes())
+
+        # --- Execution
+        elif event.key() == QtCore.Qt.Key_Return and not modifiers:
+            self.run_nodes(self.selected_nodes())
+
+        elif event.key() == QtCore.Qt.Key_R and not modifiers:
+            self.reset_nodes(self.selected_nodes())
+
+        # --- Toggle activation
+        elif event.key() == QtCore.Qt.Key_D and not modifiers:
+            self.toggle_activated_nodes(self.selected_nodes())
+
+        # --- Context expansion
+        elif (
+            event.key() == QtCore.Qt.Key_Return
+            and modifiers == QtCore.Qt.ControlModifier
+        ):
+            self.expand_contexts(self.selected_nodes())
+
+        # --- Export code
+        elif event.key() == QtCore.Qt.Key_E and modifiers == QtCore.Qt.ControlModifier:
+            self.export_nodes_code(self.selected_nodes())
+
+        # --- Soft-reset
+        elif event.key() == QtCore.Qt.Key_S:
+            self.soft_reset_nodes(self.selected_nodes())
+
+        # --- Delete
+        elif event.key() == QtCore.Qt.Key_Delete:
             for n in self.selected_nodes():
                 GS.signals.attribute_editor_remove_node_requested.emit(
                     n.logic_node.uuid
                 )
                 self.delete_node(n)
+
+        # --- Fit in view
         elif event.key() == QtCore.Qt.Key_F:
             self.fit_in_view()
-        elif event.key() == QtCore.Qt.Key_Return and not modifiers:
-            for n in self.selected_nodes():
-                self.run_single_node(n)
-        elif event.key() == QtCore.Qt.Key_R:
-            for n in self.selected_nodes():
-                self.reset_single_node(n)
-        elif event.key() == QtCore.Qt.Key_S:
-            for n in self.selected_nodes():
-                self.soft_reset_single_node(n)
-        elif event.key() == QtCore.Qt.Key_D:
-            for n in self.selected_nodes():
-                self.toggle_activated_node(n)
-        elif event.key() == QtCore.Qt.Key_E:
-            for n in self.selected_nodes():
-                self.examine_code(n)
-        elif (
-            event.key() == QtCore.Qt.Key_Return
-            and modifiers == QtCore.Qt.ControlModifier
-        ):
-            for n in self.selected_nodes():
-                self.expand_context(n)
-        elif event.key() == QtCore.Qt.Key_Slash and not modifiers:
+
+        # --- Class search
+        elif event.key() == QtCore.Qt.Key_Tab and not modifiers:
             GS.signals.class_searcher_move.emit(
                 QtGui.QCursor.pos().x(), QtGui.QCursor.pos().y()
             )
 
+        return QtWidgets.QGraphicsScene.event(self, event)
+
     # MOUSE EVENTS ----------------------
     def mousePressEvent(self, event):
-        QtWidgets.QGraphicsScene.mousePressEvent(self, event)
+        QtWidgets.QGraphicsScene.mousePressEvent(
+            self, event
+        )  # TODO check if these have to go at the bottom and with return
 
         if not event.button() == QtCore.Qt.LeftButton:
             return
@@ -1003,7 +1131,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                             self.removeItem(line)
                 self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
             else:
-                self.in_screen_feedback.emit(
+                GS.signals.main_screen_feedback.emit(
                     "Those two attributes belong to the same node!",
                     logging.WARNING,
                 )

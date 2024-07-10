@@ -82,17 +82,20 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_getting_internal_dict")
 
-        n_1 = general_input.StrInput()
-        n_2 = miscellaneous.GetDictKey()
+        n_s = general_input.StrInput()
+        n_d = miscellaneous.GetDictKey()
 
-        n_1.set_attribute_value("internal_str", "test")
-        n_1.connect_attribute("out_str", n_2, "key")
-        n_2.set_attribute_value("in_dict", {"test": 100})
-        n_1.run_chain()
+        print(n_s.get_input_attrs())
 
-        assert n_2["out"].get_value() == 100
+        n_s.set_attribute_value("internal_str", "test")
+        n_s.connect_attribute("out_str", n_d, "key")
+        n_d.set_attribute_value("in_dict", {"test": 100})
+        n_s.run_chain()
 
-        assert n_2.get_node_full_dict()
+        print(">>>", n_d["out"].get_value())
+        assert n_d["out"].get_value() == 100
+
+        assert n_d.get_node_full_dict()
 
     def test_inputs_checked_run(self):
         """
@@ -100,22 +103,22 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_inputs_checked_run")
 
-        n_1 = debug.EmptyNode()
-        n_1.run_single()
-        self.assertEqual(n_1.success, constants.SUCCESSFUL)
+        n_e = debug.EmptyNode()
+        n_e.run_single()
+        self.assertEqual(n_e.success, constants.SUCCESSFUL)
 
-        n_2 = file_reading.JsonToDict()
-        n_2.run_single()
-        self.assertEqual(n_2.success, constants.NOT_RUN)
+        n_j = file_reading.JsonToDict()
+        n_j.run_single()
+        self.assertEqual(n_j.success, constants.NOT_RUN)
 
-        n_3 = file_writing.CreateTempFile()
-        n_3.run_single()
-        self.assertEqual(n_3.success, constants.SUCCESSFUL)
+        n_f = file_writing.CreateTempFile()
+        n_f.run_single()
+        self.assertEqual(n_f.success, constants.SUCCESSFUL)
 
-        n_4 = file_writing.CreateTempFile()
-        n_4["suffix"].set_value(".txt")
-        n_4.run_single()
-        self.assertEqual(n_4.success, constants.SUCCESSFUL)
+        n_f2 = file_writing.CreateTempFile()
+        n_f2["suffix"].set_value(".txt")
+        n_f2.run_single()
+        self.assertEqual(n_f2.success, constants.SUCCESSFUL)
 
     def test_run_node_1(self):
         """

@@ -304,7 +304,7 @@ class LogicScene:
             )
             file.write(f"\n# {save_type.capitalize()} by: {getpass.getuser()}")
 
-        LOGGER.info("💾 Wrote scene to file: {}".format(filepath))
+        LOGGER.info("Wrote scene to file: {}".format(filepath))
 
     def load_from_file(self, scene_path: str, namespace: str = None) -> list:
         """
