@@ -101,7 +101,7 @@ class NodePanel(QtWidgets.QWidget):
         """
         self.row_count = 0
 
-        name_label = QtWidgets.QLabel(self.logic_node.node_name)
+        name_label = QtWidgets.QLabel(self.logic_node.full_name)
         name_label.setFont(QtGui.QFont("arial", 14))
         self.grid_layout.addWidget(name_label, self.row_count, 0, 1, 3)
         close_btn = QtWidgets.QToolButton()

@@ -341,7 +341,7 @@ class GeneralLogicNode:
         """
         gui_internals_inputs = dict()
         for attr_name in self.INTERNALS_DICT:
-            if self.INTERNALS_DICT[attr_name].get("gui_type") in set(
+            if self.INTERNALS_DICT[attr_name].get("gui_type") in list(
                 constants.InputsGUI
             ):
                 gui_internals_inputs[attr_name] = self.INTERNALS_DICT[attr_name]
@@ -454,6 +454,49 @@ class GeneralLogicNode:
                 ),
             )
             self.all_attributes.append(internal_attr)
+
+    def add_attribute(
+        self,
+        attribute_name,
+        connector_type,
+        data_type,
+        gui_type=None,
+        is_optional=False,
+        value=None,
+    ):
+        # Check name
+        if attribute_name in self.all_attribute_names:
+            LOGGER.error(
+                "Attribute name '{}' is already used. Skipping.".format(attribute_name)
+            )
+            return
+
+        # Create attribute
+        new_attribute = GeneralLogicAttribute(
+            self, attribute_name, connector_type, data_type, is_optional=is_optional
+        )
+
+        if value:
+            new_attribute.set_value(value)
+
+        self.all_attributes.append(new_attribute)
+
+        # Registrer it to the dict of the instance
+        if connector_type == constants.INPUT:
+            self.INPUTS_DICT[attribute_name] = dict()
+            self.INPUTS_DICT[attribute_name]["type"] = data_type
+            self.INPUTS_DICT[attribute_name]["optional"] = is_optional
+        elif connector_type == constants.OUTPUT:
+            self.OUTPUTS_DICT[attribute_name] = dict()
+            self.OUTPUTS_DICT[attribute_name]["type"] = data_type
+            self.OUTPUTS_DICT[attribute_name]["optional"] = is_optional
+        elif connector_type == constants.INTERNAL:
+            self.INTERNALS_DICT[attribute_name] = dict()
+            self.INTERNALS_DICT[attribute_name]["type"] = data_type
+            self.INTERNALS_DICT[attribute_name]["gui_type"] = gui_type
+
+        # Return new attribute
+        return new_attribute
 
     def get_input_attrs(self):
         """
@@ -1347,12 +1390,7 @@ class GeneralLogicAttribute:
         Returns:
             str: with a representation fo the datatype
         """
-        type = str(self.data_type)
-        if re.match("<class '.+\.(.+)'>", type):
-            return re.match("<class '.+\.(.+)'>", type).group(1)
-        elif re.match("<module '.+\.(.+)' from", type):
-            return re.match("<module '.+\.(.+)' from", type).group(1)
-        return re.search("'(.+)'", type).group(1)
+        return utils.parse_datatype(str(self.data_type))
 
     def propagate_value(self):
         """

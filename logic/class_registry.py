@@ -61,7 +61,7 @@ def register_node_lib(lib_path):
         # ICONS - registering the icons so they can be found
         if not os.path.isdir(icons_path):
             LOGGER.warning(
-                f"No icons folder available for {module_filename}, icons for this module should be saved at: {icons_path}"
+                f"No icons folder available for {node_library_name}, icons for this library should be saved at: {icons_path}"
             )
         if os.path.isdir(icons_path) and icons_path not in QtCore.QDir.searchPaths(
             "icons"
@@ -267,7 +267,7 @@ class ClassRegistry:
 
     # Workers
     _lib_workers = []
-    _time_start = time.time()
+    _time_start = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -285,6 +285,7 @@ class ClassRegistry:
         will tell the UI when to populate its elements, so the main UI thread is not blocked while scanning.
         """
         LOGGER.info("Gathering all classes (GUI mode)...")
+        cls._time_start = time.time()
         cls._all_classes = dict()
 
         node_libs = get_all_node_libs()

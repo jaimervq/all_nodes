@@ -8,29 +8,33 @@ from PySide2 import QtCore
 
 
 class GlobalSignals(QtCore.QObject):
-    # CLASS SCANNING ----------------------
+    # -------------------------- LOGIC -------------------------- #
     class_scanning_finished = QtCore.Signal()
 
-    # WIDGET MOVE ----------------------
+    # -------------------------- WIDGETS -------------------------- #
+    # Widget move ----------------------
     class_searcher_move = QtCore.Signal(int, int)
 
-    # TABS ----------------------
+    # Tabs ----------------------
     tab_names_refresh_requested = QtCore.Signal()
 
-    # ATTRIBUTE EDITOR ----------------------
+    # Attribute editor ----------------------
     attribute_editor_node_addition_requested = QtCore.Signal(str)
     attribute_editor_refresh_node_requested = QtCore.Signal(str)
     attribute_editor_remove_node_requested = QtCore.Signal(str)
 
     attribute_editor_global_refresh_requested = QtCore.Signal()
 
-    # CONTEXTS ----------------------
+    # Contexts ----------------------
     context_expansion_requested = QtCore.Signal(str)
 
-    # NODE CREATION ----------------------
+    # Node creation ----------------------
     node_creation_requested = QtCore.Signal(QtCore.QPoint, str)
 
-    # EXECUTION ----------------------
+    # Feedback ----------------------
+    main_screen_feedback = QtCore.Signal(str, int)
+
+    # -------------------------- EXECUTION -------------------------- #
     execution_started = QtCore.Signal()
     execution_finished = QtCore.Signal()
 

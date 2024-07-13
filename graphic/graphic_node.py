@@ -5,6 +5,7 @@ __credits__ = []
 __license__ = "MIT License"
 
 
+import logging
 from functools import partial
 import math
 import pprint
@@ -69,6 +70,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         self.proxy_help_btn = QtWidgets.QGraphicsProxyWidget(parent=self)
 
+        self.stripes = []
+
         self.selection_marquee = QtWidgets.QGraphicsPathItem(parent=self)
         self.selection_marquee.hide()
 
@@ -95,31 +98,27 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         # ATTRIBUTES
         self.graphic_attributes = []
 
-        # DIRECT INPUT WIDGETS
+        # DIRECT INPUT WIDGETS AND PREVIEWS
         self.input_widgets = []
         self.proxy_input_widgets = []
 
-        self.has_gui_inputs = False
-        if self.logic_node.get_gui_internals_inputs():
-            self.has_gui_inputs = True
-
-        # PREVIEW WIDGETS
         self.preview_widgets = []
         self.proxy_preview_widgets = []
 
-        self.has_gui_previews = False
-        if self.logic_node.get_gui_internals_previews():
-            self.has_gui_previews = True
+        self.widget_registry = []
 
         # SETUP
         self.setup_node()
-        self.add_graphic_attributes()
+        self.setup_graphic_attributes()
         self.setup_input_widgets()
         self.setup_preview_widgets()
+        self.setup_extras()
+
         self.make_shape()
         self.place_graphic_attributes()
+        self.place_widgets()
+
         self.update_attributes_from_widgets()
-        self.setup_extras()
 
         # Connect
         self.logic_node.signaler.is_executing.connect(self.show_executing)
@@ -138,6 +137,20 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         total_h += constants.STRIPE_HEIGHT
 
         return total_h
+
+    @property
+    def has_gui_inputs(self):
+        if self.logic_node.get_gui_internals_inputs():
+            return True
+
+        return False
+
+    @property
+    def has_gui_previews(self):
+        if self.logic_node.get_gui_internals_previews():
+            return True
+
+        return False
 
     # GRAPHICS SETUP ----------------------
     def guess_width_to_use(self):
@@ -169,7 +182,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             longest_in_name + longest_out_name + 2 * constants.CHAMFER_RADIUS + 20,
         )
 
-        # Re-shape input / preview widgets
         if self.has_gui_inputs:
             self.node_width = max(
                 self.node_width,
@@ -177,32 +189,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                     w.width() + 2 * constants.CHAMFER_RADIUS for w in self.input_widgets
                 ),
             )
-
-            for i in range(len(self.input_widgets)):
-                self.input_widgets[i].setFixedSize(
-                    max(
-                        self.node_width - 2 * constants.CHAMFER_RADIUS,
-                        self.input_widgets[i].width(),
-                    ),
-                    self.input_widgets[i].height(),
-                )
-
-                self.proxy_input_widgets.append(
-                    QtWidgets.QGraphicsProxyWidget(parent=self)
-                )
-                self.proxy_input_widgets[i].setWidget(self.input_widgets[i])
-                self.proxy_input_widgets[i].setPos(
-                    constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
-                )
-                self.proxy_input_widgets[i].setZValue(
-                    200
-                )  # TODO maybe put all the setZValue together?
-                if i:
-                    in_widget = self.proxy_input_widgets[i - 1].widget()
-                    self.proxy_input_widgets[i].setPos(
-                        constants.CHAMFER_RADIUS,
-                        in_widget.pos().y() + in_widget.height(),
-                    )
 
         if self.has_gui_previews:
             self.node_width = max(
@@ -212,34 +198,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                     for w in self.preview_widgets
                 ),
             )
-
-            for i in range(len(self.preview_widgets)):
-                self.preview_widgets[i].setFixedSize(
-                    max(
-                        self.node_width - 2 * constants.CHAMFER_RADIUS,
-                        self.preview_widgets[i].width(),
-                    ),
-                    self.preview_widgets[i].height(),
-                )
-
-                self.proxy_preview_widgets.append(
-                    QtWidgets.QGraphicsProxyWidget(parent=self)
-                )
-                self.proxy_preview_widgets[i].setWidget(self.preview_widgets[i])
-                self.proxy_preview_widgets[i].setPos(
-                    constants.CHAMFER_RADIUS,
-                    constants.HEADER_HEIGHT
-                    + +self.extra_header
-                    + (self.logic_node.get_max_in_or_out_count())
-                    * constants.STRIPE_HEIGHT
-                    + constants.CHAMFER_RADIUS,
-                )
-                if i:
-                    prev_widget = self.proxy_preview_widgets[i - 1].widget()
-                    self.proxy_preview_widgets[i].setPos(
-                        constants.CHAMFER_RADIUS,
-                        prev_widget.pos().y() + prev_widget.height(),
-                    )
 
     def setup_node(self):
         """
@@ -284,7 +242,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.additional_info_text.setFont(node_id_font)
         self.additional_info_text.hide()
 
-    def add_graphic_attributes(self):
+    def setup_graphic_attributes(self):
         """
         Create graphic attributes of this node
         """
@@ -302,10 +260,61 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.graphic_attributes.append(attr)
             i += 1
 
+    def add_single_graphic_attribute(
+        self,
+        attribute_name,
+        connector_type,
+        data_type,
+        gui_type=None,
+        is_optional=False,
+        value=None,
+    ):
+        # Check if it can be added
+        new_logic_attr = self.logic_node.add_attribute(
+            attribute_name, connector_type, data_type, gui_type, is_optional, value
+        )
+        if not new_logic_attr:
+            GS.signals.main_screen_feedback.emit(
+                "Cannot create attribute, name '{}' already exists in the node".format(
+                    attribute_name
+                ),
+                logging.ERROR,
+            )
+            return
+
+        # Create graphic attribute
+        if connector_type in [constants.INPUT, constants.OUTPUT]:
+            max_row = len(
+                [
+                    attribute
+                    for attribute in self.graphic_attributes
+                    if attribute.connector_type == connector_type
+                ]
+            )
+            attr = GeneralGraphicAttribute(new_logic_attr, self, max_row)
+            attr.setZValue(100)  # TODO maybe put all the setZValue together?
+            self.graphic_attributes.append(attr)
+
+        elif connector_type == constants.INTERNAL:
+            self.setup_input_widgets()
+            self.setup_preview_widgets()
+
+        self.make_shape()
+        self.place_graphic_attributes()
+        self.place_widgets()
+
+        # Feedback
+        GS.signals.main_screen_feedback.emit(
+            "Added new attribute '{}' to the node".format(attribute_name), logging.INFO
+        )
+
     def make_shape(self):
         """
         Setup the shape and size of the node and its subcomponents.
         """
+        # ESTABLISH WIDTH OF THE NODE
+        self.guess_width_to_use()
+
         # BASIC SHAPE
         self.setZValue(20)
         self.setPen(
@@ -313,7 +322,6 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 QtGui.QColor(self.bright_color_name), constants.NODE_CONTOUR_THICKNESS
             )
         )
-        self.guess_width_to_use()
         new_path = QtGui.QPainterPath()
         new_path.addRoundedRect(
             QtCore.QRect(0, 0, self.node_width, self.node_height),
@@ -334,6 +342,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.setBrush(grad)
 
         # STRIPES
+        for stripe in self.stripes:
+            stripe.setParentItem(None)
+            del stripe
         stripe_path = QtGui.QPainterPath()
         stripe_path.addRect(
             QtCore.QRect(0, 0, self.node_width, constants.STRIPE_HEIGHT)
@@ -349,8 +360,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 + row_count * constants.STRIPE_HEIGHT,
             )
             if row_count % 2 == 0:
-                stripe.setBrush(QtGui.QColor(255, 255, 255, 20))
+                stripe.setBrush(QtGui.QColor(255, 255, 255, 25))
             stripe.setZValue(10)
+            self.stripes.append(stripe)
 
         # BUTTON MOVEMENT
         self.proxy_help_btn.setPos(
@@ -437,6 +449,66 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         for attr in self.graphic_attributes:
             attr.setup_graphics()
 
+    def place_widgets(self):
+        """
+        Place the input and preview widgets in their correct position.
+        """
+        if self.has_gui_inputs:
+            for i in range(len(self.input_widgets)):
+                self.input_widgets[i].setFixedSize(
+                    max(
+                        self.node_width - 2 * constants.CHAMFER_RADIUS,
+                        self.input_widgets[i].width(),
+                    ),
+                    self.input_widgets[i].height(),
+                )
+
+                self.proxy_input_widgets.append(
+                    QtWidgets.QGraphicsProxyWidget(parent=self)
+                )
+                self.proxy_input_widgets[i].setWidget(self.input_widgets[i])
+                self.proxy_input_widgets[i].setPos(
+                    constants.CHAMFER_RADIUS, constants.HEADER_HEIGHT
+                )
+                self.proxy_input_widgets[i].setZValue(
+                    200
+                )  # TODO maybe put all the setZValue together?
+                if i:
+                    in_widget = self.proxy_input_widgets[i - 1].widget()
+                    self.proxy_input_widgets[i].setPos(
+                        constants.CHAMFER_RADIUS,
+                        in_widget.pos().y() + in_widget.height(),
+                    )
+
+        if self.has_gui_previews:
+            for i in range(len(self.preview_widgets)):
+                self.preview_widgets[i].setFixedSize(
+                    max(
+                        self.node_width - 2 * constants.CHAMFER_RADIUS,
+                        self.preview_widgets[i].width(),
+                    ),
+                    self.preview_widgets[i].height(),
+                )
+
+                self.proxy_preview_widgets.append(
+                    QtWidgets.QGraphicsProxyWidget(parent=self)
+                )
+                self.proxy_preview_widgets[i].setWidget(self.preview_widgets[i])
+                self.proxy_preview_widgets[i].setPos(
+                    constants.CHAMFER_RADIUS,
+                    constants.HEADER_HEIGHT
+                    + self.extra_header
+                    + (self.logic_node.get_max_in_or_out_count())
+                    * constants.STRIPE_HEIGHT
+                    + constants.CHAMFER_RADIUS,
+                )
+                if i:
+                    prev_widget = self.proxy_preview_widgets[i - 1].widget()
+                    self.proxy_preview_widgets[i].setPos(
+                        constants.CHAMFER_RADIUS,
+                        prev_widget.pos().y() + prev_widget.height(),
+                    )
+
     def setup_input_widgets(self):
         """
         For special nodes that take input, setup widgets to receive the input
@@ -448,6 +520,13 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         gui_internals_inputs = self.logic_node.get_gui_internals_inputs()
 
         for attr_name in gui_internals_inputs:
+            # Check if a widget was already created
+            if attr_name in self.widget_registry:
+                continue
+            else:
+                self.widget_registry.append(attr_name)
+
+            # Setup a widget for this attr
             gui_input_type = gui_internals_inputs.get(attr_name).get("gui_type")
 
             if gui_input_type == constants.InputsGUI.STR_INPUT:
@@ -683,21 +762,29 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             return
 
         # Separator label
-        previews_label = QtWidgets.QLabel(parent=None)
-        previews_label.setFixedSize(
-            150,
-            int(constants.STRIPE_HEIGHT),
-        )
-        previews_label.setStyleSheet(
-            "background:transparent; color:white; border:none;"
-        )
-        previews_label.setText("- PREVIEWS -")
-        self.preview_widgets.append(previews_label)
+        if not self.widget_registry:
+            previews_label = QtWidgets.QLabel(parent=None)
+            previews_label.setFixedSize(
+                150,
+                int(constants.STRIPE_HEIGHT),
+            )
+            previews_label.setStyleSheet(
+                "background:transparent; color:white; border:none;"
+            )
+            previews_label.setText("- PREVIEWS -")
+            self.preview_widgets.append(previews_label)
 
         # Set type of widget depending on the type of preview needed
         gui_internals_previews = self.logic_node.get_gui_internals_previews()
 
         for attr_name in gui_internals_previews:
+            # Check if a widget was already created
+            if attr_name in self.widget_registry:
+                continue
+            else:
+                self.widget_registry.append(attr_name)
+
+            # Create widget for attribute
             gui_preview_type = gui_internals_previews.get(attr_name).get("gui_type")
 
             if gui_preview_type == constants.PreviewsGUI.STR_PREVIEW:
@@ -1071,6 +1158,20 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             '<p align="left"><font color=white>{0}'.format(self.logic_node.node_name)
         )
 
+    def get_as_code(self):
+        format_dict = {
+            "inputs_dict": self.logic_node.INPUTS_DICT,
+            "outputs_dict": self.logic_node.OUTPUTS_DICT,
+            "internals_dict": self.logic_node.INTERNALS_DICT,
+            "class_name": self.logic_node.node_name,
+            "is_context": self.logic_node.IS_CONTEXT,
+        }
+
+        template_file = QtCore.QFile(r"resources:class_template.txt")
+        with open(template_file.fileName(), "r") as template:
+            template_text = template.read()
+            return template_text.format(**format_dict)
+
     # SPECIAL METHODS ----------------------
     def __str__(self):
         return "Grapic node " + self.logic_node.node_name
@@ -1279,7 +1380,6 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
         self.plug_polygon.setZValue(50)
 
         self.plug_polygon.setData(0, constants.PLUG)
-        # self.plug_polygon.setData(1, self)
 
         # Glow
         self.glow.setPath(plug_path)
@@ -1294,7 +1394,7 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
         self.glow.setZValue(40)
 
         # Move elements
-        self.moveBy(
+        self.setPos(
             0,
             constants.HEADER_HEIGHT
             + self.parent_node.extra_header
@@ -1302,23 +1402,23 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
         )
 
         if self.logic_attribute.connector_type == constants.INPUT:
-            self.plug_polygon.moveBy(
+            self.plug_polygon.setPos(
                 -constants.PLUG_RADIUS * 1.3,
                 constants.STRIPE_HEIGHT / 2,
             )
-            self.glow.moveBy(
+            self.glow.setPos(
                 -constants.PLUG_RADIUS * 1.3,
                 constants.STRIPE_HEIGHT / 2,
             )
         elif self.logic_attribute.connector_type == constants.OUTPUT:
-            self.attr_text.moveBy(
+            self.attr_text.setPos(
                 self.parent_node.node_width - self.attr_text.boundingRect().width(), 0
             )
-            self.plug_polygon.moveBy(
+            self.plug_polygon.setPos(
                 self.parent_node.node_width + constants.PLUG_RADIUS * 1.3,
                 constants.STRIPE_HEIGHT / 2,
             )
-            self.glow.moveBy(
+            self.glow.setPos(
                 self.parent_node.node_width + constants.PLUG_RADIUS * 1.3,
                 constants.STRIPE_HEIGHT / 2,
             )
