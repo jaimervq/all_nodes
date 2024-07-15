@@ -7,6 +7,7 @@ __credits__ = []
 __license__ = "MIT License"
 
 import ast
+from copy import deepcopy
 import datetime
 import getpass
 import os
@@ -66,6 +67,10 @@ class GeneralLogicNode:
         self.class_name = type(self).__name__
         self.node_name = self.class_name + "_1"
         self.uuid = str(uuid.uuid4())
+
+        # Copy dicts
+        self.INPUTS_DICT = deepcopy(self.INPUTS_DICT)
+        self.OUTPUTS_DICT = deepcopy(self.OUTPUTS_DICT)
 
         # Attributes
         self.all_attributes = []
