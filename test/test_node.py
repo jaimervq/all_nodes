@@ -183,3 +183,25 @@ class NodeTesting(unittest.TestCase):
         n_1.run_single()
 
         self.assertGreater(n_1.execution_time, 1.0)
+
+    def test_add_attrs(self):
+        """
+        Check attributes can be added to a node instance
+        """
+        utils.print_test_header("test_add_attrs")
+
+        n_empty = debug.EmptyNode()
+        n_empty.add_attribute("test_attr", constants.INPUT, int, value=100)
+        self.assertEqual(n_empty["test_attr"].get_value(), 100)
+        self.assertEqual(len(n_empty.get_input_attrs()), 2)
+
+    def test_add_attrs_2(self):
+        """
+        Check attributes can be added to a node instance
+        """
+        utils.print_test_header("test_add_attrs_2")
+
+        n_empty = debug.ErrorNode()
+        n_empty.add_attribute("some_attr", constants.OUTPUT, str)
+        self.assertIsNone(n_empty["some_attr"].get_value())
+        self.assertEqual(len(n_empty.get_output_attrs()), 2)

@@ -963,7 +963,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         # See that we are not working on a node widget
         if self.focusItem():  # Means we are editing a widget in some input node
-            return
+            return QtWidgets.QGraphicsScene.event(self, event)
 
         modifiers = QtWidgets.QApplication.keyboardModifiers()
 
