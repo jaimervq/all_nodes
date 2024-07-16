@@ -266,4 +266,3 @@ Automatically generated once a month
 ![](docs/analytics/most_used.png)
 ![](docs/analytics/errored.png)
 ![](docs/analytics/failed.png)
-![](docs/analytics/slowest.png)

@@ -167,46 +167,6 @@ def process_analytics():
         fig.tight_layout()
         fig.savefig(graph_file)
 
-    # Exec times ---------------------------------------
-    res = make_query_aggregation(
-        [
-            {
-                "$match": {
-                    "$nor": [
-                        {"class_name": re.compile(".*TimedNode")},
-                        {"class_name": re.compile(".*StartFile")},
-                    ],
-                    "IS_CONTEXT": {"$ne": True},
-                }
-            },
-            {
-                "$group": {
-                    "_id": "$class_name",
-                    "average_time": {"$avg": "$execution_time"},
-                }
-            },
-            {"$sort": {"average_time": -1}},
-            {"$limit": 10},
-        ]
-    )
-
-    if res:
-        df = pl.DataFrame(list(res))
-
-        node_names = df["_id"].tolist()
-        avg_time = df["average_time"].tolist()
-
-        fig, ax = plt.subplots(figsize=(10, 7))
-        ax.barh(node_names, avg_time)
-        ax.set_xlabel("Average execution time (s)")
-        ax.set_ylabel("Node class")
-        ax.invert_yaxis()
-        ax.set_title("Top 10 slowest nodes")
-
-        graph_file = os.path.join(root_dir_path, "../docs/analytics", "slowest.png")
-        fig.tight_layout()
-        fig.savefig(graph_file)
-
     # Last errored ---------------------------------------
     res = make_query_aggregation(
         [
