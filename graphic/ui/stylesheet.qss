@@ -74,7 +74,7 @@ QLineEdit
 /* ---------------------------- QPushButton ---------------------------- */
 QPushButton
 {
-    background-color: qlineargradient(spread:repeat, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255,255,255,20), stop:0.2 rgba(255,255,255,40), stop:1 rgba(0,0,0,40));
+    background-color: qlineargradient(spread:repeat, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(60,60,60,255), stop:0.2 rgba(100,100,110,255), stop:1 rgba(20,20,20,255));
     border:1px solid black;
     border-radius: 4px;
 	padding: 5px;

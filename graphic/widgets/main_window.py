@@ -7,6 +7,8 @@ __license__ = "MIT License"
 
 import os
 from functools import partial
+from pathlib import Path
+
 
 from PySide2 import QtCore
 from PySide2 import QtGui
@@ -18,9 +20,7 @@ from all_nodes.graphic import graphic_scene
 from all_nodes.graphic.widgets.attribute_editor import AttributeEditor
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 from all_nodes.graphic.widgets.shortcuts_help import ShortcutsHelp
-
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
-
 from all_nodes import utils
 
 
@@ -39,6 +39,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         # Add search paths
         root_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         QtCore.QDir.addSearchPath("icons", os.path.join(root_dir_path, "general_icons"))
+        QtCore.QDir.addSearchPath(
+            "graphics", os.path.join(root_dir_path, "general_graphics")
+        )
         QtCore.QDir.addSearchPath("ui", os.path.join(root_dir_path, "ui"))
         QtCore.QDir.addSearchPath(
             "resources", os.path.join(root_dir_path, "../logic/resources")
@@ -70,13 +73,15 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.the_process_window.setWindowTitle("Execution feedback")
 
         # ELEMENTS OF THE UI
-        self.ui.nodes_tree.setMinimumWidth(260)
+        self.ui.nodes_tree.setMinimumWidth(300)
         self.ui.nodes_tree.setDragEnabled(True)
+        self.ui.annotations_tree.setDragEnabled(True)
+
+        self.ui.splitter_libs.setStretchFactor(0, 8)
+        self.ui.splitter_libs.setStretchFactor(1, 2)
 
         self.add_scene()
-
-        self.ui.reset_current_btn.setIcon(QtGui.QIcon("icons:reset.png"))
-        self.ui.run_current_btn.setIcon(QtGui.QIcon("icons:brain.png"))
+        self.create_dock_windows()
 
         # STYLESHEET
         f = QtCore.QFile(r"ui:stylesheet.qss")
@@ -87,7 +92,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.make_connections()
 
         # INITIALIZE
-        self.create_dock_windows()
         self.show()
         LOGGER.debug("all_nodes main window created")
 
@@ -107,8 +111,8 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         self.ui.tabWidget.currentChanged.connect(self.show_scene_results)
 
-        self.ui.reset_current_btn.clicked.connect(self.reset_current_scene)
-        self.ui.run_current_btn.clicked.connect(self.run_current_scene)
+        self.ui.nodes_tree.itemEntered.connect(self.ui.annotations_tree.clearSelection)
+        self.ui.annotations_tree.itemEntered.connect(self.ui.nodes_tree.clearSelection)
 
         # Classes scanning / populating
         for worker in CR.get_workers():
@@ -117,6 +121,8 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         GS.signals.class_scanning_finished.connect(
             lambda: self.menuBar().setEnabled(True)
         )
+
+        GS.signals.class_scanning_finished.connect(self.populate_annotations)
 
         # Global signaler
         GS.signals.node_creation_requested.connect(self.add_node_to_current)
@@ -159,6 +165,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 nice_name = key.replace("scene_lib", "").title().replace("_", " ")
                 libs_menu = menu.addMenu(nice_name)
                 libs_menu.setIcon(QtGui.QIcon("icons:folder.svg"))
+                libs_menu.setToolTipsVisible(True)
                 scenes_list = entries_dict[key]
                 for elem in scenes_list:
                     if isinstance(elem, dict):
@@ -222,6 +229,23 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.attr_editr_dock)
         self.attr_editr_dock.hide()
 
+    def populate_annotations(self):
+        annotation_items_folder = QtCore.QDir.searchPaths("graphics")[0]
+
+        for note_type_elem in os.listdir(annotation_items_folder):
+            note_type = Path(note_type_elem).stem
+            annotation_item = QtWidgets.QTreeWidgetItem()
+            annotation_item.setIcon(0, QtGui.QIcon(f"graphics:{note_type}.svg"))
+            annotation_item.setText(0, note_type.replace("_", " ").title())
+            annotation_item.setData(0, QtCore.Qt.UserRole, note_type)
+            annotation_item.setData(
+                0, QtCore.Qt.UserRole + 1, constants.GRAPHIC_ANNOTATION
+            )
+            annotation_item.setFont(0, QtGui.QFont("arial", 14))
+            self.ui.annotations_tree.addTopLevelItem(annotation_item)
+
+        self.ui.annotations_tree.sortByColumn(0, QtCore.Qt.AscendingOrder)
+
     def populate_tree(self):
         """
         Populate the tree where all nodes are displayed.
@@ -268,6 +292,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                         ),
                     )
                     class_item.setData(0, QtCore.Qt.UserRole, name)
+                    class_item.setData(
+                        0, QtCore.Qt.UserRole + 1, constants.GRAPHIC_NODE
+                    )
                     if (
                         hasattr(cls, "NICE_NAME") and cls.NICE_NAME
                     ):  # TODO inheritance not working here?
@@ -337,6 +364,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         # Clear the UI
         self.menuBar().setEnabled(False)
         self.ui.nodes_tree.clear()
+        self.ui.annotations_tree.clear()
         self.libraries_added.clear()
 
         # Re-scan classes
@@ -398,9 +426,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         graphics_scene.dropped_node.connect(
             self.add_node_to_current
         )  # TODO use the GS?
-        GS.signals.main_screen_feedback.connect(
-            graphics_view.show_feedback
-        )  # TODO use the GS?
+        GS.signals.main_screen_feedback.connect(graphics_view.show_feedback)
 
         if context:
             graphics_scene.load_from_file(context.CONTEXT_DEFINITION_FILE, False)
@@ -477,14 +503,32 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
         node_class_name = class_name
+        item_type = constants.GRAPHIC_NODE
+
         if class_name is None:
-            selected = self.ui.nodes_tree.selectedItems()[0]
+            selected_item = (
+                self.ui.nodes_tree.selectedItems()
+                or self.ui.annotations_tree.selectedItems()
+            )
+            if not selected_item:
+                return
+            selected = selected_item[0]
             node_class_name = str(selected.data(0, QtCore.Qt.UserRole)).strip()
-        current_scene.add_graphic_node_by_class_name(
-            node_class_name,
-            current_gw.mapToScene(pos).x(),
-            current_gw.mapToScene(pos).y(),
-        )
+            item_type = str(selected.data(0, QtCore.Qt.UserRole + 1)).strip()
+
+        if item_type == constants.GRAPHIC_NODE:
+            current_scene.add_graphic_node_by_class_name(
+                node_class_name,
+                current_gw.mapToScene(pos).x() - 50,
+                current_gw.mapToScene(pos).y() - 20,
+            )
+
+        elif item_type == constants.GRAPHIC_ANNOTATION:
+            current_scene.add_annotation_by_type(
+                node_class_name,
+                current_gw.mapToScene(pos).x() - 50,
+                current_gw.mapToScene(pos).y() - 50,
+            )
 
     # ATTRIBUTE EDITOR ----------------------
     def refresh_node_in_attribute_editor_by_uuid(self, uuid):
@@ -557,6 +601,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         # Clear scenes
         self.clear_tabs()
+
+        # Clear attr editor
+        self.attr_editor.clear_all()
 
         # Add scene and load
         self.add_scene()

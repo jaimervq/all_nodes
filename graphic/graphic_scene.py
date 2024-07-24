@@ -21,6 +21,7 @@ from PySide2 import QtGui
 import yaml
 
 from all_nodes import constants
+from all_nodes.graphic.graphic_annotation import GeneralGraphicAnnotation
 from all_nodes.graphic.graphic_node import GeneralGraphicNode, GeneralGraphicAttribute
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 from all_nodes.logic.logic_node import GeneralLogicNode
@@ -58,6 +59,16 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.feedback_line.setFont(QtGui.QFont("arial", 12))
         self.feedback_line.hide()
 
+        self.run_btn = QtWidgets.QPushButton("Run scene", parent=self)
+        self.run_btn.setFixedSize(160, 35)
+        self.run_btn.setFont(QtGui.QFont("arial", 10))
+        self.run_btn.setIcon(QtGui.QIcon("icons:brain.png"))
+
+        self.reset_btn = QtWidgets.QPushButton("Reset scene", parent=self)
+        self.reset_btn.setFixedSize(160, 35)
+        self.reset_btn.setFont(QtGui.QFont("arial", 10))
+        self.reset_btn.setIcon(QtGui.QIcon("icons:reset.png"))
+
         self.hourglass_animation = QtWidgets.QLabel(parent=self)
         self.hourglass_animation.setAlignment(QtCore.Qt.AlignCenter)
         ag_file = "ui:hourglass.gif"
@@ -75,11 +86,31 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
 
         # Signals connection
+        self.reset_btn.clicked.connect(self.reset)
+        self.run_btn.clicked.connect(self.run)
+
         GS.signals.execution_started.connect(self.hourglass_animation.show)
         GS.signals.execution_finished.connect(self.hourglass_animation.hide)
         GS.signals.class_scanning_finished.connect(
             lambda: self.show_feedback("Finished scanning classes", level=logging.INFO)
         )
+
+    # RUN AND REFRESH ----------------------
+    def run(self):
+        """
+        Run the current scene.
+        """
+        if self.scene():
+            self.scene().run_graphic_scene()
+            GS.signals.attribute_editor_global_refresh_requested.emit()
+
+    def reset(self):
+        """
+        Reset the current scene.
+        """
+        if self.scene():
+            self.scene().reset_graphic_scene()
+            GS.signals.attribute_editor_global_refresh_requested.emit()
 
     # UTILITY ----------------------
     def show_feedback(self, message, level=logging.INFO):
@@ -138,13 +169,17 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 
     # RESIZE EVENTS ----------------------
     def resizeEvent(self, event):
-        QtWidgets.QGraphicsView.resizeEvent(self, event)
-        self.feedback_line.move(25, self.height() - 50)
-        self.feedback_line.setFixedSize(self.width(), 30)
-
         self.hourglass_animation.move(self.width() - 200, self.height() - 200)
         self.hourglass_animation.setFixedSize(200, 200)
         self.movie.setScaledSize(QtCore.QSize(200, 200))
+
+        self.feedback_line.move(25, self.height() - 50)
+        self.feedback_line.setFixedSize(self.width(), 30)
+
+        self.reset_btn.move(self.width() - 380, self.height() - 55)
+        self.run_btn.move(self.width() - 200, self.height() - 55)
+
+        QtWidgets.QGraphicsView.resizeEvent(self, event)
 
     # MOUSE EVENTS ----------------------
     def mousePressEvent(self, event):
@@ -213,7 +248,10 @@ class CustomScene(QtWidgets.QGraphicsScene):
         # Nodes
         self.all_graphic_nodes = set()
 
-        # PATH TESTS
+        # Annotations
+        self.all_graphic_annotations = set()
+
+        # Path tests
         self.testing_graphic_attr = None
 
         self.testing_path = ConnectorLine()
@@ -231,6 +269,16 @@ class CustomScene(QtWidgets.QGraphicsScene):
             if i > rect.y() and i < rect.y() + rect.height():
                 painter.drawLine(QtCore.QLine(-20_000, i, 20_000, i))
 
+    # ANNOTATIONS ----------------------
+    def add_annotation_by_type(
+        self, annotation_type: str, x: int = 0, y: int = 0
+    ) -> GeneralGraphicAnnotation:
+        new_annotation = GeneralGraphicAnnotation(annotation_type)
+        new_annotation.setPos(x, y)
+        self.all_graphic_annotations.add(new_annotation)
+        self.addItem(new_annotation)
+        return new_annotation
+
     # ADD AND DELETE NODES ----------------------
     def add_graphic_node_by_class_name(
         self, node_classname: str, x: int = 0, y: int = 0
@@ -244,7 +292,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
             y (int): optional, coords to place the node at
 
         Returns:
-            GeneralGraphicNode: newly create node
+            GeneralGraphicNode: newly created node
         """
         all_classes = CR.get_all_classes()
         for lib in sorted(all_classes):
@@ -264,6 +312,12 @@ class CustomScene(QtWidgets.QGraphicsScene):
                             logging.INFO,
                         )
                         return new_graph_node
+
+        GS.signals.main_screen_feedback.emit(
+            "Could not create graphic node {}".format(node_classname),
+            logging.ERROR,
+        )
+        return None
 
     def add_graphic_node_from_logic_node(
         self, logic_node, x: int = 0, y: int = 0
@@ -313,6 +367,11 @@ class CustomScene(QtWidgets.QGraphicsScene):
         self.logic_scene.remove_node_by_name(graphic_node.logic_node.node_name)
 
         del graphic_node
+
+    def delete_annotation(self, graphic_annotation: GeneralGraphicAnnotation):
+        self.all_graphic_annotations.remove(graphic_annotation)
+        self.removeItem(graphic_annotation)
+        del graphic_annotation
 
     # NODE CONNECTIONS/LINES ----------------------
     def connect_graphic_attrs(
@@ -380,7 +439,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         graphic_attrs = [
             c
             for c in self.items()
-            if c.data(0) == "GRAPHIC_ATTRIBUTE" and c.parent_node == node
+            if c.data(0) == constants.GRAPHIC_ATTRIBUTE and c.parent_node == node
         ]
 
         for g in graphic_attrs:
@@ -468,6 +527,20 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     node_dict[node_name]["y_pos"] = int(g_node.scenePos().y())
                     break
 
+        # Add annotations
+        if self.all_graphic_annotations:
+            the_dict["annotations"] = list()
+            annotation_count = 0
+            for ann in self.all_graphic_annotations:
+                annotation_dict = dict()
+                annotation_dict["annotation_type"] = ann.get_type()
+                annotation_dict["x_pos"] = int(ann.scenePos().x())
+                annotation_dict["y_pos"] = int(ann.scenePos().y())
+                if ann.get_text():
+                    annotation_dict["text"] = str(ann.get_text())
+                the_dict["annotations"].append(annotation_dict)
+                annotation_count += 1
+
         # Save logic scene
         self.logic_scene.save_to_file(target_file, the_dict)
 
@@ -501,6 +574,14 @@ class CustomScene(QtWidgets.QGraphicsScene):
                         node_dict[node_name]["y_pos"],
                     )
                     break
+
+        # Create annotations
+        if "annotations" in scene_dict:
+            for ann_dict in scene_dict["annotations"]:
+                new_annotation = self.add_annotation_by_type(
+                    ann_dict["annotation_type"], ann_dict["x_pos"], ann_dict["y_pos"]
+                )
+                new_annotation.set_text(ann_dict.get("text", ""))
 
         # Connections
         all_graphic_attrs = []
@@ -648,16 +729,25 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Args:
              graphic_node_list (list): nodes to execute
         """
+        # Check nodes to execute
+        if not graphic_node_list:
+            graphic_node_list = self.selected_nodes()
+
+        if not graphic_node_list:
+            GS.signals.main_screen_feedback.emit(
+                "No nodes selected, nothing to execute", logging.WARNING
+            )
+            return
+
+        # Execution
         GS.signals.main_screen_feedback.emit(
             "Running only selected node(s)", logging.INFO
         )
         GS.signals.execution_started.emit()
 
-        if not graphic_node_list:
-            graphic_node_list = self.selected_nodes()
-        for graphic_node in graphic_node_list:
-            logic_node = graphic_node.logic_node
-            self.logic_scene.run_list_of_nodes([logic_node])
+        self.logic_scene.run_list_of_nodes(
+            [graphic_node.logic_node for graphic_node in graphic_node_list]
+        )
 
     def reset_nodes(self, graphic_node_list: list = None):
         """
@@ -711,7 +801,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
     def add_attr_to_node(self, graphic_node: GeneralGraphicNode):
         a_picker = AttributePicker()
-        graphic_node.add_single_graphic_attribute(*a_picker.get_results())
+        if a_picker.get_results():
+            graphic_node.add_single_graphic_attribute(*a_picker.get_results())
 
     def export_nodes_code(self, graphic_node_list: list):
         if not graphic_node_list:
@@ -771,6 +862,21 @@ class CustomScene(QtWidgets.QGraphicsScene):
         for n in self.all_graphic_nodes:
             n.setSelected(False)
 
+    # ANNOTATION SPECIFIC ----------------------
+    def bring_annotation_to_front(self, annotation_list: list):
+        if not annotation_list:
+            annotation_list = self.selected_annotations()
+
+        for annotation in annotation_list:
+            annotation.setZValue(500)
+
+    def move_annotation_backward(self, annotation_list: list):
+        if not annotation_list:
+            annotation_list = self.selected_annotations()
+
+        for annotation in annotation_list:
+            annotation.setZValue(-500)
+
     # SCENE EXECUTION ----------------------
     def reset_all_graphic_nodes(self):
         """
@@ -817,21 +923,30 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 sel_nodes.append(n)
         return sel_nodes
 
+    def selected_annotations(self) -> list:
+        sel_annotations = []
+        for a in self.all_graphic_annotations:
+            if a.isSelected():
+                sel_annotations.append(a)
+        return sel_annotations
+
     def fit_in_view(self):
         """
         If selected nodes, fit all of them in the view. Otherwise, fit all nodes.
         """
         self.parent().resetMatrix()
-        nodes = list(self.all_graphic_nodes)
-        if self.selected_nodes():
-            nodes = self.selected_nodes()
+        nodes = list(self.all_graphic_nodes) + list(self.all_graphic_annotations)
+        if self.selected_nodes() or self.selected_annotations():
+            nodes = list(self.selected_nodes()) + list(self.selected_annotations())
         if not nodes:
             return
         rect = nodes[0].sceneBoundingRect()
         for n in nodes:
             rect = rect.united(n.sceneBoundingRect())
 
-        self.parent().fitInView(rect, QtCore.Qt.KeepAspectRatio)
+        self.parent().fitInView(
+            rect + QtCore.QMarginsF(20.0, 20.0, 20.0, 20.0), QtCore.Qt.KeepAspectRatio
+        )
 
     # CONTEXT EVENTS ----------------------
     def contextMenuEvent(self, event):
@@ -846,6 +961,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
             for item in test_items:
                 if item and item.data(0) == constants.GRAPHIC_NODE:
                     self.menu_node(event, item)
+                    break
+                elif item and item.data(0) == constants.GRAPHIC_ANNOTATION:
+                    self.menu_annotation(event, item)
                     break
         else:
             self.menu_scene(event)
@@ -917,6 +1035,29 @@ class CustomScene(QtWidgets.QGraphicsScene):
             print_node_log_action = menu.addAction(" Print node log")
             print_node_log_action.setIcon(QtGui.QIcon("icons:nodes_2.png"))
             print_node_log_action.triggered.connect(lambda: self.show_log(node))
+
+        # Style
+        f = QtCore.QFile(r"ui:stylesheet.qss")  # TODO not ideal, maybe a reduced qss?
+        with open(f.fileName(), "r") as s:
+            menu.setStyleSheet(s.read())
+
+        # Exec
+        menu.exec_(event.screenPos(), parent=self)
+
+    def menu_annotation(self, event, node):
+        menu = QtWidgets.QMenu()  # TODO add tooltips
+
+        bring_forward_action = menu.addAction(" Bring annotation to front")
+        bring_forward_action.setIcon(QtGui.QIcon("icons:front.svg"))
+        bring_forward_action.triggered.connect(
+            lambda: self.bring_annotation_to_front([node])
+        )
+
+        move_backward_action = menu.addAction(" Move annotation back")
+        move_backward_action.setIcon(QtGui.QIcon("icons:back.svg"))
+        move_backward_action.triggered.connect(
+            lambda: self.move_annotation_backward([node])
+        )
 
         # Style
         f = QtCore.QFile(r"ui:stylesheet.qss")  # TODO not ideal, maybe a reduced qss?
@@ -1004,6 +1145,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     n.logic_node.uuid
                 )
                 self.delete_node(n)
+
+            for a in self.selected_annotations():
+                self.delete_annotation(a)
 
         # --- Fit in view
         elif event.key() == QtCore.Qt.Key_F:
@@ -1203,9 +1347,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
         event.acceptProposedAction()
 
     def dropEvent(self, event):
+        # TODO make sure this can only happen after GS emits signal of all classes scanned
         event_data = event.mimeData()
         if event_data.hasUrls():
-            # TODO make sure this can only happen after GS emits signal of all classes scanned
             event_urls = event_data.urls()
             for url in event_urls:
                 if os.path.isfile(url.toLocalFile()):

@@ -49,9 +49,11 @@ It also aims to prevent re-duplication and re-writing of code inside of a projec
   </tr>
   <tr> 
       <td>✅ Deactivation of nodes</td>
+      <td>✅ Annotations</td>
   </tr>
   <tr>
     <td align="center"><img src="docs/deactivate.gif" width=60%></td>
+    <td align="center"><img src="docs/annotations.gif" width=60%></td>
   </tr>
 </table>
 
