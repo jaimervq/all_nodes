@@ -17,6 +17,7 @@ import yaml
 
 from all_nodes import constants
 from all_nodes import utils
+from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 
 
@@ -93,14 +94,18 @@ def register_node_lib(lib_path):
         classes_dict[node_library_name][module_name] = dict()
         module_classes = list()
         class_counter = 0
-        for name, cls in class_members:
-            if name in CLASSES_TO_SKIP:
+        for name, cls_object in class_members:
+            if (
+                not issubclass(cls_object, GeneralLogicNode)
+                or cls_object == GeneralLogicNode
+            ):
                 continue
+
             # Icon for this class  # TODO Refactor this out
             default_icon = node_styles.get(module_name, dict()).get("default_icon")
             icon_path = "icons:nodes.svg"
             if (
-                hasattr(cls, "IS_CONTEXT") and cls.IS_CONTEXT
+                hasattr(cls_object, "IS_CONTEXT") and cls_object.IS_CONTEXT
             ):  # TODO inheritance not working here?
                 icon_path = "icons:cubes.svg"
             if QtCore.QFile.exists(f"icons:{name}.png"):
@@ -112,11 +117,11 @@ def register_node_lib(lib_path):
                     icon_path = f"icons:{default_icon}.png"
                 elif QtCore.QFile.exists("icons:" + default_icon + ".svg"):
                     icon_path = f"icons:{default_icon}.svg"
-            setattr(cls, "ICON_PATH", icon_path)
+            setattr(cls_object, "ICON_PATH", icon_path)
 
             # Class name and object
-            setattr(cls, "FILEPATH", py_path)  # TODO not ideal?
-            module_classes.append((name, cls))
+            setattr(cls_object, "FILEPATH", py_path)  # TODO not ideal?
+            module_classes.append((name, cls_object))
             class_counter += 1
 
         classes_dict[node_library_name][module_name][
@@ -308,7 +313,7 @@ class ClassRegistry:
             for future in concurrent.futures.as_completed(futures):
                 cls._all_classes.update(future.result())
 
-        LOGGER.info(f"Total time scanning classes: {time.time() -t1} s.")
+        LOGGER.info(f"Total time scanning classes: {time.time() -t1}s.")
         GS.signals.class_scanning_finished.emit()
 
     def get_all_classes(cls):
@@ -363,7 +368,7 @@ class ClassRegistry:
 
         if not len(cls._lib_workers):
             LOGGER.info(
-                f"Total time scanning classes: {time.time() - cls._time_start} s."
+                f"Total time scanning classes: {time.time() - cls._time_start}s."
             )
             GS.signals.class_scanning_finished.emit()
 

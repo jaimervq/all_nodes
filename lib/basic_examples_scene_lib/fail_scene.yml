@@ -49,6 +49,18 @@ connections:
 - StrInput_1.out_str -> GetEnvVariable_1.env_variable_name
 - TimedNode_1.COMPLETED -> ErrorNode_1.START
 
+# Annotations section: list of annotations in the scene
+annotations:
+- annotation_type: notepad
+  text: '
 
-# Scene modified at: 2024-07-02 19:29:35.295502
-# Modified by: Jaime
+    This var we know that should not work, we will have an error in the next node.'
+  x_pos: -1822
+  y_pos: -409
+- annotation_type: hand
+  x_pos: -675
+  y_pos: -124
+
+
+# Scene modified at: 2024-07-24 13:33:27.841690
+# Modified by: jaime.rvq

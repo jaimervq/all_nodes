@@ -51,8 +51,11 @@ CONNECTOR_USED_PEN = QtGui.QPen(QtCore.Qt.white, 3)
 # Naming
 GRAPHIC_NODE = "GRAPHIC_NODE"
 GRAPHIC_ATTRIBUTE = "GRAPHIC_ATTRIBUTE"
+
 PLUG = "PLUG"
 CONNECTOR_LINE = "CONNECTOR_LINE"
+
+GRAPHIC_ANNOTATION = "GRAPHIC_ANNOTATION"
 
 
 # -------------------------------- LOGIC -------------------------------- #
@@ -93,9 +96,6 @@ class PreviewsGUI(Enum):
     MULTILINE_STR_PREVIEW = "Multiline string preview"
     DICT_PREVIEW = "Dictionary preview"
     IMAGE_PREVIEW = "Image preview"
-
-
-# -------------------------------- KEYBOARD SHORTCUTS -------------------------------- #
 
 
 # -------------------------------- LOGGING PREFS -------------------------------- #

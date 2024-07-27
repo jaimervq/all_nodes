@@ -237,14 +237,15 @@ class LogicScene:
         """
         scene_dict = dict()
 
-        scene_dict["nodes"] = list()
         all_node_names = sorted([n.node_name for n in self.all_logic_nodes])
-        for name in all_node_names:
-            for node in self.all_logic_nodes:
-                if node.node_name == name:
-                    node_dict = node.get_node_basic_dict()
-                    scene_dict["nodes"].append(node_dict)
-                    break
+        if all_node_names:
+            scene_dict["nodes"] = list()
+            for name in all_node_names:
+                for node in self.all_logic_nodes:
+                    if node.node_name == name:
+                        node_dict = node.get_node_basic_dict()
+                        scene_dict["nodes"].append(node_dict)
+                        break
 
         connections = set()
         for node in self.all_logic_nodes:
@@ -252,7 +253,8 @@ class LogicScene:
             if out_conns:
                 for c in out_conns:
                     connections.add(" -> ".join(c))
-        scene_dict["connections"] = sorted(list(connections))
+        if connections:
+            scene_dict["connections"] = sorted(list(connections))
 
         return scene_dict
 
@@ -285,19 +287,28 @@ class LogicScene:
             )
             file.write(header)
             file.write("\n# " + "-" * (len(header) - 2))
-            file.write("\n# Description: ")
+            file.write("\n# Description: \n")
 
-            file.write(
-                "\n\n# Nodes section: overall list of nodes to be created\n" "nodes:\n"
-            )
-            yaml.dump(scene_dict["nodes"], file, sort_keys=True)
+            if "nodes" in scene_dict:
+                file.write(
+                    "\n# Nodes section: overall list of nodes to be created\n"
+                    "nodes:\n"
+                )
+                yaml.dump(scene_dict["nodes"], file, sort_keys=True)
 
-            if scene_dict["connections"]:
+            if "connections" in scene_dict:
                 file.write(
                     "\n# Connections section: connections to be done between nodes\n"
                     "connections:\n"
                 )
                 yaml.dump(scene_dict["connections"], file)
+
+            if "annotations" in scene_dict:
+                file.write(
+                    "\n# Annotations section: list of annotations in the scene\n"
+                    "annotations:\n"
+                )
+                yaml.dump(scene_dict["annotations"], file, sort_keys=True)
 
             file.write(
                 f"\n\n# {file_type.capitalize()} {save_type} at: {datetime.datetime.now()}"
@@ -458,7 +469,7 @@ class LogicScene:
 
     def run_list_of_nodes(self, nodes_to_execute: list, spawn_thread: bool = True):
         """
-        Execute a list of nodes.y.
+        Execute a list of nodes.
 
         Parameters:
             nodes_to_execute (list): A list of nodes to be executed.

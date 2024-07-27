@@ -18,50 +18,102 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
-    <widget class="QSplitter" name="splitter">
+    <widget class="QSplitter" name="splitter_main">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="handleWidth">
-      <number>12</number>
-     </property>
-     <widget class="QWidget" name="layoutWidget">
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QLineEdit" name="filter_le">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="placeholderText">
-          <string>Filter nodes by name...</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTreeWidget" name="nodes_tree">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <attribute name="headerVisible">
-          <bool>false</bool>
-         </attribute>
-         <column>
-          <property name="text">
-           <string notr="true">1</string>
+     <widget class="QSplitter" name="splitter_libs">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="handleWidth">
+       <number>8</number>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QLineEdit" name="filter_le">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
           </property>
-         </column>
-        </widget>
-       </item>
-      </layout>
+          <property name="placeholderText">
+           <string>Filter nodes by name...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTreeWidget" name="nodes_tree">
+          <property name="font">
+           <font>
+            <family>Arial</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <attribute name="headerVisible">
+           <bool>false</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string notr="true">1</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Annotations:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTreeWidget" name="annotations_tree">
+          <property name="indentation">
+           <number>2</number>
+          </property>
+          <property name="headerHidden">
+           <bool>true</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string notr="true">1</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
      <widget class="QWidget" name="layoutWidget">
       <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="0" colspan="3">
+       <item row="0" column="0" colspan="2">
         <widget class="QTabWidget" name="tabWidget">
          <property name="minimumSize">
           <size>
@@ -71,50 +123,6 @@
          </property>
          <property name="currentIndex">
           <number>-1</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QPushButton" name="run_current_btn">
-         <property name="minimumSize">
-          <size>
-           <width>150</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Run current scene</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="reset_current_btn">
-         <property name="minimumSize">
-          <size>
-           <width>150</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Reset current scene</string>
          </property>
         </widget>
        </item>

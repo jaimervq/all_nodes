@@ -26,6 +26,7 @@ SHORTCUTS_DICT = {
     "Soft-reset selected nodes": "S",
     "Delete selected nodes": "Del",
     "Fit to view": "F",
+    "Search node class": "Tab",
 }
 
 

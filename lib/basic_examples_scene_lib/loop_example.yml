@@ -21,8 +21,8 @@ nodes:
     y_pos: -622
 - ForEachBegin_1:
     class_name: ForEachBegin
-    x_pos: -1986
-    y_pos: -475
+    x_pos: -2078
+    y_pos: -490
 - ForEachEnd_1:
     class_name: ForEachEnd
     x_pos: -34
@@ -34,8 +34,8 @@ nodes:
       - A
       - B
       - C
-    x_pos: -2393
-    y_pos: -550
+    x_pos: -2485
+    y_pos: -555
 - PrintToConsole_1:
     class_name: PrintToConsole
     x_pos: -1543
@@ -66,6 +66,19 @@ connections:
 - PrintToConsole_2.COMPLETED -> EmptyNode_1.START
 - StrInput_1.out_str -> PrintToConsole_2.in_object_1
 
+# Annotations section: list of annotations in the scene
+annotations:
+- annotation_type: separator
+  x_pos: -1760
+  y_pos: -734
+- annotation_type: separator
+  x_pos: -176
+  y_pos: -741
+- annotation_type: long_tag
+  text: LOOP BODY
+  x_pos: -1562
+  y_pos: -731
 
-# Scene modified at: 2024-06-30 22:36:12.141286
-# Modified by: Jaime
+
+# Scene modified at: 2024-07-25 15:53:52.208486
+# Modified by: jaime.rvq
