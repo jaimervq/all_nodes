@@ -1,25 +1,28 @@
 <h1 align="center">
-    <img src="https://github.com/jaimervq/all_nodes/blob/main/docs/all_nodes_banner.png"/><br>
+    <img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/all_nodes_banner.png"/><br>
     <a href=https://github.com/jaimervq/all_nodes/actions/workflows/tests.yml> 
-        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=Tests&style=for-the-badge"> 
+        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=Tests&style=plastic"> 
     </a>
     <a href=https://opensource.org/licenses/MIT> 
-        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge"> 
+        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic"> 
     </a>
     <a href=https://github.com/astral-sh/ruff> 
-        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge&label=Code style"> 
+        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic&label=Code style"> 
     </a>
-    <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=for-the-badge">
+    <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=plastic">
 </h1>
 <h3 align="center">
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-features>Features</a> • 
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-how-to>How to</a> • 
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#%EF%B8%8F-execution-logic>Execution logic</a><br><br>
-    <img alt="" src="https://github.com/jaimervq/all_nodes/blob/main/docs/preview.png"><br>   
+    <img alt="" src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/preview.png"><br>   
 </h3>
 
 **all_nodes** is a visual programming node editor designed to be used in the most flexible way possible.
 It also aims to prevent re-duplication and re-writing of code inside of a project, as well as making debugging easier with its one-node-at-a-time approach to execution.
+
+# 💽 Install
+```pip install all-nodes```
 
 # 💡 Features
 <table align="center">
@@ -28,32 +31,32 @@ It also aims to prevent re-duplication and re-writing of code inside of a projec
     <td>✅ Class search</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/drop.gif" width=60%></td>
-    <td align="center"><img src="docs/search.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/drop.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/search.gif" width=60%></td>
   </tr>
   <tr> 
       <td>✅ Visual feedback of execution</td>
       <td>✅ Execution in separate thread</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/execution.gif" width=60%></td>
-    <td align="center"><img src="docs/threading.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/execution.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/threading.gif" width=60%></td>
   </tr>
   <tr> 
       <td>✅ Preview of images and other elements</td>
       <td>✅ Attribute editor</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/previews.gif" width=60%></td>
-    <td align="center"><img src="docs/attribute_editor.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/previews.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/attribute_editor.gif" width=60%></td>
   </tr>
   <tr> 
       <td>✅ Deactivation of nodes</td>
       <td>✅ Annotations</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/deactivate.gif" width=60%></td>
-    <td align="center"><img src="docs/annotations.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/deactivate.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/annotations.gif" width=60%></td>
   </tr>
 </table>
 

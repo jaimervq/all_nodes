@@ -1,6 +1,14 @@
-*.pyc
+# Files
 *.ai
+*.psd
+*.pyc
 
-graphics_creation/
+# Folders
+build/
+dist/
 .idea/
 .venv/
+*egg-info*
+
+# Project-specific
+.graphics_creation/

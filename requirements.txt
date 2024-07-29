@@ -1,9 +1,0 @@
-colorama
-numpy<2
-matplotlib<3.9
-Pillow
-PySide2<6
-PyYAML
-polars
-pymongo[srv]
-ruff==0.1.6

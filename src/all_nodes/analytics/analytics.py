@@ -98,7 +98,7 @@ def process_analytics():
     # Folder
     root = os.path.abspath(__file__)
     root_dir_path = os.path.dirname(root)
-    os.makedirs(os.path.join(root_dir_path, "../docs/analytics"), exist_ok=True)
+    os.makedirs(os.path.join(root_dir_path, "../../../docs/analytics"), exist_ok=True)
 
     # Style for plots
     plt.style.use("seaborn-v0_8-dark")
@@ -108,15 +108,16 @@ def process_analytics():
         [
             {"$match": {"run_date": {"$ne": None}}},
             {"$group": {"_id": "$run_date", "count": {"$sum": 1}}},
-            {"$sort": {"_id": 1}},
+            {"$sort": {"run_date": 1}},
+            {"$limit": 30},
         ]
     )
 
     if res:
         df = pl.DataFrame(list(res))
 
-        dates = df["_id"].tolist()
-        uses = df["count"].tolist()
+        dates = df["_id"].to_list()
+        uses = df["count"].to_list()
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.plot(dates, uses)
@@ -127,7 +128,7 @@ def process_analytics():
         ax.set_title("Recent usage")
 
         graph_file = os.path.join(
-            root_dir_path, "../docs/analytics", "recent_usage.png"
+            root_dir_path, "../../../docs/analytics", "recent_usage.png"
         )
         fig.tight_layout()
         fig.savefig(graph_file)
@@ -153,8 +154,8 @@ def process_analytics():
     if res:
         df = pl.DataFrame(list(res))
 
-        node_names = df["_id"].tolist()
-        uses = df["count"].tolist()
+        node_names = df["_id"].to_list()
+        uses = df["count"].to_list()
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.barh(node_names, uses)
@@ -163,7 +164,9 @@ def process_analytics():
         ax.invert_yaxis()
         ax.set_title("Top 30 most used nodes")
 
-        graph_file = os.path.join(root_dir_path, "../docs/analytics", "most_used.png")
+        graph_file = os.path.join(
+            root_dir_path, "../../../docs/analytics", "most_used.png"
+        )
         fig.tight_layout()
         fig.savefig(graph_file)
 
@@ -184,17 +187,11 @@ def process_analytics():
     if res:
         df = pl.DataFrame(list(res))
 
-        df_grouped = (
-            df.groupby(["class_name", "run_date"])
-            .size()
-            .to_frame("occurrences")
-            .reset_index()
-            .sort_values("run_date")
-        )
+        df_grouped = df.group_by(["class_name", "run_date"]).count()
 
-        node_names = df_grouped["class_name"].tolist()
-        failed_date = df_grouped["run_date"].tolist()
-        occurrences = df_grouped["occurrences"].tolist()
+        node_names = df_grouped["class_name"].to_list()
+        failed_date = df_grouped["run_date"].to_list()
+        occurrences = df_grouped["count"].to_list()
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.scatter(
@@ -213,7 +210,9 @@ def process_analytics():
         ax.set_title("Most recently errored nodes")
         ax.grid(which="major", axis="x", linestyle="--")
 
-        graph_file = os.path.join(root_dir_path, "../docs/analytics", "errored.png")
+        graph_file = os.path.join(
+            root_dir_path, "../../../docs/analytics", "errored.png"
+        )
         fig.tight_layout()
         fig.savefig(graph_file)
 
@@ -232,19 +231,11 @@ def process_analytics():
     )
 
     if res:
-        df = pl.DataFrame(list(res))
+        df_grouped = df.group_by(["class_name", "run_date"]).count()
 
-        df_grouped = (
-            df.groupby(["class_name", "run_date"])
-            .size()
-            .to_frame("occurrences")
-            .reset_index()
-            .sort_values("run_date")
-        )
-
-        node_names = df_grouped["class_name"].tolist()
-        failed_date = df_grouped["run_date"].tolist()
-        occurrences = df_grouped["occurrences"].tolist()
+        node_names = df_grouped["class_name"].to_list()
+        failed_date = df_grouped["run_date"].to_list()
+        occurrences = df_grouped["count"].to_list()
 
         fig, ax = plt.subplots(figsize=(10, 7))
         ax.scatter(
@@ -263,7 +254,9 @@ def process_analytics():
         ax.set_title("Most recently failed nodes")
         ax.grid(which="major", axis="x", linestyle="--")
 
-        graph_file = os.path.join(root_dir_path, "../docs/analytics", "failed.png")
+        graph_file = os.path.join(
+            root_dir_path, "../../../docs/analytics", "failed.png"
+        )
         fig.tight_layout()
         fig.savefig(graph_file)
 

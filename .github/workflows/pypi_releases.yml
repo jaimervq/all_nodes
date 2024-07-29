@@ -1,0 +1,29 @@
+on:
+  push:
+    tags:
+      - "1.*"
+
+name: Publish to PyPI
+
+jobs:
+  build:
+    environment: publish
+    name: Publish to PyPI
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create distribution
+        run: python setup.py sdist bdist_wheel
+
+      - name: Upload with twine
+        env:
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+        run: |
+          twine upload ./dist/*
