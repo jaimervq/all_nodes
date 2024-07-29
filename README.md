@@ -1,25 +1,36 @@
 <h1 align="center">
-    <img src="https://github.com/jaimervq/all_nodes/blob/main/docs/all_nodes_banner.png"/><br>
+    <img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/all_nodes_banner.png"/><br>
     <a href=https://github.com/jaimervq/all_nodes/actions/workflows/tests.yml> 
-        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=Tests&style=for-the-badge"> 
+        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=Tests&style=plastic"> 
     </a>
     <a href=https://opensource.org/licenses/MIT> 
-        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge"> 
+        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic"> 
     </a>
     <a href=https://github.com/astral-sh/ruff> 
-        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge&label=Code style"> 
+        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic&label=Code style"> 
     </a>
-    <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=for-the-badge">
+    <img alt="Closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=plastic">
+    <br>
+    <img alt="PyPI - Version" src="https://img.shields.io/pypi/v/all-nodes">
+    <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/all-nodes">
+    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/all-nodes">
 </h1>
 <h3 align="center">
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-features>Features</a> • 
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-how-to>How to</a> • 
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#%EF%B8%8F-execution-logic>Execution logic</a><br><br>
-    <img alt="" src="https://github.com/jaimervq/all_nodes/blob/main/docs/preview.png"><br>   
+    <img alt="" src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/preview.png"><br>   
 </h3>
 
 **all_nodes** is a visual programming node editor designed to be used in the most flexible way possible.
 It also aims to prevent re-duplication and re-writing of code inside of a project, as well as making debugging easier with its one-node-at-a-time approach to execution.
+
+# 💽 Install and run
+Install from PyPI with:
+```pip install all-nodes```
+
+And then run with
+`all-nodes`
 
 # 💡 Features
 <table align="center">
@@ -28,32 +39,32 @@ It also aims to prevent re-duplication and re-writing of code inside of a projec
     <td>✅ Class search</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/drop.gif" width=60%></td>
-    <td align="center"><img src="docs/search.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/drop.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/search.gif" width=60%></td>
   </tr>
   <tr> 
       <td>✅ Visual feedback of execution</td>
       <td>✅ Execution in separate thread</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/execution.gif" width=60%></td>
-    <td align="center"><img src="docs/threading.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/execution.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/threading.gif" width=60%></td>
   </tr>
   <tr> 
       <td>✅ Preview of images and other elements</td>
       <td>✅ Attribute editor</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/previews.gif" width=60%></td>
-    <td align="center"><img src="docs/attribute_editor.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/previews.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/attribute_editor.gif" width=60%></td>
   </tr>
   <tr> 
       <td>✅ Deactivation of nodes</td>
       <td>✅ Annotations</td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/deactivate.gif" width=60%></td>
-    <td align="center"><img src="docs/annotations.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/deactivate.gif" width=60%></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/annotations.gif" width=60%></td>
   </tr>
 </table>
 
@@ -67,7 +78,7 @@ Example of organization of a folder, that contains two libraries
 
 | Folder structure             | Classes representation          | Scenes                       |
 | ---------------------------- | ------------------------------- | ---------------------------- |
-| ![](docs/folder_example.png) | ![](docs/structure_example.png) | ![](docs/scenes_example.png) |
+| ![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/folder_example.png) | ![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/structure_example.png) | ![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/scenes_example.png) |
 
 This folder has:
 
@@ -129,14 +140,14 @@ Other considerations:
 * The `import` statements are kept inside the run method, so no ImportError is met when editing nodes outside the software they are meant for.
 
 ## Defining a context
-![](docs/context.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/context.png)
 
 A context is a "node of nodes", or a node that contains a scene inside itself. To define it, just two ingredients are needed:
 * As usual, a class in a .py file, with the **IS_CONTEXT** attribute set
 * In the same folder as the .py file, a .ctx file (just a yaml file but with that extension instead) with the inner scene of the node
 
 Once "inside" the context, its input attributes can be "grabbed" and its output attributes set by making use of the special ctx nodes:
-![](docs/ctx_grab.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/ctx_grab.png)
 
 ## Defining a scene
 Defining a scene is very easy, it is a simple and readable yaml file.
@@ -199,13 +210,13 @@ Those are nodes that:
 * Have no dependency/inputs/connetions from others.
 * Don't have any non-optional attributes not set
 
-![](docs/start_nodes.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/start_nodes.png)
 
 In these example nodes, none of them have any incoming connections. Also, the only input attribute they all have is the START attribute, but since it is an optional attribute, the node can start executing even if it is not set.
   
 Another example:
 
-![](docs/start_node_manual.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/start_node_manual.png)
 
 The node has a non-optional input. It is not connected, but a value has been defined to it, so the node can start executing.
 
@@ -213,7 +224,7 @@ The node has a non-optional input. It is not connected, but a value has been def
 When a start node is executed, and it is successful, the nodes connected to its outputs will try to execute as well.
 Have a look at this example:
 
-![](docs/exec_1.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/exec_1.png)
 
 What will happen is:
 * IntInput_1 is executed
@@ -225,7 +236,7 @@ What will happen is:
 
 However, changing the scene a little bit, makes things  more complex:
 
-![](docs/exec_2.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/exec_2.png)
 
 * IntInput_1 is executed
 * It is successful, so its output value "out_int" is propagated to the connected nodes. Also, this time the "COMPLETED" attribute is propagated to the EmptyNode_1 connected node.
@@ -264,7 +275,7 @@ logic_scene.run_all_nodes()
 # 📈 Analytics
 Automatically generated once a month
 (For personal use, they are not gathered from any other user)
-![](docs/analytics/recent_usage.png)
-![](docs/analytics/most_used.png)
-![](docs/analytics/errored.png)
-![](docs/analytics/failed.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/analytics/recent_usage.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/analytics/most_used.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/analytics/errored.png)
+![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/analytics/failed.png)

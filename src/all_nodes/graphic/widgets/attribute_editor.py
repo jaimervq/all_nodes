@@ -205,15 +205,15 @@ class NodePanel(QtWidgets.QWidget):
             attrib_value_le.setText(str(value))
 
         regex = QtCore.QRegExp(".*")
-        if data_type == str and value == "":
+        if data_type is str and value == "":
             attrib_value_le.setText("''")
-        elif data_type == float:
+        elif data_type is float:
             regex = QtCore.QRegExp("\d+\.\d+")
-        elif data_type == int:
+        elif data_type is int:
             regex = QtCore.QRegExp("\d+")
-        elif data_type == dict:
+        elif data_type is dict:
             regex = QtCore.QRegExp("\{.+")
-        elif data_type == bool:
+        elif data_type is bool:
             regex = QtCore.QRegExp("[01]")
             if value is not None:
                 attrib_value_le.setText(str(int(value)))

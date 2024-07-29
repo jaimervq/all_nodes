@@ -1,0 +1,39 @@
+on:
+  push:
+    tags:
+      - "test*"
+
+name: Publish to PyPI (TEST)
+
+jobs:
+  build:
+    environment: publish_test
+    name: Publish to PyPI TEST
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install setuptools, twine, wheel
+        run: |
+          pip install --upgrade pip
+          pip install setuptools twine wheel
+
+      - name: Create distribution
+        run: python setup.py sdist bdist_wheel
+
+      - name: Upload with twine
+        env:
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+        run: |
+          twine upload --repository-url https://test.pypi.org/legacy/ ./dist/*

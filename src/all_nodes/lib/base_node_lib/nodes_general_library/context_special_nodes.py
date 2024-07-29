@@ -114,7 +114,7 @@ class SetOutputToCtx(GeneralLogicNode):
 
         out_attr = self["out_parent_attr_value"]
         out_attr_value = self.get_attribute_value("out_parent_attr_value")
-        if not out_attr.data_type == parent_attr.data_type:
+        if out_attr.data_type is not parent_attr.data_type:
             self.fail(
                 "Value of {0} ({1}) cannot be propagated to parent {2} ({3}): {1} != {3}".format(
                     out_attr.dot_name,
