@@ -9,7 +9,7 @@
     <a href=https://github.com/astral-sh/ruff> 
         <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic&label=Code style"> 
     </a>
-    <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=plastic">
+    <img alt="Closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=plastic">
 </h1>
 <h3 align="center">
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-features>Features</a> • 
