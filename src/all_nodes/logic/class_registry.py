@@ -124,21 +124,21 @@ def register_node_lib(lib_path):
             module_classes.append((name, cls_object))
             class_counter += 1
 
-        classes_dict[node_library_name][module_name][
-            "node_lib_path"
-        ] = node_library_path
-        classes_dict[node_library_name][module_name][
-            "node_lib_name"
-        ] = node_library_name
-        classes_dict[node_library_name][module_name][
-            "module_filename"
-        ] = module_filename
+        classes_dict[node_library_name][module_name]["node_lib_path"] = (
+            node_library_path
+        )
+        classes_dict[node_library_name][module_name]["node_lib_name"] = (
+            node_library_name
+        )
+        classes_dict[node_library_name][module_name]["module_filename"] = (
+            module_filename
+        )
         classes_dict[node_library_name][module_name]["module_full_path"] = py_path
         classes_dict[node_library_name][module_name]["classes"] = module_classes
 
-        classes_dict[node_library_name][module_name][
-            "color"
-        ] = constants.DEFAULT_NODE_COLOR
+        classes_dict[node_library_name][module_name]["color"] = (
+            constants.DEFAULT_NODE_COLOR
+        )
         for module_style in node_styles:
             if module_style in module_name:
                 classes_dict[node_library_name][module_name]["color"] = node_styles[
@@ -304,7 +304,6 @@ class ClassRegistry:
         t1 = time.time()  # TODO find something more precise
         cls._all_classes = dict()
 
-        executor = concurrent.futures.ThreadPoolExecutor()
         with concurrent.futures.ThreadPoolExecutor(10) as executor:
             futures = [
                 executor.submit(register_node_lib, full_path)

@@ -1283,37 +1283,37 @@ class CustomScene(QtWidgets.QGraphicsScene):
             graphic_attr_1 = self.testing_graphic_attr
             if graphic_attr_1.connector_type == constants.INPUT:
                 new_g_node = None
-                if graphic_attr_1.logic_attribute.data_type == str:
+                if graphic_attr_1.logic_attribute.data_type is str:
                     new_g_node = self.add_graphic_node_by_class_name(
                         "StrInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_str"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
-                elif graphic_attr_1.logic_attribute.data_type == list:
+                elif graphic_attr_1.logic_attribute.data_type is list:
                     new_g_node = self.add_graphic_node_by_class_name(
                         "ListInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_list"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
-                elif graphic_attr_1.logic_attribute.data_type == dict:
+                elif graphic_attr_1.logic_attribute.data_type is dict:
                     new_g_node = self.add_graphic_node_by_class_name(
                         "DictInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_dict"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
-                elif graphic_attr_1.logic_attribute.data_type == int:
+                elif graphic_attr_1.logic_attribute.data_type is int:
                     new_g_node = self.add_graphic_node_by_class_name(
                         "IntInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_int"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
-                elif graphic_attr_1.logic_attribute.data_type == float:
+                elif graphic_attr_1.logic_attribute.data_type is float:
                     new_g_node = self.add_graphic_node_by_class_name(
                         "FloatInput", event_x, event_y
                     )
                     graphic_attr_2 = new_g_node["out_float"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
-                elif graphic_attr_1.logic_attribute.data_type == bool:
+                elif graphic_attr_1.logic_attribute.data_type is bool:
                     new_g_node = self.add_graphic_node_by_class_name(
                         "BoolInput", event_x, event_y
                     )

@@ -36,7 +36,7 @@ jobs:
 
       - name: Run analytics
         run: |
-          python main.py -a
+          all-nodes -a
 
       - name: Set DATE env variable
         run: echo "DATE=`date`" >> $GITHUB_ENV

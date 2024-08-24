@@ -196,20 +196,20 @@ class GeneralLogicNode:
                 continue  # No need to register preview attrs
 
             out_dict["node_attributes"][attr.dot_name] = dict()
-            out_dict["node_attributes"][attr.dot_name][
-                "attribute_name"
-            ] = attr.attribute_name
+            out_dict["node_attributes"][attr.dot_name]["attribute_name"] = (
+                attr.attribute_name
+            )
             out_dict["node_attributes"][attr.dot_name]["value"] = str(attr.value)
-            out_dict["node_attributes"][attr.dot_name][
-                "connector_type"
-            ] = attr.connector_type
+            out_dict["node_attributes"][attr.dot_name]["connector_type"] = (
+                attr.connector_type
+            )
             out_dict["node_attributes"][attr.dot_name]["is_optional"] = attr.is_optional
-            out_dict["node_attributes"][attr.dot_name][
-                "data_type"
-            ] = attr.get_datatype_str()
-            out_dict["node_attributes"][attr.dot_name][
-                "data_type_str"
-            ] = attr.get_datatype_str()
+            out_dict["node_attributes"][attr.dot_name]["data_type"] = (
+                attr.get_datatype_str()
+            )
+            out_dict["node_attributes"][attr.dot_name]["data_type_str"] = (
+                attr.get_datatype_str()
+            )
             out_dict["node_attributes"][attr.dot_name]["connected_to"] = [
                 c_attr.dot_name for c_attr in attr.connected_attributes
             ]
@@ -266,9 +266,9 @@ class GeneralLogicNode:
                 attr.attribute_name not in [constants.START, constants.COMPLETED]
                 and attr.value is not None
             ):
-                out_dict[self.node_name]["node_attributes"][
-                    attr.attribute_name
-                ] = attr.value
+                out_dict[self.node_name]["node_attributes"][attr.attribute_name] = (
+                    attr.value
+                )
 
         # If no node attributes were registered, no need to keep this key
         if not out_dict[self.node_name]["node_attributes"]:
@@ -645,13 +645,13 @@ class GeneralLogicNode:
 
         for attribute in self.all_attributes:
             if attribute.attribute_name == attribute_name:
-                if attribute.data_type == str:
+                if attribute.data_type is str:
                     attribute.set_value(value_str)
-                elif attribute.data_type == float:
+                elif attribute.data_type is float:
                     attribute.set_value(float(value_str))
-                elif attribute.data_type == int:
+                elif attribute.data_type is int:
                     attribute.set_value(int(value_str))
-                elif attribute.data_type == bool:
+                elif attribute.data_type is bool:
                     if value_str in ["0", "1"]:
                         attribute.set_value(bool(int(value_str)))
                     elif value_str.lower() in ["false", "true"]:

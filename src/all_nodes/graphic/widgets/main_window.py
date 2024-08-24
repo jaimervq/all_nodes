@@ -48,6 +48,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         )
 
         # Load UI
+        print(">>>", os.path.join(root_dir_path, "ui"))
         file = QtCore.QFile(r"ui:all_nodes.ui")
         file.open(QtCore.QFile.ReadOnly)
         loader = QtUiTools.QUiLoader()
