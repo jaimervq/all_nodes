@@ -11,9 +11,9 @@
     </a>
     <img alt="Closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=plastic">
     <br>
-    <img alt="PyPI - Version" src="https://img.shields.io/pypi/v/all-nodes">
-    <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/all-nodes">
-    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/all-nodes">
+    <img alt="PyPI - Version" src="https://img.shields.io/pypi/v/all-nodes?style=plastic">
+    <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/all-nodes?style=plastic">
+    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/all-nodes?style=plastic">
 </h1>
 <h3 align="center">
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-features>Features</a> • 
