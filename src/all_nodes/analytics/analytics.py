@@ -33,9 +33,9 @@ mongo_client = None
 try:
     mongo_client = MongoClient(CONNECTION_STRING)
     LOGGER.debug(mongo_client.admin.command("ping"))
-    LOGGER.debug(f"Connected to MongoDB for analytics, username: {DB_USERNAME}")
+    LOGGER.info(f"Connected to MongoDB for analytics, username: {DB_USERNAME}")
 except Exception:
-    LOGGER.debug("No statistics will be submitted")
+    LOGGER.info("No statistics will be submitted!")
 
 
 # -------------------------------- METHODS -------------------------------- #
@@ -108,8 +108,8 @@ def process_analytics():
         [
             {"$match": {"run_date": {"$ne": None}}},
             {"$group": {"_id": "$run_date", "count": {"$sum": 1}}},
-            {"$sort": {"run_date": 1}},
-            {"$limit": 30},
+            {"$sort": {"_id": 1}},
+            {"$limit": 35},
         ]
     )
 
@@ -124,6 +124,7 @@ def process_analytics():
         for tick in ax.get_xticklabels():
             tick.set_rotation(45)
             tick.set_horizontalalignment("right")
+            tick.set_fontsize(9)
         ax.set_ylabel("Amount of nodes run")
         ax.set_title("Recent usage")
 
@@ -187,7 +188,9 @@ def process_analytics():
     if res:
         df = pl.DataFrame(list(res))
 
-        df_grouped = df.group_by(["class_name", "run_date"]).count()
+        df_grouped = df.group_by(
+            ["class_name", "run_date"], maintain_order=True
+        ).count()
 
         node_names = df_grouped["class_name"].to_list()
         failed_date = df_grouped["run_date"].to_list()
@@ -231,7 +234,11 @@ def process_analytics():
     )
 
     if res:
-        df_grouped = df.group_by(["class_name", "run_date"]).count()
+        df = pl.DataFrame(list(res))
+
+        df_grouped = df.group_by(
+            ["class_name", "run_date"], maintain_order=True
+        ).count()
 
         node_names = df_grouped["class_name"].to_list()
         failed_date = df_grouped["run_date"].to_list()

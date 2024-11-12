@@ -29,10 +29,16 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Env vars LINUX
+      - name: Install setuptools, twine, wheel
         run: |
-          parentdir="$(dirname `pwd`)";
-          echo "PYTHONPATH=$parentdir:$PYTHONPATH" >> $GITHUB_ENV
+          pip install --upgrade pip
+          pip install setuptools twine wheel
+
+      - name: Create distribution
+        run: python setup.py sdist bdist_wheel
+
+      - name: Install package
+        run: python -m pip install .
 
       - name: Run analytics
         run: |
