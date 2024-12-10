@@ -54,6 +54,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.middle_pressed = False
         self.left_pressed = False
 
+        self.feedback_lines = []
         self.feedback_line = QtWidgets.QLineEdit(parent=self)
         self.feedback_line.setReadOnly(True)
         self.feedback_line.setFont(QtGui.QFont("arial", 12))
@@ -121,7 +122,13 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
             message (str): message to display
             level (int): level of the message
         """
-        effect = QtWidgets.QGraphicsOpacityEffect(self.feedback_line)
+        new_feedback_line = QtWidgets.QLineEdit(parent=self)
+        new_feedback_line.setAcceptDrops(False)
+        new_feedback_line.setReadOnly(True)
+        new_feedback_line.setFont(QtGui.QFont("arial", 12))
+        new_feedback_line.hide()
+
+        effect = QtWidgets.QGraphicsOpacityEffect(new_feedback_line)
         anim = QtCore.QPropertyAnimation(effect, b"opacity", parent=self)
         anim.setStartValue(1)
         anim.setEndValue(0)
@@ -130,31 +137,40 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         if level == logging.DEBUG:
             if not constants.IN_DEV:
                 return
-            self.feedback_line.setStyleSheet(
+            new_feedback_line.setStyleSheet(
                 "color:cyan; background-color:transparent; border:none"
             )
             message = "[DEBUG] " + message
         elif level == logging.INFO:
-            self.feedback_line.setStyleSheet(
+            new_feedback_line.setStyleSheet(
                 "color:lime; background-color:transparent; border:none"
             )
             message = "[INFO] " + message
         elif level == logging.WARNING:
-            self.feedback_line.setStyleSheet(
+            new_feedback_line.setStyleSheet(
                 "color:orange; background-color:transparent; border:none"
             )
             message = "[WARNING] " + message
         elif level == logging.ERROR:
-            self.feedback_line.setStyleSheet(
+            new_feedback_line.setStyleSheet(
                 "color:red; background-color:transparent; border:none"
             )
             message = "[ERROR] " + message
             anim.setDuration(8000)
 
-        self.feedback_line.show()
-        self.feedback_line.setText(message)
-        self.feedback_line.setGraphicsEffect(effect)
+        new_feedback_line.show()
+        new_feedback_line.setText(message)
+        new_feedback_line.setGraphicsEffect(effect)
         anim.start()
+
+        new_feedback_line.setFixedSize(self.width() / 3, 30)
+        self.feedback_lines.insert(0, new_feedback_line)
+
+        if len(self.feedback_lines) > 4:
+            self.feedback_lines.pop()
+
+        for line in self.feedback_lines:
+            line.move(25, self.height() - 50 - self.feedback_lines.index(line) * 30)
 
     def move_search_bar(self, x, y):
         """
@@ -173,8 +189,9 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.hourglass_animation.setFixedSize(200, 200)
         self.movie.setScaledSize(QtCore.QSize(200, 200))
 
-        self.feedback_line.move(25, self.height() - 50)
-        self.feedback_line.setFixedSize(self.width(), 30)
+        for line in self.feedback_lines:
+            line.move(25, self.height() - 50 - self.feedback_lines.index(line) * 30)
+            line.setFixedSize(self.width() / 3, 30)
 
         self.reset_btn.move(self.width() - 380, self.height() - 55)
         self.run_btn.move(self.width() - 200, self.height() - 55)
