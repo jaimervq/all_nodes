@@ -218,13 +218,15 @@ class LogicScene:
             )
         elif source_attr is None:
             raise LogicSceneError(
-                "Cannot connect! {} -> {}, source attribute '{}' does not exist"
-                "".format(source_attr_name, target_attr_name, source_attr_name)
+                "Cannot connect! {} -> {}, source attribute '{}' does not exist".format(
+                    source_attr_name, target_attr_name, source_attr_name
+                )
             )
         elif target_attr is None:
             raise LogicSceneError(
-                "Cannot connect! {} -> {}, target attribute '{}' does not exist"
-                "".format(source_attr_name, target_attr_name, target_attr_name)
+                "Cannot connect! {} -> {}, target attribute '{}' does not exist".format(
+                    source_attr_name, target_attr_name, target_attr_name
+                )
             )
 
     # SAVE AND LOAD ----------------------
@@ -291,8 +293,7 @@ class LogicScene:
 
             if "nodes" in scene_dict:
                 file.write(
-                    "\n# Nodes section: overall list of nodes to be created\n"
-                    "nodes:\n"
+                    "\n# Nodes section: overall list of nodes to be created\nnodes:\n"
                 )
                 yaml.dump(scene_dict["nodes"], file, sort_keys=True)
 

@@ -85,14 +85,10 @@ class NodeTesting(unittest.TestCase):
         n_s = general_input.StrInput()
         n_d = miscellaneous.GetDictKey()
 
-        print(n_s.get_input_attrs())
-
         n_s.set_attribute_value("internal_str", "test")
         n_s.connect_attribute("out_str", n_d, "key")
         n_d.set_attribute_value("in_dict", {"test": 100})
         n_s.run_chain()
-
-        print(">>>", n_d["out"].get_value())
         assert n_d["out"].get_value() == 100
 
         assert n_d.get_node_full_dict()

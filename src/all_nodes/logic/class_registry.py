@@ -312,7 +312,7 @@ class ClassRegistry:
             for future in concurrent.futures.as_completed(futures):
                 cls._all_classes.update(future.result())
 
-        LOGGER.info(f"Total time scanning classes: {time.time() -t1}s.")
+        LOGGER.info(f"Total time scanning classes: {time.time() - t1}s.")
         GS.signals.class_scanning_finished.emit()
 
     def get_all_classes(cls):

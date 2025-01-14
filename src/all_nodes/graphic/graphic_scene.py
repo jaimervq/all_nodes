@@ -30,6 +30,7 @@ from all_nodes import utils
 from all_nodes.graphic.widgets.attribute_picker import AttributePicker
 from all_nodes.graphic.widgets.class_searcher import ClassSearcher
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+from all_nodes.graphic.widgets.small_widgets import FeedbackLineEdit
 
 
 GS = GlobalSignaler()
@@ -122,11 +123,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
             message (str): message to display
             level (int): level of the message
         """
-        new_feedback_line = QtWidgets.QLineEdit(parent=self)
-        new_feedback_line.setAcceptDrops(False)
-        new_feedback_line.setReadOnly(True)
-        new_feedback_line.setFont(QtGui.QFont("arial", 12))
-        new_feedback_line.hide()
+        new_feedback_line = FeedbackLineEdit(parent=self)
 
         effect = QtWidgets.QGraphicsOpacityEffect(new_feedback_line)
         anim = QtCore.QPropertyAnimation(effect, b"opacity", parent=self)
@@ -163,10 +160,10 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         new_feedback_line.setGraphicsEffect(effect)
         anim.start()
 
-        new_feedback_line.setFixedSize(self.width() / 3, 30)
+        new_feedback_line.setFixedSize(self.width(), 30)
         self.feedback_lines.insert(0, new_feedback_line)
 
-        if len(self.feedback_lines) > 4:
+        if len(self.feedback_lines) > 5:
             self.feedback_lines.pop()
 
         for line in self.feedback_lines:
@@ -191,7 +188,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 
         for line in self.feedback_lines:
             line.move(25, self.height() - 50 - self.feedback_lines.index(line) * 30)
-            line.setFixedSize(self.width() / 3, 30)
+            line.setFixedSize(self.width(), 30)
 
         self.reset_btn.move(self.width() - 380, self.height() - 55)
         self.run_btn.move(self.width() - 200, self.height() - 55)
@@ -252,9 +249,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
 
 # -------------------------------- CUSTOM SCENE CLASS -------------------------------- #
 class CustomScene(QtWidgets.QGraphicsScene):
-    # TODO rethink if these could go in the GLOBAL_SIGNALER
-    dropped_node = QtCore.Signal(QtCore.QPoint)
-
     def __init__(self, context=None):
         QtWidgets.QGraphicsScene.__init__(self)
 
@@ -1372,7 +1366,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 if os.path.isfile(url.toLocalFile()):
                     self.load_from_file(url.toLocalFile())
         else:
-            self.dropped_node.emit(
+            GS.signals.dropped_node.emit(
                 self.parent().mapFromScene(event.scenePos()) - QtCore.QPoint(20, 20)
             )
         QtWidgets.QGraphicsScene.dropEvent(self, event)
