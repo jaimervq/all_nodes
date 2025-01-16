@@ -29,6 +29,7 @@ class GlobalSignals(QtCore.QObject):
     context_expansion_requested = QtCore.Signal(str)
 
     # Node creation ----------------------
+    dropped_node = QtCore.Signal(QtCore.QPoint)
     node_creation_requested = QtCore.Signal(QtCore.QPoint, str)
 
     # Feedback ----------------------

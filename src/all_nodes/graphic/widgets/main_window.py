@@ -48,7 +48,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         )
 
         # Load UI
-        print(">>>", os.path.join(root_dir_path, "ui"))
         file = QtCore.QFile(r"ui:all_nodes.ui")
         file.open(QtCore.QFile.ReadOnly)
         loader = QtUiTools.QUiLoader()
@@ -126,6 +125,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         GS.signals.class_scanning_finished.connect(self.populate_annotations)
 
         # Global signaler
+        GS.signals.dropped_node.connect(self.add_node_to_current)
         GS.signals.node_creation_requested.connect(self.add_node_to_current)
 
         GS.signals.tab_names_refresh_requested.connect(self.refresh_tab_names)
@@ -424,9 +424,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         graphics_scene.setSceneRect(-20000, -20000, 40000, 40000)
         graphics_scene.setParent(graphics_view)
-        graphics_scene.dropped_node.connect(
-            self.add_node_to_current
-        )  # TODO use the GS?
         GS.signals.main_screen_feedback.connect(graphics_view.show_feedback)
 
         if context:
