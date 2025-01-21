@@ -39,6 +39,10 @@ context_special_nodes:
     color: '#707070'
     default_icon: cube
 
+random_data:
+    color: '#4b007a'
+    default_icon: dice
+
 special_input:
     color: '#4b007a'
 

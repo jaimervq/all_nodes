@@ -158,6 +158,8 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         new_feedback_line.show()
         new_feedback_line.setText(message)
         new_feedback_line.setGraphicsEffect(effect)
+        new_feedback_line.stackUnder(self.reset_btn)
+        new_feedback_line.stackUnder(self.run_btn)
         anim.start()
 
         new_feedback_line.setFixedSize(self.width(), 30)

@@ -78,7 +78,7 @@ class ForEachBegin(GeneralLogicNode):
         self.success = constants.IN_LOOP
 
         for i in range(num_iterations):
-            LOGGER.info(f"{Fore.CYAN}Iteration: {i}{Style.RESET_ALL}")
+            LOGGER.info(f"{Fore.CYAN}{self.node_name}, iteration {i}{Style.RESET_ALL}")
 
             if execute_connected:
                 for node in self.out_connected_nodes():

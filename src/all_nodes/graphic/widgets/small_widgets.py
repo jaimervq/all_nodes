@@ -33,3 +33,7 @@ class FeedbackLineEdit(QtWidgets.QLineEdit):
             + event.pos()
             - QtCore.QPoint(20, 20)
         )
+
+    def mousePressEvent(self, event):
+        event.ignore()
+        super().mousePressEvent(event)
