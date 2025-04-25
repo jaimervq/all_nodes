@@ -7,7 +7,7 @@
         <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic"> 
     </a>
     <a href=https://github.com/astral-sh/ruff> 
-        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic&label=Code style"> 
+        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic&label=Style"> 
     </a>
     <img alt="Closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=plastic">
     <br>
