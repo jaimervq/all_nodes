@@ -1,13 +1,13 @@
 <h1 align="center">
     <img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/all_nodes_banner.png"/><br>
     <a href=https://github.com/jaimervq/all_nodes/actions/workflows/tests.yml> 
-        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=Tests&style=plastic"> 
+        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=tests&style=plastic"> 
     </a>
     <a href=https://opensource.org/licenses/MIT> 
-        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic"> 
+        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic&label=license"> 
     </a>
     <a href=https://github.com/astral-sh/ruff> 
-        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic&label=Style"> 
+        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic&label=style"> 
     </a>
     <img alt="Closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=plastic">
     <br>
@@ -29,7 +29,7 @@ It also aims to prevent re-duplication and re-writing of code inside of a projec
 Install from PyPI with:
 ```pip install all-nodes```
 
-And then run with
+And then run with:
 `all-nodes`
 
 # 💡 Features
