@@ -565,7 +565,6 @@ class LogicSceneError(Exception):
 class Worker(QtCore.QRunnable):
     def __init__(self, fn, *args, **kwargs):
         super(Worker, self).__init__()
-        # Store constructor arguments (re-used for processing)
         self.fn = fn
         self.args = args
         self.kwargs = kwargs

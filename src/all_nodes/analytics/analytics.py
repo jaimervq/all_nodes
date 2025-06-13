@@ -15,33 +15,39 @@ from all_nodes import constants
 from all_nodes import utils
 
 
-LOGGER = utils.get_logger(__name__)
-
-
-DB_READ_AND_WRITE_PASSWORD = os.getenv("DB_READ_AND_WRITE_PASSWORD")
-DB_USERNAME = "jaimervq" if DB_READ_AND_WRITE_PASSWORD else "readonly_user"
-DB_PASSWORD = DB_READ_AND_WRITE_PASSWORD or "BqrWK1TzOmLfcqq2"
-CONNECTION_STRING = f"mongodb+srv://{DB_USERNAME}:{DB_PASSWORD}@cluster0.rud2hei.mongodb.net/?retryWrites=true&w=majority"
-
 ENVIRONMENT = constants.DB_ENV
 ALL_NODES_DB = "all_nodes"
 ALL_NODES_TABLE = f"node_usage_{ENVIRONMENT}"
 
+DB_READ_AND_WRITE_PASSWORD = os.getenv("DB_READ_AND_WRITE_PASSWORD")
+DB_USERNAME = "read_and_write_user" if DB_READ_AND_WRITE_PASSWORD else "readonly_user"
+DB_PASSWORD = DB_READ_AND_WRITE_PASSWORD or "jwNXfEqOBCiAPpbh"
+CONNECTION_STRING = (
+    f"mongodb+srv://{DB_USERNAME}:{DB_PASSWORD}@cluster0.hdqsbww.mongodb.net"
+)
 
-# -------------------------------- CLIENT -------------------------------- #
-mongo_client = None
-try:
-    mongo_client = MongoClient(CONNECTION_STRING)
-    LOGGER.debug(mongo_client.admin.command("ping"))
-    LOGGER.info(f"Connected to MongoDB for analytics, username: {DB_USERNAME}")
-except Exception:
-    LOGGER.info("No statistics will be submitted!")
+LOGGER = utils.get_logger(__name__)
 
 
 # -------------------------------- METHODS -------------------------------- #
 def get_collection():
-    db = mongo_client[ALL_NODES_DB]
-    return db[ALL_NODES_TABLE]
+    mongo_client = None
+    try:
+        mongo_client = MongoClient(
+            CONNECTION_STRING,
+            serverSelectionTimeoutMS=3000,
+            connectTimeoutMS=3000,
+            socketTimeoutMS=3000,
+        )
+        LOGGER.debug(mongo_client.admin.command("ping"))
+        LOGGER.info(f"Connected to MongoDB for analytics, username: {DB_USERNAME}")
+    except Exception as e:
+        LOGGER.info(
+            f"Cannot connect to MongoDB, no statistics will be submitted! ({e})"
+        )
+        return
+
+    return mongo_client[ALL_NODES_DB][ALL_NODES_TABLE]
 
 
 def make_query(query_dict: dict):
@@ -54,7 +60,10 @@ def make_query(query_dict: dict):
         pymongo.cursor.Cursor
     """
     table = get_collection()
-    return table.find(query_dict)
+    if table is not None:
+        return table.find(query_dict)
+
+    return []
 
 
 def make_query_aggregation(pipeline: list):
@@ -67,7 +76,10 @@ def make_query_aggregation(pipeline: list):
         pymongo.cursor.Cursor
     """
     table = get_collection()
-    return table.aggregate(pipeline)
+    if table is not None:
+        return table.aggregate(pipeline)
+
+    return []
 
 
 def submit_bulk_analytics(node_attrs_list):
@@ -85,8 +97,9 @@ def submit_bulk_analytics(node_attrs_list):
         return
 
     table = get_collection()
-    LOGGER.info(f"Submitting stats to {ALL_NODES_DB}.{ALL_NODES_TABLE}...")
-    table.insert_many(node_attrs_list)
+    if table is not None:
+        LOGGER.info(f"Submitting stats to {ALL_NODES_DB}.{ALL_NODES_TABLE}...")
+        table.insert_many(node_attrs_list)
 
 
 def process_analytics():
