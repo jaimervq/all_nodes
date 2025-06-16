@@ -271,10 +271,3 @@ n_1["env_variable_value"].connect_to_other(n_2["in_object_0"])
 # Run!
 logic_scene.run_all_nodes()
 ```
-
-# 📈 Analytics
-Automatically generated once a month **(for personal use, they are not gathered from any other user)**
-![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/analytics/recent_usage.png)
-![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/analytics/most_used.png)
-![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/analytics/errored.png)
-![](https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/analytics/failed.png)

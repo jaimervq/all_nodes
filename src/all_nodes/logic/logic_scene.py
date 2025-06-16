@@ -504,6 +504,9 @@ class LogicScene:
 
         # Analytics
         # TODO separate into own method in case analytics crash
+        if self.context:
+            return
+
         LOGGER.info("Gathering analytics")
         node_properties_list = []
         for node in self.all_logic_nodes:
@@ -513,6 +516,7 @@ class LogicScene:
                     node.internal_scene.all_logic_nodes
                 ):  # TODO make this properly recursive
                     node_properties_list.append(i_node.get_node_full_dict())
+
         analytics.submit_bulk_analytics(node_properties_list)
 
     def _run_list_of_nodes(self, nodes_to_execute: list):
