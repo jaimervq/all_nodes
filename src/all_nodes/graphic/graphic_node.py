@@ -18,6 +18,7 @@ from PySide2 import QtSvg
 from all_nodes import constants
 from all_nodes import utils
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+from all_nodes.graphic.widgets.small_widgets import NodeHelpWindow
 
 
 GS = GlobalSignaler()
@@ -529,7 +530,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             # Setup a widget for this attr
             gui_input_type = gui_internals_inputs.get(attr_name).get("gui_type")
 
-            if gui_input_type == constants.InputsGUI.STR_INPUT:
+            if gui_input_type in [
+                constants.InputsGUI.STR_INPUT,
+                constants.InputsGUI.STR_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QLineEdit(parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -553,7 +557,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 self.input_widgets.append(new_input_widget)
 
-            elif gui_input_type == constants.InputsGUI.MULTILINE_STR_INPUT:
+            elif gui_input_type in [
+                constants.InputsGUI.MULTILINE_STR_INPUT,
+                constants.InputsGUI.MULTILINE_STR_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QPlainTextEdit(parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -577,7 +584,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 self.input_widgets.append(new_input_widget)
 
-            elif gui_input_type == constants.InputsGUI.DICT_INPUT:
+            elif gui_input_type in [
+                constants.InputsGUI.DICT_INPUT,
+                constants.InputsGUI.DICT_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QPlainTextEdit(parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -601,7 +611,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 self.input_widgets.append(new_input_widget)
 
-            elif gui_input_type == constants.InputsGUI.LIST_INPUT:
+            elif gui_input_type in [
+                constants.InputsGUI.LIST_INPUT,
+                constants.InputsGUI.LIST_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QLineEdit(parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -625,7 +638,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 self.input_widgets.append(new_input_widget)
 
-            elif gui_input_type == constants.InputsGUI.BOOL_INPUT:
+            elif gui_input_type in [
+                constants.InputsGUI.BOOL_INPUT,
+                constants.InputsGUI.BOOL_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QCheckBox("False", parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -649,7 +665,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 self.input_widgets.append(new_input_widget)
 
-            elif gui_input_type == constants.InputsGUI.INT_INPUT:
+            elif gui_input_type in [
+                constants.InputsGUI.INT_INPUT,
+                constants.InputsGUI.INT_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QSpinBox(parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -671,7 +690,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 self.input_widgets.append(new_input_widget)
 
-            elif gui_input_type == constants.InputsGUI.FLOAT_INPUT:
+            elif gui_input_type in [
+                constants.InputsGUI.FLOAT_INPUT,
+                constants.InputsGUI.FLOAT_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QDoubleSpinBox(parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -693,7 +715,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 self.input_widgets.append(new_input_widget)
 
-            elif gui_input_type == constants.InputsGUI.OPTION_INPUT:
+            elif gui_input_type in [
+                constants.InputsGUI.OPTION_INPUT,
+                constants.InputsGUI.OPTION_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QComboBox(parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -723,7 +748,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
                 self.input_widgets.append(new_input_widget)
 
-            elif gui_input_type == constants.InputsGUI.TUPLE_INPUT:
+            elif gui_input_type in [
+                constants.InputsGUI.TUPLE_INPUT,
+                constants.InputsGUI.TUPLE_INPUT.value,
+            ]:
                 new_input_widget = QtWidgets.QLineEdit(parent=None)
                 new_input_widget.setObjectName(attr_name)
                 new_input_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -787,7 +815,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             # Create widget for attribute
             gui_preview_type = gui_internals_previews.get(attr_name).get("gui_type")
 
-            if gui_preview_type == constants.PreviewsGUI.STR_PREVIEW:
+            if gui_preview_type in [
+                constants.PreviewsGUI.STR_PREVIEW,
+                constants.PreviewsGUI.STR_PREVIEW.value,
+            ]:
                 new_preview_widget = QtWidgets.QLineEdit(parent=None)
                 new_preview_widget.setObjectName(attr_name)
                 new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -809,7 +840,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
                 self.preview_widgets.append(new_preview_widget)
 
-            elif gui_preview_type == constants.PreviewsGUI.MULTILINE_STR_PREVIEW:
+            elif gui_preview_type in [
+                constants.PreviewsGUI.MULTILINE_STR_PREVIEW,
+                constants.PreviewsGUI.MULTILINE_STR_PREVIEW.value,
+            ]:
                 new_preview_widget = QtWidgets.QPlainTextEdit(parent=None)
                 new_preview_widget.setObjectName(attr_name)
                 new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -831,7 +865,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
                 self.preview_widgets.append(new_preview_widget)
 
-            elif gui_preview_type == constants.PreviewsGUI.DICT_PREVIEW:
+            elif gui_preview_type in [
+                constants.PreviewsGUI.DICT_PREVIEW,
+                constants.PreviewsGUI.DICT_PREVIEW.value,
+            ]:
                 new_preview_widget = QtWidgets.QPlainTextEdit(parent=None)
                 new_preview_widget.setObjectName(attr_name)
                 new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -853,7 +890,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
                 self.preview_widgets.append(new_preview_widget)
 
-            elif gui_preview_type == constants.PreviewsGUI.IMAGE_PREVIEW:
+            elif gui_preview_type in [
+                constants.PreviewsGUI.IMAGE_PREVIEW,
+                constants.PreviewsGUI.IMAGE_PREVIEW.value,
+            ]:
                 new_preview_widget = QtWidgets.QLabel(parent=None)
                 new_preview_widget.setObjectName(attr_name)
                 new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
@@ -1050,10 +1090,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             elif isinstance(w, QtWidgets.QComboBox):
                 w.setCurrentText(value)
             elif isinstance(w, QtWidgets.QLabel):
-                im2 = value.convert("RGB")
-                data = im2.tobytes("raw", "RGB")
+                data = value.tobytes("raw", "RGB")
                 image = QtGui.QImage(
-                    data, im2.width, im2.height, QtGui.QImage.Format_RGB888
+                    data, value.width, value.height, QtGui.QImage.Format_RGB888
                 )
                 pix = QtGui.QPixmap.fromImage(image)
                 w.setPixmap(
@@ -1128,16 +1167,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         """
         Show a window with the help/usage of this node class.
         """
-        help_text = self.logic_node.get_node_html_help()
-        info_window = QtWidgets.QMessageBox()
-        info_window.setText(help_text)
-        info_window.setWindowTitle("Help")
-        info_window.setIcon(QtWidgets.QMessageBox.Information)
-
-        f = QtCore.QFile(r"ui:stylesheet.qss")
-        with open(f.fileName(), "r") as s:
-            info_window.setStyleSheet(s.read())
-
+        info_window = NodeHelpWindow()
+        info_window.set_text(self.logic_node.get_node_html_help())
+        info_window.set_run_text(self.logic_node.get_run_code())
         info_window.exec_()
 
     def toggle_activated(self):

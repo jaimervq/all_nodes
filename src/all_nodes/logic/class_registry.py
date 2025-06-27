@@ -5,6 +5,7 @@ __credits__ = []
 __license__ = "MIT License"
 
 
+import builtins
 import concurrent.futures
 import importlib
 import inspect
@@ -13,6 +14,8 @@ from pathlib import Path
 import time
 
 from PySide2 import QtCore
+
+import toml
 import yaml
 
 from all_nodes import constants
@@ -20,6 +23,15 @@ from all_nodes import utils
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 
+TYPE_MAP = {
+    "str": str,
+    "int": int,
+    "float": float,
+    "bool": bool,
+    "list": list,
+    "dict": dict,
+    "object": object,
+}
 
 GS = GlobalSignaler()
 
@@ -41,17 +53,19 @@ CLASSES_TO_SKIP = [
 def register_node_lib(lib_path):
     classes_dict = dict()
 
-    all_py = []
+    all_files = []
     for root, _, files in os.walk(lib_path, topdown=True):
         for file in files:
             p = os.path.join(root, file)
             if p.endswith(".py") and "__init__" not in p:
-                all_py.append(p)
+                all_files.append(p)
+            elif p.endswith(".toml"):
+                all_files.append(p)
 
-    for py_path in all_py:
-        node_library_path = os.path.dirname(py_path)
+    for module_path in all_files:
+        node_library_path = os.path.dirname(module_path)
         node_library_name = os.path.basename(node_library_path)
-        module_filename = os.path.basename(py_path)
+        module_filename = os.path.basename(module_path)
         module_name = os.path.splitext(module_filename)[0]
         icons_path = os.path.join(node_library_path, "icons")
         styles_path = os.path.join(node_library_path, "styles.yml")
@@ -80,20 +94,33 @@ def register_node_lib(lib_path):
             with open(styles_path, "r") as stream:
                 node_styles = yaml.safe_load(stream)
 
-        # CLASSES SCANNING
-        loaded_spec = importlib.util.spec_from_file_location(
-            module_name,
-            py_path,
-        )
-        loaded_module = importlib.util.module_from_spec(loaded_spec)
-        loaded_spec.loader.exec_module(loaded_module)
-        class_members = inspect.getmembers(loaded_module, inspect.isclass)
-        if not class_members:
-            return
-
-        classes_dict[node_library_name][module_name] = dict()
+        class_members = []
         module_classes = list()
         class_counter = 0
+        if module_path.endswith(".py"):
+            loaded_spec = importlib.util.spec_from_file_location(
+                module_name,
+                module_path,
+            )
+            loaded_module = importlib.util.module_from_spec(loaded_spec)
+            loaded_spec.loader.exec_module(loaded_module)
+            class_members = inspect.getmembers(loaded_module, inspect.isclass)
+            if not class_members:
+                continue
+
+            classes_dict[node_library_name][module_name] = dict()
+
+        elif module_path.endswith(".toml"):
+            classes_config = toml.load(module_path)
+
+            for class_name, class_def in classes_config.items():
+                cls_object = TOMLMeta(
+                    class_name, (GeneralLogicNode,), {}, config=class_def
+                )
+                class_members.append((class_name, cls_object))
+
+            classes_dict[node_library_name][module_name] = dict()
+
         for name, cls_object in class_members:
             if (
                 not issubclass(cls_object, GeneralLogicNode)
@@ -120,7 +147,7 @@ def register_node_lib(lib_path):
             setattr(cls_object, "ICON_PATH", icon_path)
 
             # Class name and object
-            setattr(cls_object, "FILEPATH", py_path)  # TODO not ideal?
+            setattr(cls_object, "FILEPATH", module_path)  # TODO not ideal?
             module_classes.append((name, cls_object))
             class_counter += 1
 
@@ -133,7 +160,7 @@ def register_node_lib(lib_path):
         classes_dict[node_library_name][module_name]["module_filename"] = (
             module_filename
         )
-        classes_dict[node_library_name][module_name]["module_full_path"] = py_path
+        classes_dict[node_library_name][module_name]["module_full_path"] = module_path
         classes_dict[node_library_name][module_name]["classes"] = module_classes
 
         classes_dict[node_library_name][module_name]["color"] = (
@@ -146,7 +173,7 @@ def register_node_lib(lib_path):
                 ].get("color", constants.DEFAULT_NODE_COLOR)
         LOGGER.debug(
             "Scanned {} for classes: found {}".format(
-                os.path.basename(py_path), class_counter
+                os.path.basename(module_path), class_counter
             )
         )
 
@@ -172,6 +199,44 @@ def get_all_node_libs():
         )
 
     return libraries_path
+
+
+class TOMLMeta(type):
+    def __new__(mcs, name, bases, namespace, config=None):
+        if config is None:
+            raise ValueError("Missing config for class creation")
+
+        attrs = config.get("attributes", {})
+        methods = config.get("methods", {})
+
+        # Handle attributes with type and default
+        for attr_name, attr_info in attrs.items():
+            if isinstance(attr_info, dict) or isinstance(attr_info, list):
+                namespace[attr_name] = apply_type_map(attr_info)
+            else:
+                namespace[attr_name] = attr_info  # raw fallback
+
+        # Handle methods
+        for method_name, method_def in methods.items():
+            args = method_def.get("args", [])
+            body = method_def.get("body", "")
+            args_str = ", ".join(["self"] + args)
+
+            method_src = f"def {method_name}({args_str}):\n"
+            method_src += "\n".join(f"    {line}" for line in body.splitlines())
+
+            method_ns = {}
+            exec(method_src, {}, method_ns)
+            namespace[method_name] = method_ns[method_name]
+            if method_name == "run":
+                namespace["RUN_SNAPSHOT"] = method_src
+
+        cls = super().__new__(mcs, name, bases, namespace)
+
+        # Register globally
+        builtins.__dict__[name] = cls
+
+        return cls
 
 
 # -------------------------------- SCENES -------------------------------- #
@@ -409,3 +474,22 @@ class LibWorker(QtCore.QRunnable):
         self.dict_lib = register_node_lib(path)
         self.finished = True
         self.signaler.finished.emit()
+
+
+# -------------------------------- UTILITY -------------------------------- #
+def apply_type_map(data):
+    """
+    Recursively replace any {"type": "str"} with {"type": str}, using TYPE_MAP.
+    """
+    if isinstance(data, dict):
+        new = {}
+        for key, value in data.items():
+            if key == "type" and isinstance(value, str):
+                new[key] = TYPE_MAP.get(value.lower(), value)
+            else:
+                new[key] = apply_type_map(value)
+        return new
+    elif isinstance(data, list):
+        return [apply_type_map(item) for item in data]
+    else:
+        return data

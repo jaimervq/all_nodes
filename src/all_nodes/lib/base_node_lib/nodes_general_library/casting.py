@@ -96,3 +96,15 @@ class MultiToStr(GeneralLogicNode):
         in_object = self.get_attribute_value("in_object")
         if in_object is not None:
             self.set_output("out_object_to_str", str(in_object))
+
+
+class FLoatToInt(GeneralLogicNode):
+    INPUTS_DICT = {
+        "in_float": {"type": float},
+    }
+
+    OUTPUTS_DICT = {"out_int": {"type": int}}
+
+    def run(self):
+        in_float = self.get_attribute_value("in_float")
+        self.set_output("out_int", int(in_float))

@@ -1,0 +1,33 @@
+# UUID4 generator
+UUID4Gen.attributes.HELP = "Generate a UUID4"
+
+[UUID4Gen.attributes.OUTPUTS_DICT.out_uuid]
+type = "str"
+
+[UUID4Gen.methods.run]
+args = []
+body = """
+import uuid
+self.set_output("out_uuid", str(uuid.uuid4()))
+"""
+
+# UUID checker
+[UUIDCheck.attributes]
+HELP = "Check if a string is a valid UUID"
+
+[UUIDCheck.attributes.INPUTS_DICT.text]
+type = "str"
+
+[UUIDCheck.attributes.OUTPUTS_DICT.is_valid]
+type = "bool"
+
+[UUIDCheck.methods.run]
+args = []
+body = """
+import uuid
+try:
+    uuid.UUID(self.get_input("text"))
+    self.set_output("is_valid", True)
+except ValueError:
+    self.set_output("is_valid", False)
+"""

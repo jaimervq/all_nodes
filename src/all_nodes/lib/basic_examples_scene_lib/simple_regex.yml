@@ -27,8 +27,8 @@ nodes:
 
 # Connections section: connections to be done between nodes
 connections:
-- RegexMatch_1.match -> PrintToConsole_1.in_object_0
-- StrInput_1.out_str -> RegexMatch_1.in_str
+- RegexMatch_1.matched -> PrintToConsole_1.in_object_0
+- StrInput_1.out_str -> RegexMatch_1.text
 - StrInput_2.out_str -> RegexMatch_1.pattern
 
 
