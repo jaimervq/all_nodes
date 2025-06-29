@@ -159,7 +159,7 @@ class LogicSceneTesting(unittest.TestCase):
         utils.print_test_header("test_load_scene_from_alias")
 
         logic_scene = LogicScene()
-        logic_scene.load_from_file("simple_regex")
+        logic_scene.load_from_file("env_variables")
 
     def test_load_scene_from_alias_faulty(self):
         utils.print_test_header("test_load_scene_from_alias_faulty")
@@ -173,10 +173,10 @@ class LogicSceneTesting(unittest.TestCase):
         utils.print_test_header("test_execute_scene_from_alias")
 
         logic_scene = LogicScene()
-        logic_scene.load_from_file("simple_regex")
+        logic_scene.load_from_file("env_variables")
         logic_scene.run_all_nodes_batch()
 
-        assert len(logic_scene.gather_failed_nodes_logs()) == 0
+        assert len(logic_scene.gather_failed_nodes_logs()) == 1
         assert len(logic_scene.gather_errored_nodes_logs()) == 0
 
     def test_execute_scene_from_alias_2(self):

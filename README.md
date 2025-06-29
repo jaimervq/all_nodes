@@ -84,7 +84,7 @@ This folder has:
 
 - A `*node_lib` named folder with node libraries, in this case 2 libraries: `lib_1` and `lib_2`. Inside each library we can have:
 
-    - As many `py` modules as needed 
+    - As many `py` or `toml` modules as needed. The node classes are defined in these files.
     - A `styles.yml` file to define default styles for these modules (default colors, icons...)
     - A `icons` folder for the classes contained in the modules
 

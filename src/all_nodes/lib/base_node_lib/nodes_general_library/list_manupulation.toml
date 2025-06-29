@@ -1,0 +1,37 @@
+# Build a list from elements
+[BuildList.attributes]
+NICE_NAME = "Build list"
+
+[BuildList.attributes.INPUTS_DICT.in_object_0]
+type = "object"
+optional = true
+
+[BuildList.attributes.INPUTS_DICT.in_object_1]
+type = "object"
+optional = true
+
+[BuildList.attributes.INPUTS_DICT.in_object_2]
+type = "object"
+optional = true
+
+[BuildList.attributes.INPUTS_DICT.in_object_3]
+type = "object"
+optional = true
+
+[BuildList.attributes.INPUTS_DICT.in_object_4]
+type = "object"
+optional = true
+
+[BuildList.attributes.OUTPUTS_DICT.list]
+type = "list"
+optional = true
+
+[BuildList.methods.run]
+args = []
+body = '''
+out_list = []
+for i in range(5):
+    if self.get_input("in_object_" + str(i)) is not None:
+        out_list.append(self.get_input("in_object_" + str(i)))
+self.set_output("list", out_list)
+'''

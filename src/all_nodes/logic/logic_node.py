@@ -10,10 +10,13 @@ import ast
 from copy import deepcopy
 import datetime
 import getpass
+import html
+import inspect
 import os
 from pathlib import Path
 import pprint
 import re
+import textwrap
 import time
 import uuid
 
@@ -348,7 +351,9 @@ class GeneralLogicNode:
         for attr_name in self.INTERNALS_DICT:
             if self.INTERNALS_DICT[attr_name].get("gui_type") in list(
                 constants.InputsGUI
-            ):
+            ) or self.INTERNALS_DICT[attr_name].get("gui_type") in [
+                member.value for member in constants.InputsGUI
+            ]:
                 gui_internals_inputs[attr_name] = self.INTERNALS_DICT[attr_name]
 
         return gui_internals_inputs
@@ -364,7 +369,9 @@ class GeneralLogicNode:
         for attr_name in self.INTERNALS_DICT:
             if self.INTERNALS_DICT[attr_name].get("gui_type") in set(
                 constants.PreviewsGUI
-            ):
+            ) or self.INTERNALS_DICT[attr_name].get("gui_type") in [
+                member.value for member in constants.PreviewsGUI
+            ]:
                 gui_internals_previews[attr_name] = self.INTERNALS_DICT[attr_name]
 
         return gui_internals_previews
@@ -576,6 +583,24 @@ class GeneralLogicNode:
                             attribute.get_datatype_str(),
                         )
                     )
+
+    def get_input(self, attribute_name: str):
+        """
+        Get an input attribute value.
+
+        Args:
+            attribute_name (str): name of the input attribute to set
+        """
+        for attr in self.all_attributes:
+            if (
+                attr.attribute_name == attribute_name
+                and attr.connector_type == constants.INPUT
+            ):
+                return self.get_attribute_value(attribute_name)
+
+        LOGGER.error(
+            "Error! No valid input attribute {} in the node".format(attribute_name)
+        )
 
     def set_input(self, attribute_name: str, value):
         """
@@ -1140,36 +1165,59 @@ class GeneralLogicNode:
         )
 
         if self.HELP:
-            help_text += f"<p style='white-space:pre'>HELP:<br>{self.HELP}"
+            help_text += f"<h4><br>HELP:</h4> {self.HELP}"
 
         help_text += (
-            "<h4><br>INPUTS_DICT:</h4><p style='white-space:pre; background-color:black'><code>"
-            + pprint.pformat(self.INPUTS_DICT, indent=2)
-            .replace(">", "&gt;")
-            .replace("<", "&lt;")
-            .replace("\n", "<br>")
-            + "</code></p>"
+            "<h4><br>INPUTS_DICT:</h4><code>"
+            + html.escape(
+                re.sub(
+                    r"<class '([^']+)'>",
+                    r"\1",
+                    pprint.pformat(self.INPUTS_DICT, indent=2),
+                )
+            )
+            + "</code>"
         )
 
         help_text += (
-            "<h4>OUTPUTS_DICT:</h4><p style='white-space:pre; background-color:black'><code>"
-            + pprint.pformat(self.OUTPUTS_DICT, indent=2)
-            .replace(">", "&gt;")
-            .replace("<", "&lt;")
-            .replace("\n", "<br>")
-            + "</code></p>"
+            "<h4>OUTPUTS_DICT:</h4><code>"
+            + html.escape(
+                re.sub(
+                    r"<class '([^']+)'>",
+                    r"\1",
+                    pprint.pformat(self.OUTPUTS_DICT, indent=2),
+                )
+            )
+            + "</code>"
         )
 
         help_text += (
-            "<h4>INTERNALS_DICT:</h4><p style='white-space:pre; background-color:black'><code>"
-            + pprint.pformat(self.INTERNALS_DICT, indent=2)
-            .replace(">", "&gt;")
-            .replace("<", "&lt;")
-            .replace("\n", "<br>")
-            + "</code></p>"
+            "<h4>INTERNALS_DICT:</h4><pre><code>"
+            + html.escape(
+                re.sub(
+                    r"<class '([^']+)'>",
+                    r"\1",
+                    pprint.pformat(self.INTERNALS_DICT, indent=2),
+                )
+            )
+            + "</code></pre>"
         )
 
         return help_text
+
+    def get_run_code(self):
+        run_body = ""
+        try:
+            run_body = textwrap.dedent(inspect.getsource(self.run)).strip()
+        except OSError:
+            run_body = self.RUN_SNAPSHOT
+
+        run_body = (
+            "<p style='white-space:pre; background-color:black'><code>"
+            + html.escape(run_body)
+            + "</code></p>"
+        )
+        return run_body
 
 
 class LogicNodeSignaler(QtCore.QObject):

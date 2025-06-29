@@ -23,7 +23,7 @@ nodes:
 - StrInput_3:
     class_name: StrInput
     node_attributes:
-      internal_str: USERNAME
+      internal_str: FAKE
     x_pos: -1409
     y_pos: -7
 - VAR_1:

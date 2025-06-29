@@ -13,7 +13,7 @@ from all_nodes.lib.base_node_lib.nodes_general_library import debug
 from all_nodes.lib.base_node_lib.nodes_general_library import file_reading
 from all_nodes.lib.base_node_lib.nodes_general_library import file_writing
 from all_nodes.lib.base_node_lib.nodes_general_library import folder_management
-from all_nodes.lib.base_node_lib.nodes_general_library import miscellaneous
+from all_nodes.lib.base_node_lib.nodes_general_library import dict_manipulation
 from all_nodes.lib.base_node_lib.nodes_general_library import general_input
 from all_nodes import utils
 
@@ -32,7 +32,7 @@ class NodeTesting(unittest.TestCase):
 
         n_1 = debug.EmptyNode()
         self.assertIsNotNone(n_1)
-        n_2 = miscellaneous.GetDictKey()
+        n_2 = dict_manipulation.GetDictKey()
         self.assertIsNotNone(n_2)
         n_3 = folder_management.CopyFoldersRecursive()
         self.assertIsNotNone(n_3)
@@ -43,7 +43,7 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_attribute_name")
 
-        n_1 = miscellaneous.GetDictKey()
+        n_1 = dict_manipulation.GetDictKey()
         in_dict_attr = n_1["in_dict"]
         self.assertRegex(in_dict_attr.dot_name, "GetDictKey_\d+\.in_dict")
 
@@ -54,7 +54,7 @@ class NodeTesting(unittest.TestCase):
         utils.print_test_header("test_connection")
 
         n_1 = file_reading.JsonToDict()
-        n_2 = miscellaneous.GetDictKey()
+        n_2 = dict_manipulation.GetDictKey()
         self.assertTrue(n_1.connect_attribute("out_dict", n_2, "in_dict")[0])
         self.assertFalse(n_1["out_dict"].connect_to_other(n_2["key"])[0])
         self.assertFalse(n_2["in_dict"].connect_to_other(n_2["key"])[0])
@@ -83,7 +83,7 @@ class NodeTesting(unittest.TestCase):
         utils.print_test_header("test_getting_internal_dict")
 
         n_s = general_input.StrInput()
-        n_d = miscellaneous.GetDictKey()
+        n_d = dict_manipulation.GetDictKey()
 
         n_s.set_attribute_value("internal_str", "test")
         n_s.connect_attribute("out_str", n_d, "key")
@@ -151,7 +151,7 @@ class NodeTesting(unittest.TestCase):
         """
         utils.print_test_header("test_node_fails")
 
-        n_1 = miscellaneous.GetDictKey()
+        n_1 = dict_manipulation.GetDictKey()
         n_1.set_attribute_value("in_dict", NodeTesting.DICT_EXAMPLE)
         n_1.set_attribute_value("key", "FAKE")
         n_1._run()

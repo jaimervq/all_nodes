@@ -1,0 +1,46 @@
+# Select a math constant
+[MathConstants.attributes]
+NICE_NAME = "Math constants"
+
+[MathConstants.attributes.INTERNALS_DICT.internal_str]
+type = "str"
+gui_type = "Option input"
+options = [
+  "pi (π)",
+  "e (e)",
+  "tau (τ)",
+  "phi (φ)",
+  "sqrt2 (√2)",
+  "inf (∞)",
+  "nan (NaN)"
+]
+
+[MathConstants.attributes.INTERNALS_DICT.preview_str]
+type = "str"
+gui_type = "String preview"
+
+[MathConstants.attributes.OUTPUTS_DICT.out_float]
+type = "float"
+
+[MathConstants.methods.run]
+args = []
+body = '''
+import math
+
+# Map option labels to actual constants
+value_map = {
+    "pi (π)": math.pi,
+    "e (e)": math.e,
+    "tau (τ)": math.tau,
+    "phi (φ)": (1 + math.sqrt(5)) / 2,
+    "sqrt2 (√2)": math.sqrt(2),
+    "inf (∞)": math.inf,
+    "nan (NaN)": math.nan,
+}
+
+selected = self.get_attribute_value("internal_str")
+value = value_map.get(selected, 0.0)
+
+self.set_output("out_float", value)
+self.set_attribute_value("preview_str", str(value))
+'''

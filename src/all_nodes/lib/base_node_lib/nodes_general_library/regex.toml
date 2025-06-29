@@ -1,0 +1,97 @@
+# Check if a regex fully matches the input string
+[RegexMatch.attributes]
+HELP = "Check if a regex pattern matches the input string."
+
+[RegexMatch.attributes.INPUTS_DICT.text]
+type = "str"
+
+[RegexMatch.attributes.INPUTS_DICT.pattern]
+type = "str"
+
+[RegexMatch.attributes.OUTPUTS_DICT.matched]
+type = "bool"
+
+[RegexMatch.methods.run]
+args = []
+body = '''
+import re
+text = self.get_input("text")
+pattern = self.get_input("pattern")
+self.set_output("matched", re.fullmatch(pattern, text) is not None)
+'''
+
+
+# Search for the first regex match in the input string
+[RegexSearch.attributes]
+HELP = "Search for the first regex match in the input string."
+
+[RegexSearch.attributes.INPUTS_DICT.text]
+type = "str"
+
+[RegexSearch.attributes.INPUTS_DICT.pattern]
+type = "str"
+
+[RegexSearch.attributes.OUTPUTS_DICT.match]
+type = "str"
+
+[RegexSearch.methods.run]
+args = []
+body = '''
+import re
+text = self.get_input("text")
+pattern = self.get_input("pattern")
+m = re.search(pattern, text)
+self.set_output("match", m.group(0) if m else "")
+'''
+
+
+# Find all matches of a regex in the input string
+[RegexFindAll.attributes]
+HELP = "Find all matches of a regex in the input string."
+
+[RegexFindAll.attributes.INPUTS_DICT.text]
+type = "str"
+
+[RegexFindAll.attributes.INPUTS_DICT.pattern]
+type = "str"
+
+[RegexFindAll.attributes.OUTPUTS_DICT.matches]
+type = "list"
+
+[RegexFindAll.methods.run]
+args = []
+body = '''
+import re
+text = self.get_input("text")
+pattern = self.get_input("pattern")
+matches = re.findall(pattern, text)
+self.set_output("matches", matches)
+'''
+
+
+# Replace all matches of a regex pattern with a replacement string
+[RegexReplace.attributes]
+HELP = "Replace all matches of a regex pattern with a replacement string."
+
+[RegexReplace.attributes.INPUTS_DICT.pattern]
+type = "str"
+
+[RegexReplace.attributes.INPUTS_DICT.repl]
+type = "str"
+
+[RegexReplace.attributes.INPUTS_DICT.text]
+type = "str"
+
+[RegexReplace.attributes.OUTPUTS_DICT.result]
+type = "str"
+
+[RegexReplace.methods.run]
+args = []
+body = '''
+import re
+text = self.get_input("text")
+pattern = self.get_input("pattern")
+repl = self.get_input("repl")
+self.set_output("result", re.sub(pattern, repl, text))
+'''
+

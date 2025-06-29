@@ -19,7 +19,7 @@ file_extension:
     default_icon: file
 
 file_reading:
-    color: '#5e0e01'
+    color: 'darkred'
 
 file_writing:
     color: '#5e3901'
@@ -40,14 +40,18 @@ context_special_nodes:
     default_icon: cube
 
 random_data:
-    color: '#4b007a'
+    color: '#4b017a'
     default_icon: dice
 
-special_input:
-    color: '#4b007a'
+regex:
+    default_icon: regex
 
 string_manipulation:
     color: '#382b1a'
     default_icon: string
+
+uuid:
+    color: 'darkblue'
+    default_icon: snowflake
 
 

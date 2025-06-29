@@ -1,0 +1,51 @@
+# SCENE PIL_noise_examples
+# ------------------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- FLoatToInt_1:
+    class_name: FLoatToInt
+    x_pos: -1527
+    y_pos: -253
+- FloatInput_1:
+    class_name: FloatInput
+    node_attributes:
+      internal_float: 50.0
+    x_pos: -2037
+    y_pos: -861
+- IntInput_1:
+    class_name: IntInput
+    node_attributes:
+      internal_int: 500
+    x_pos: -1831
+    y_pos: -1006
+- PIL_PerlinNoise_1:
+    class_name: PIL_PerlinNoise
+    x_pos: -1037
+    y_pos: -983
+- PIL_SimplexNoise_1:
+    class_name: PIL_SimplexNoise
+    x_pos: -1037
+    y_pos: -604
+- PIL_VoronoiNoise_1:
+    class_name: PIL_VoronoiNoise
+    x_pos: -1037
+    y_pos: -220
+
+# Connections section: connections to be done between nodes
+connections:
+- FLoatToInt_1.out_int -> PIL_VoronoiNoise_1.num_seeds
+- FloatInput_1.out_float -> FLoatToInt_1.in_float
+- FloatInput_1.out_float -> PIL_PerlinNoise_1.scale
+- FloatInput_1.out_float -> PIL_SimplexNoise_1.scale
+- IntInput_1.out_int -> PIL_PerlinNoise_1.in_height
+- IntInput_1.out_int -> PIL_PerlinNoise_1.in_width
+- IntInput_1.out_int -> PIL_SimplexNoise_1.in_height
+- IntInput_1.out_int -> PIL_SimplexNoise_1.in_width
+- IntInput_1.out_int -> PIL_VoronoiNoise_1.in_height
+- IntInput_1.out_int -> PIL_VoronoiNoise_1.in_width
+
+
+# Scene modified at: 2025-06-27 13:47:43.593233
+# Modified by: jaime.rvq
