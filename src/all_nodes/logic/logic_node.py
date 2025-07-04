@@ -25,7 +25,6 @@ from PySide2 import QtCore
 from all_nodes import constants
 from all_nodes import utils
 
-
 LOGGER = utils.get_logger(__name__)
 
 

@@ -170,7 +170,7 @@ class NodePanel(QtWidgets.QWidget):
 
         # Execution time
         exec_time = QtWidgets.QLabel(
-            f"Execution time: {self.logic_node.execution_time:.4f} s."
+            f"Execution time: {self.logic_node.execution_time:.8f} s."
         )
         self.grid_layout.addWidget(exec_time, self.row_count, 0, 1, 3)
         self.row_count += 1

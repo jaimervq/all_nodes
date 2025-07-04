@@ -1,0 +1,96 @@
+# SCENE word_count
+# ----------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- ConcatStr_1:
+    class_name: ConcatStr
+    x_pos: 400
+    y_pos: -79
+- CreateTempFile_1:
+    class_name: CreateTempFile
+    x_pos: -1545
+    y_pos: -329
+- DownloadToTxt_1:
+    class_name: DownloadToTxt
+    x_pos: -1163
+    y_pos: -435
+- IntToStr_1:
+    class_name: IntToStr
+    x_pos: -27
+    y_pos: 153
+- MultilineStrInput_1:
+    class_name: MultilineStrInput
+    node_attributes:
+      internal_str: 'Just finished counting words in the text.
+
+        The word "'
+    x_pos: -99
+    y_pos: -256
+- PrintToConsole_1:
+    class_name: PrintToConsole
+    x_pos: 882
+    y_pos: -413
+- RexegCountInFile_1:
+    class_name: RexegCountInFile
+    x_pos: -670
+    y_pos: -346
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      internal_str: .txt
+    x_pos: -1893
+    y_pos: -306
+- StrInput_2:
+    class_name: StrInput
+    node_attributes:
+      internal_str: https://www.gutenberg.org/files/11/11-0.txt
+    x_pos: -1571
+    y_pos: -481
+- StrInput_3:
+    class_name: StrInput
+    node_attributes:
+      internal_str: Alice
+    x_pos: -1262
+    y_pos: -138
+- StrInput_6:
+    class_name: StrInput
+    node_attributes:
+      internal_str: '" appears a total of '
+    x_pos: -595
+    y_pos: 70
+- StrInput_7:
+    class_name: StrInput
+    node_attributes:
+      internal_str: ' times'
+    x_pos: -17
+    y_pos: 306
+
+# Connections section: connections to be done between nodes
+connections:
+- ConcatStr_1.out_str -> PrintToConsole_1.in_object_0
+- CreateTempFile_1.tempfile_path -> DownloadToTxt_1.filename
+- CreateTempFile_1.tempfile_path -> RexegCountInFile_1.filepath
+- DownloadToTxt_1.COMPLETED -> RexegCountInFile_1.START
+- IntToStr_1.out_str -> ConcatStr_1.in_str_3
+- MultilineStrInput_1.out_str -> ConcatStr_1.in_str_0
+- RexegCountInFile_1.COMPLETED -> PrintToConsole_1.START
+- RexegCountInFile_1.count -> IntToStr_1.in_int
+- StrInput_1.out_str -> CreateTempFile_1.suffix
+- StrInput_2.out_str -> DownloadToTxt_1.url
+- StrInput_3.out_str -> ConcatStr_1.in_str_1
+- StrInput_3.out_str -> RexegCountInFile_1.word
+- StrInput_6.out_str -> ConcatStr_1.in_str_2
+- StrInput_7.out_str -> ConcatStr_1.in_str_4
+
+# Annotations section: list of annotations in the scene
+annotations:
+- annotation_type: long_tag
+  text: Download "Alice in Wonderland"
+  x_pos: -1181
+  y_pos: -533
+
+
+# Scene modified at: 2025-07-10 19:38:53.092614
+# Modified by: Jaime

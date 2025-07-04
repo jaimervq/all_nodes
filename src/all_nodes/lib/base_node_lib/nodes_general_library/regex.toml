@@ -95,3 +95,29 @@ repl = self.get_input("repl")
 self.set_output("result", re.sub(pattern, repl, text))
 '''
 
+
+# Count how many times a word appears in a file
+[RexegCountInFile.attributes]
+HELP = "ount how many times a word appears in a file"
+
+[RexegCountInFile.attributes.INPUTS_DICT.filepath]
+type = "str"
+
+[RexegCountInFile.attributes.INPUTS_DICT.word]
+type = "str"
+
+[RexegCountInFile.attributes.OUTPUTS_DICT.count]
+type = "int"
+
+[RexegCountInFile.methods.run]
+args = []
+body = '''
+import re
+
+from all_nodes.helpers.rust import rust_regex
+
+filepath = self.get_input("filepath")
+word = self.get_input("word")
+
+self.set_output("count", rust_regex.find_word_matches_parallel(filepath, word))
+'''

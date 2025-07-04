@@ -35,7 +35,7 @@ class FeedbackLineEdit(QtWidgets.QLineEdit):
         )
 
     def mousePressEvent(self, event):
-        event.ignore()
+        event.accept()
         super().mousePressEvent(event)
 
 

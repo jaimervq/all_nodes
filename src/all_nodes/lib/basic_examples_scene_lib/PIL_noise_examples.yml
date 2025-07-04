@@ -6,46 +6,55 @@
 nodes:
 - FLoatToInt_1:
     class_name: FLoatToInt
-    x_pos: -1527
-    y_pos: -253
+    x_pos: -1644
+    y_pos: -485
 - FloatInput_1:
     class_name: FloatInput
     node_attributes:
-      internal_float: 50.0
-    x_pos: -2037
-    y_pos: -861
+      internal_float: 100.0
+    x_pos: -2117
+    y_pos: -827
+- FloatInput_2:
+    class_name: FloatInput
+    node_attributes:
+      internal_float: 500.0
+    x_pos: -1750
+    y_pos: -1427
 - IntInput_1:
     class_name: IntInput
     node_attributes:
-      internal_int: 500
+      internal_int: 1000
     x_pos: -1831
     y_pos: -1006
+- PIL_FbmNoise_1:
+    class_name: PIL_FbmNoise
+    x_pos: -1040
+    y_pos: -1399
 - PIL_PerlinNoise_1:
     class_name: PIL_PerlinNoise
     x_pos: -1037
     y_pos: -983
-- PIL_SimplexNoise_1:
-    class_name: PIL_SimplexNoise
-    x_pos: -1037
-    y_pos: -604
 - PIL_VoronoiNoise_1:
     class_name: PIL_VoronoiNoise
-    x_pos: -1037
-    y_pos: -220
+    node_attributes:
+      executor_type: Rust
+    x_pos: -1031
+    y_pos: -594
 
 # Connections section: connections to be done between nodes
 connections:
+- FLoatToInt_1.out_int -> PIL_FbmNoise_1.seed
 - FLoatToInt_1.out_int -> PIL_VoronoiNoise_1.num_seeds
 - FloatInput_1.out_float -> FLoatToInt_1.in_float
 - FloatInput_1.out_float -> PIL_PerlinNoise_1.scale
-- FloatInput_1.out_float -> PIL_SimplexNoise_1.scale
+- FloatInput_2.out_float -> PIL_FbmNoise_1.scale
+- IntInput_1.out_int -> PIL_FbmNoise_1.in_height
+- IntInput_1.out_int -> PIL_FbmNoise_1.in_width
 - IntInput_1.out_int -> PIL_PerlinNoise_1.in_height
 - IntInput_1.out_int -> PIL_PerlinNoise_1.in_width
-- IntInput_1.out_int -> PIL_SimplexNoise_1.in_height
-- IntInput_1.out_int -> PIL_SimplexNoise_1.in_width
 - IntInput_1.out_int -> PIL_VoronoiNoise_1.in_height
 - IntInput_1.out_int -> PIL_VoronoiNoise_1.in_width
 
 
-# Scene modified at: 2025-06-27 13:47:43.593233
-# Modified by: jaime.rvq
+# Scene modified at: 2025-07-09 23:08:35.003975
+# Modified by: james.rvq
