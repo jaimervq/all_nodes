@@ -131,54 +131,80 @@ class PIL_VoronoiNoise(GeneralLogicNode):
     }
 
     INTERNALS_DICT = {
+        "executor_type": {
+            "type": str,
+            "gui_type": InputsGUI.OPTION_INPUT,
+            "options": ["Rust", "Python"],
+        },
         "internal_image": {
             "type": PIL.Image.Image,
             "gui_type": PreviewsGUI.IMAGE_PREVIEW,
         },
+        "internal_time_feedback": {
+            "type": str,
+            "gui_type": PreviewsGUI.STR_PREVIEW,
+        },
     }
 
     def run(self):
+        import platform
         import random
+        import time
+
         from PIL import Image
 
         width = self.get_attribute_value("in_width")
         height = self.get_attribute_value("in_height")
         num_seeds = self.get_attribute_value("num_seeds")
 
-        img = Image.new("RGB", (width, height), (0, 0, 0))
-        pixels = img.load()
+        execution_start = time.perf_counter()
 
-        # Generate random seed points and assign them a random color
-        # Each seed is (x, y, (r, g, b))
-        seeds = []
-        for _ in range(num_seeds):
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-            color = (
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255),
-            )
-            seeds.append((x, y, color))
+        if self.get_attribute_value("executor_type") == "Rust":
+            if platform.system() == "Windows":
+                from all_nodes.helpers.rust import rust_noise
 
-        # Iterate over each pixel in the image
-        for py in range(height):
-            for px in range(width):
-                min_dist_sq = float("inf")
-                closest_color = (0, 0, 0)
+                rgb_flat = rust_noise.voronoi_rgb(width, height, num_seeds)
+                img = Image.frombytes("RGB", (width, height), bytes(rgb_flat))
+            else:
+                self.fail(
+                    "Rust executor is only available for Windows. Please use Python executor instead"
+                )
+        else:
+            img = Image.new("RGB", (width, height), (0, 0, 0))
+            pixels = img.load()
+            seeds = []
+            for _ in range(num_seeds):
+                x = random.randint(0, width - 1)
+                y = random.randint(0, height - 1)
+                color = (
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                )
+                seeds.append((x, y, color))
 
-                # Find the closest seed point for the current pixel
-                for sx, sy, s_color in seeds:
-                    # Calculate squared Euclidean distance to avoid sqrt for performance
-                    dist_sq = (px - sx) ** 2 + (py - sy) ** 2
-                    if dist_sq < min_dist_sq:
-                        min_dist_sq = dist_sq
-                        closest_color = s_color
+            # Iterate over each pixel in the image
+            for py in range(height):
+                for px in range(width):
+                    min_dist_sq = float("inf")
+                    closest_color = (0, 0, 0)
 
-                # Set the pixel color to the color of the closest seed
-                pixels[px, py] = closest_color
+                    # Find the closest seed point for the current pixel
+                    for sx, sy, s_color in seeds:
+                        # Calculate squared Euclidean distance to avoid sqrt for performance
+                        dist_sq = (px - sx) ** 2 + (py - sy) ** 2
+                        if dist_sq < min_dist_sq:
+                            min_dist_sq = dist_sq
+                            closest_color = s_color
 
-        # Display previews
+                    # Set the pixel color to the color of the closest seed
+                    pixels[px, py] = closest_color
+
+        # Out
+        self.set_attribute_value(
+            "internal_time_feedback",
+            f"Execution time: {(time.perf_counter() - execution_start):.4f}",
+        )
         self.set_output("out_image", img)
         self.set_attribute_value("internal_image", img)
 
@@ -301,6 +327,62 @@ class PIL_PerlinNoise(GeneralLogicNode):
         self.set_attribute_value("internal_image", img.convert("RGB"))
 
 
+class PIL_FbmNoise(GeneralLogicNode):
+    INPUTS_DICT = {
+        "in_width": {"type": int},
+        "in_height": {"type": int},
+        "scale": {"type": float},
+        "seed": {"type": int},
+    }
+
+    OUTPUTS_DICT = {
+        "out_image": {"type": PIL.Image.Image},
+    }
+
+    INTERNALS_DICT = {
+        "internal_image": {
+            "type": PIL.Image.Image,
+            "gui_type": PreviewsGUI.IMAGE_PREVIEW,
+        },
+        "internal_time_feedback": {
+            "type": str,
+            "gui_type": PreviewsGUI.STR_PREVIEW,
+        },
+    }
+
+    def run(self):
+        import platform
+        import time
+
+        from PIL import Image
+
+        width = self.get_attribute_value("in_width")
+        height = self.get_attribute_value("in_height")
+        scale = self.get_attribute_value("scale")
+        seed = self.get_attribute_value("seed")
+
+        execution_start = time.perf_counter()
+
+        if platform.system() == "Windows":
+            from all_nodes.helpers.rust import rust_noise
+
+            rgb_flat = rust_noise.colorful_fbm_noise(width, height, scale, seed)
+            img = Image.frombytes("RGB", (width, height), bytes(rgb_flat))
+        else:
+            self.fail(
+                "Rust executor is only available for Windows. Please use Python executor instead"
+            )
+            return
+
+        # Out
+        self.set_attribute_value(
+            "internal_time_feedback",
+            f"Execution time: {(time.perf_counter() - execution_start):.4f}",
+        )
+        self.set_output("out_image", img)
+        self.set_attribute_value("internal_image", img)
+
+
 class PIL_SimplexNoise(GeneralLogicNode):
     INPUTS_DICT = {
         "in_width": {"type": int},
@@ -313,9 +395,18 @@ class PIL_SimplexNoise(GeneralLogicNode):
     }
 
     INTERNALS_DICT = {
+        "executor_type": {
+            "type": str,
+            "gui_type": InputsGUI.OPTION_INPUT,
+            "options": ["Rust", "Python"],
+        },
         "internal_image": {
             "type": PIL.Image.Image,
             "gui_type": PreviewsGUI.IMAGE_PREVIEW,
+        },
+        "internal_time_feedback": {
+            "type": str,
+            "gui_type": PreviewsGUI.STR_PREVIEW,
         },
     }
 
@@ -411,40 +502,62 @@ class PIL_SimplexNoise(GeneralLogicNode):
         return noise * 70.0  # Adjust this multiplier to change the intensity/contrast
 
     def run(self):
+        import platform
         import random
+        import time
+
         from PIL import Image
 
         width = self.get_attribute_value("in_width")
         height = self.get_attribute_value("in_height")
         scale = self.get_attribute_value("scale")
 
-        img = Image.new("RGB", (width, height), (0, 0, 0))
-        pixels = img.load()
+        execution_start = time.perf_counter()
 
-        # Simplex noise permutation table
-        # A list of numbers from 0-255, shuffled, and then doubled for wrapping
-        p = list(range(256))
-        random.shuffle(p)
-        p += p  # Duplicate the list for easy wrapping (p[256] == p[0])
+        if self.get_attribute_value("executor_type") == "Rust":
+            if platform.system() == "Windows":
+                from all_nodes.helpers.rust import rust_noise
 
-        # Iterate over each pixel in the image
-        for py in range(height):
-            for px in range(width):
-                # Map pixel coordinates to noise input coordinates based on scale
-                # We divide by scale to "stretch" the noise over the image
-                noise_val = self.simplex_noise_2d(px / scale, py / scale, p)
+                rgb_flat = rust_noise.simplex_noise_rgb(
+                    width, height, scale, random.randint(0, 100)
+                )
+                img = Image.frombytes("RGB", (width, height), bytes(rgb_flat))
+            else:
+                self.fail(
+                    "Rust executor is only available for Windows. Please use Python executor instead"
+                )
+        else:
+            img = Image.new("RGB", (width, height), (0, 0, 0))
+            pixels = img.load()
 
-                # Map the noise value (typically -1 to 1 after scaling) to grayscale (0-255)
-                # Clip values to ensure they are within the valid range
-                color = int((noise_val + 1) * 127.5)  # Map [-1, 1] to [0, 255]
-                color = max(0, min(255, color))  # Clamp to 0-255
+            # Simplex noise permutation table
+            # A list of numbers from 0-255, shuffled, and then doubled for wrapping
+            p = list(range(256))
+            random.shuffle(p)
+            p += p  # Duplicate the list for easy wrapping (p[256] == p[0])
 
-                pixels[px, py] = (
-                    color,
-                    color,
-                    color,
-                )  # Set RGB values to the grayscale color
+            # Iterate over each pixel in the image
+            for py in range(height):
+                for px in range(width):
+                    # Map pixel coordinates to noise input coordinates based on scale
+                    # We divide by scale to "stretch" the noise over the image
+                    noise_val = self.simplex_noise_2d(px / scale, py / scale, p)
 
-        # Display previews
+                    # Map the noise value (typically -1 to 1 after scaling) to grayscale (0-255)
+                    # Clip values to ensure they are within the valid range
+                    color = int((noise_val + 1) * 127.5)  # Map [-1, 1] to [0, 255]
+                    color = max(0, min(255, color))  # Clamp to 0-255
+
+                    pixels[px, py] = (
+                        color,
+                        color,
+                        color,
+                    )  # Set RGB values to the grayscale color
+
+        # Out
+        self.set_attribute_value(
+            "internal_time_feedback",
+            f"Execution time: {(time.perf_counter() - execution_start):.4f}",
+        )
         self.set_output("out_image", img.convert("RGB"))
         self.set_attribute_value("internal_image", img.convert("RGB"))
