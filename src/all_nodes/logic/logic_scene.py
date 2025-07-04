@@ -459,6 +459,7 @@ class LogicScene:
         """
         if spawn_thread:
             worker = Worker(self._run_all_nodes)
+            worker.signaler.finished.connect(self.submit_stats_in_thread)
             self.thread_manager.start(worker)
         else:
             self._run_all_nodes()
@@ -502,23 +503,6 @@ class LogicScene:
             if node.success == constants.NOT_RUN:
                 node.mark_skipped()
 
-        # Analytics
-        # TODO separate into own method in case analytics crash
-        if self.context:
-            return
-
-        LOGGER.info("Gathering analytics")
-        node_properties_list = []
-        for node in self.all_logic_nodes:
-            node_properties_list.append(node.get_node_full_dict())
-            if node.IS_CONTEXT:
-                for i_node in (
-                    node.internal_scene.all_logic_nodes
-                ):  # TODO make this properly recursive
-                    node_properties_list.append(i_node.get_node_full_dict())
-
-        analytics.submit_bulk_analytics(node_properties_list)
-
     def _run_list_of_nodes(self, nodes_to_execute: list):
         """
         Run a list of nodes.
@@ -529,7 +513,7 @@ class LogicScene:
         for node in nodes_to_execute:
             node.run_single()
 
-    # FEEDBACK GATHERING ----------------------
+    # FEEDBACK GATHERING AND SUBMITTING----------------------
     # TODO make these properly recursive, mark contexts appropriately
     def gather_failed_nodes_logs(self) -> list:
         """
@@ -559,6 +543,25 @@ class LogicScene:
                     errored_log.append(node.full_name + ": " + line)
         return errored_log
 
+    def submit_stats_in_thread(self):
+        if self.context:
+            return
+
+        LOGGER.info("Gathering analytics")
+        node_properties_list = []
+        for node in self.all_logic_nodes:
+            node_properties_list.append(node.get_node_full_dict())
+            if node.IS_CONTEXT:
+                for i_node in (
+                    node.internal_scene.all_logic_nodes
+                ):  # TODO make this properly recursive
+                    node_properties_list.append(i_node.get_node_full_dict())
+
+        worker = Worker(
+            analytics.submit_bulk_analytics, node_properties_list, no_signals=True
+        )
+        self.thread_manager.start(worker)
+
 
 # -------------------------------- UTILITY -------------------------------- #
 class LogicSceneError(Exception):
@@ -566,17 +569,27 @@ class LogicSceneError(Exception):
 
 
 # -------------------------------- WORKER -------------------------------- #
+class WorkerSignals(QtCore.QObject):
+    finished = QtCore.Signal()
+
+
 class Worker(QtCore.QRunnable):
     def __init__(self, fn, *args, **kwargs):
         super(Worker, self).__init__()
+        self.no_signals = kwargs.pop("no_signals", False)
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
+
+        self.signaler = WorkerSignals()
 
     def run(self):
         """
         Initialise the runner function with passed args, kwargs.
         """
         self.fn(*self.args, **self.kwargs)
-        GS.signals.execution_finished.emit()
-        GS.signals.attribute_editor_global_refresh_requested.emit()
+        if not self.no_signals:
+            GS.signals.execution_finished.emit()
+            GS.signals.attribute_editor_global_refresh_requested.emit()
+
+        self.signaler.finished.emit()
