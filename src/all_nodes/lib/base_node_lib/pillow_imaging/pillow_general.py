@@ -370,7 +370,7 @@ class PIL_FbmNoise(GeneralLogicNode):
             img = Image.frombytes("RGB", (width, height), bytes(rgb_flat))
         else:
             self.fail(
-                "Rust executor is only available for Windows. Please use Python executor instead"
+                "This node is not supported on this platform. Please run on Windows."
             )
             return
 
