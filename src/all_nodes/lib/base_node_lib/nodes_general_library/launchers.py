@@ -53,9 +53,12 @@ class LaunchSubprocess(GeneralLogicNode):
         subprocess_command = self.get_attribute_value("subprocess_command")
         subprocess_args = self.get_attribute_value("subprocess_args")
         if platform.system() == "Windows":
-            subprocess.run(["cmd", "/c"] + [subprocess_command] + subprocess_args)
+            s = subprocess.run(["cmd", "/c"] + [subprocess_command] + subprocess_args)
         else:
-            subprocess.run([subprocess_command] + subprocess_args)
+            s = subprocess.run([subprocess_command] + subprocess_args)
+
+        if s.returncode != 0:
+            self.fail("Subprocess failed with return code {}".format(s.returncode))
 
 
 class LaunchSubprocessWithConsole(GeneralLogicNode):

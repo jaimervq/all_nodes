@@ -55,7 +55,6 @@ class NodeHelpWindow(QtWidgets.QDialog):
         self.text = QtWidgets.QTextEdit()
         self.text.setStyleSheet("border:none")
         self.text.setReadOnly(True)
-        self.text.setWordWrapMode(QtGui.QTextOption.WrapMode.WordWrap)
         self.text.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.layout.addWidget(self.text)
 

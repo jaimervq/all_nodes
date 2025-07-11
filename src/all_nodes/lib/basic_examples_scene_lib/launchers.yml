@@ -10,8 +10,12 @@ nodes:
     y_pos: -310
 - LaunchSubprocessWithConsole_2:
     class_name: LaunchSubprocessWithConsole
-    x_pos: -964
-    y_pos: 108
+    x_pos: -965
+    y_pos: 121
+- LaunchSubprocess_1:
+    class_name: LaunchSubprocess
+    x_pos: -972
+    y_pos: -537
 - ListInput_1:
     class_name: ListInput
     node_attributes:
@@ -42,10 +46,12 @@ nodes:
 # Connections section: connections to be done between nodes
 connections:
 - ListInput_1.out_list -> LaunchSubprocessWithConsole_1.subprocess_args
+- ListInput_1.out_list -> LaunchSubprocess_1.subprocess_args
 - ListInput_2.out_list -> LaunchSubprocessWithConsole_2.subprocess_args
 - StrInput_1.out_str -> LaunchSubprocessWithConsole_1.subprocess_command
+- StrInput_1.out_str -> LaunchSubprocess_1.subprocess_command
 - StrInput_2.out_str -> LaunchSubprocessWithConsole_2.subprocess_command
 
 
-# Scene modified at: 2025-07-10 22:22:31.026506
-# Created by: james.rvq
+# Scene modified at: 2025-07-11 00:57:55.281288
+# Modified by: Jaime
