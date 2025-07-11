@@ -18,6 +18,7 @@ from PySide2 import QtWidgets
 from all_nodes import constants
 from all_nodes.graphic import graphic_scene
 from all_nodes.graphic.widgets.attribute_editor import AttributeEditor
+from all_nodes.graphic.widgets.class_searcher import ClassSearcher
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 from all_nodes.graphic.widgets.shortcuts_help import ShortcutsHelp
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
@@ -36,7 +37,7 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         # CLASSES SCANNING
         self.libraries_added = set()
 
-        # Add search paths
+        # ADD SEARCH PATHS
         root_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         QtCore.QDir.addSearchPath("icons", os.path.join(root_dir_path, "general_icons"))
         QtCore.QDir.addSearchPath(
@@ -47,14 +48,14 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             "resources", os.path.join(root_dir_path, "../logic/resources")
         )
 
-        # Load UI
+        # LOAD UI
         file = QtCore.QFile(r"ui:all_nodes.ui")
         file.open(QtCore.QFile.ReadOnly)
         loader = QtUiTools.QUiLoader()
         self.ui = loader.load(file, self)
         self.setCentralWidget(self.ui)
 
-        # Dock
+        # DOCK
         self.attr_editr_dock = QtWidgets.QDockWidget()
         self.attr_editr_dock.setWindowTitle("Attribute Editor")
         self.attr_editor = AttributeEditor()
@@ -71,6 +72,10 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         self.the_process_window = QtWidgets.QTextEdit()
         self.the_process_window.setReadOnly(True)
         self.the_process_window.setWindowTitle("Execution feedback")
+
+        # CLASS SEARCER
+        self.class_searcher = ClassSearcher(parent=None)
+        self.class_searcher.setParent(self)
 
         # ELEMENTS OF THE UI
         self.ui.nodes_tree.setMinimumWidth(300)
@@ -145,6 +150,8 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         GS.signals.attribute_editor_global_refresh_requested.connect(
             self.attr_editor.refresh
         )
+
+        GS.signals.class_searcher_move.connect(self.move_search_bar)
 
     # UI SETUP ----------------------
     def create_menus(self):
@@ -375,6 +382,17 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         for worker in CR.get_workers():
             worker.signaler.finished.connect(self.populate_tree)
 
+    def move_search_bar(self, x, y):
+        """
+        Move the classes search bar to a new position
+
+        Args:
+            x (int)
+            y (int)
+        """
+        self.class_searcher.move(self.mapFromGlobal(QtCore.QPoint(x, y)))
+        self.class_searcher.reset()
+
     # TABS ----------------------
     def clear_workspace(self):
         """
@@ -431,6 +449,8 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         self.ui.tabWidget.addTab(graphics_view, icon, scene_name)
         self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count() - 1)
+
+        self.class_searcher.hide()
 
     def expand_context(self, uuid):
         """
@@ -517,15 +537,15 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         if item_type == constants.GRAPHIC_NODE:
             current_scene.add_graphic_node_by_class_name(
                 node_class_name,
-                current_gw.mapToScene(pos).x() - 50,
-                current_gw.mapToScene(pos).y() - 20,
+                current_gw.mapToScene(current_gw.mapFromGlobal(pos)).x(),
+                current_gw.mapToScene(current_gw.mapFromGlobal(pos)).y(),
             )
 
         elif item_type == constants.GRAPHIC_ANNOTATION:
             current_scene.add_annotation_by_type(
                 node_class_name,
-                current_gw.mapToScene(pos).x() - 50,
-                current_gw.mapToScene(pos).y() - 50,
+                current_gw.mapToScene(current_gw.mapFromGlobal(pos)).x(),
+                current_gw.mapToScene(current_gw.mapFromGlobal(pos)).y(),
             )
 
     # ATTRIBUTE EDITOR ----------------------
@@ -646,3 +666,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         current_gw = self.ui.tabWidget.widget(current_index)
         current_scene = current_gw.scene()
         current_scene.show_result_on_nodes()
+
+    # EVENTS
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        super().mousePressEvent(event)
+        if event.button() == QtCore.Qt.LeftButton:
+            self.class_searcher.hide()

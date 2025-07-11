@@ -4,6 +4,10 @@
 
 # Nodes section: overall list of nodes to be created
 nodes:
+- CreateTempFile_1:
+    class_name: CreateTempFile
+    x_pos: -254
+    y_pos: -942
 - FLoatToInt_1:
     class_name: FLoatToInt
     x_pos: -1644
@@ -20,6 +24,12 @@ nodes:
       internal_float: 500.0
     x_pos: -1750
     y_pos: -1427
+- ImageFileExtensionSelect_1:
+    class_name: ImageFileExtensionSelect
+    node_attributes:
+      internal_str: .jpg
+    x_pos: -699
+    y_pos: -1081
 - IntInput_1:
     class_name: IntInput
     node_attributes:
@@ -34,27 +44,40 @@ nodes:
     class_name: PIL_PerlinNoise
     x_pos: -1037
     y_pos: -983
+- PIL_SaveImage_1:
+    class_name: PIL_SaveImage
+    x_pos: 153
+    y_pos: -758
 - PIL_VoronoiNoise_1:
     class_name: PIL_VoronoiNoise
     node_attributes:
       executor_type: Rust
-    x_pos: -1031
-    y_pos: -594
+    x_pos: -1038
+    y_pos: -591
+- StartFile_1:
+    class_name: StartFile
+    x_pos: 553
+    y_pos: -901
 
 # Connections section: connections to be done between nodes
 connections:
+- CreateTempFile_1.tempfile_path -> PIL_SaveImage_1.in_path
+- CreateTempFile_1.tempfile_path -> StartFile_1.file_path
 - FLoatToInt_1.out_int -> PIL_FbmNoise_1.seed
 - FLoatToInt_1.out_int -> PIL_VoronoiNoise_1.num_seeds
 - FloatInput_1.out_float -> FLoatToInt_1.in_float
 - FloatInput_1.out_float -> PIL_PerlinNoise_1.scale
 - FloatInput_2.out_float -> PIL_FbmNoise_1.scale
+- ImageFileExtensionSelect_1.out_str -> CreateTempFile_1.suffix
 - IntInput_1.out_int -> PIL_FbmNoise_1.in_height
 - IntInput_1.out_int -> PIL_FbmNoise_1.in_width
 - IntInput_1.out_int -> PIL_PerlinNoise_1.in_height
 - IntInput_1.out_int -> PIL_PerlinNoise_1.in_width
 - IntInput_1.out_int -> PIL_VoronoiNoise_1.in_height
 - IntInput_1.out_int -> PIL_VoronoiNoise_1.in_width
+- PIL_SaveImage_1.COMPLETED -> StartFile_1.START
+- PIL_VoronoiNoise_1.out_image -> PIL_SaveImage_1.in_image
 
 
-# Scene modified at: 2025-07-09 23:08:35.003975
+# Scene modified at: 2025-07-10 22:12:25.048384
 # Modified by: james.rvq

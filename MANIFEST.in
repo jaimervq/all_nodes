@@ -1,2 +1,2 @@
-global-include *.yml *.ctx
+global-include *.yml *.ctx *.toml
 global-include *.gif *.png *.qss *.svg *.ui

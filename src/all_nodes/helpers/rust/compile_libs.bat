@@ -22,6 +22,12 @@ cargo fmt -q --manifest-path=./rust_regex/Cargo.toml
 cargo build -q --manifest-path=./rust_regex/Cargo.toml  --release
 move .\rust_regex\target\release\rust_regex.dll .\rust_regex.pyd >nul
 
+del /q .\rust_requests.pyd 2>nul
+del /q .\rust_requests.so 2>nul
+cargo fmt -q --manifest-path=./rust_requests/Cargo.toml
+cargo build -q --manifest-path=./rust_requests/Cargo.toml  --release
+move .\rust_requests\target\release\rust_requests.dll .\rust_requests.pyd >nul
+
 echo Built and renamed rust libs (Windows)
 echo:
 

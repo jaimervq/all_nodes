@@ -13,9 +13,11 @@ WORKDIR /usr/src
 # Copy Rust source files
 COPY ./rust_noise ./rust_noise
 COPY ./rust_regex ./rust_regex
+COPY ./rust_requests ./rust_requests
 
-# Copy your bash script for build/rename
+# Copy bash script for build/rename
 COPY ./build_and_rename_libs.sh /usr/local/bin/build_and_rename_libs.sh
+RUN sed -i 's/\r$//' /usr/local/bin/build_and_rename_libs.sh
 RUN chmod +x /usr/local/bin/build_and_rename_libs.sh
 
 # Bash script as the container entrypoint

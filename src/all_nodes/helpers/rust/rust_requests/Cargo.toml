@@ -1,0 +1,16 @@
+[package]
+name = "rust_requests"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rust_requests"
+crate-type = ["cdylib"]
+
+[dependencies]
+chrono = "0.4.26"
+percent-encoding = "2"
+pyo3 = { version = "0.25.0", features = ["extension-module"] }
+rayon = "1.7.0"
+reqwest  = { version = "0.12.22", features = ["stream", "json", "blocking"] }
+url = "2.4.1"

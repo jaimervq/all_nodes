@@ -12,8 +12,8 @@ nodes:
     class_name: CreateTempFile
     x_pos: -1545
     y_pos: -329
-- DownloadToTxt_1:
-    class_name: DownloadToTxt
+- DownloadToTextFile_1:
+    class_name: DownloadToTextFile
     x_pos: -1163
     y_pos: -435
 - IntToStr_1:
@@ -36,12 +36,6 @@ nodes:
     class_name: RexegCountInFile
     x_pos: -670
     y_pos: -346
-- StrInput_1:
-    class_name: StrInput
-    node_attributes:
-      internal_str: .txt
-    x_pos: -1893
-    y_pos: -306
 - StrInput_2:
     class_name: StrInput
     node_attributes:
@@ -66,23 +60,29 @@ nodes:
       internal_str: ' times'
     x_pos: -17
     y_pos: 306
+- TextFileExtensionSelect_1:
+    class_name: TextFileExtensionSelect
+    node_attributes:
+      internal_str: .txt
+    x_pos: -1969
+    y_pos: -291
 
 # Connections section: connections to be done between nodes
 connections:
 - ConcatStr_1.out_str -> PrintToConsole_1.in_object_0
-- CreateTempFile_1.tempfile_path -> DownloadToTxt_1.filename
+- CreateTempFile_1.tempfile_path -> DownloadToTextFile_1.filename
 - CreateTempFile_1.tempfile_path -> RexegCountInFile_1.filepath
-- DownloadToTxt_1.COMPLETED -> RexegCountInFile_1.START
+- DownloadToTextFile_1.COMPLETED -> RexegCountInFile_1.START
 - IntToStr_1.out_str -> ConcatStr_1.in_str_3
 - MultilineStrInput_1.out_str -> ConcatStr_1.in_str_0
 - RexegCountInFile_1.COMPLETED -> PrintToConsole_1.START
 - RexegCountInFile_1.count -> IntToStr_1.in_int
-- StrInput_1.out_str -> CreateTempFile_1.suffix
-- StrInput_2.out_str -> DownloadToTxt_1.url
+- StrInput_2.out_str -> DownloadToTextFile_1.url
 - StrInput_3.out_str -> ConcatStr_1.in_str_1
 - StrInput_3.out_str -> RexegCountInFile_1.word
 - StrInput_6.out_str -> ConcatStr_1.in_str_2
 - StrInput_7.out_str -> ConcatStr_1.in_str_4
+- TextFileExtensionSelect_1.out_str -> CreateTempFile_1.suffix
 
 # Annotations section: list of annotations in the scene
 annotations:
@@ -92,5 +92,5 @@ annotations:
   y_pos: -533
 
 
-# Scene modified at: 2025-07-10 19:38:53.092614
-# Modified by: Jaime
+# Scene modified at: 2025-07-10 22:23:54.642001
+# Modified by: james.rvq

@@ -55,7 +55,6 @@ class NodeHelpWindow(QtWidgets.QDialog):
         self.text = QtWidgets.QTextEdit()
         self.text.setStyleSheet("border:none")
         self.text.setReadOnly(True)
-        self.text.setWordWrapMode(QtGui.QTextOption.WrapMode.WordWrap)
         self.text.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.layout.addWidget(self.text)
 
@@ -75,3 +74,46 @@ class NodeHelpWindow(QtWidgets.QDialog):
 
     def set_run_text(self, run_html_text):
         self.run_text.insertHtml(run_html_text)
+
+
+class FakeConsole(QtWidgets.QTextEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setReadOnly(True)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        font = QtGui.QFont("Consolas")
+        font.setStyleHint(QtGui.QFont.Monospace)
+        self.setFont(font)
+        self.setStyleSheet("""
+            QTextEdit {     
+                background-color: black;
+                color: lime;
+                border: none;
+                padding: 5px;
+            }
+                    
+            QScrollBar:vertical {
+                background: transparent;
+                width: 12px;
+                margin: 0px;
+                border: none;
+                border-radius: 6px;
+            }
+
+            QScrollBar::handle:vertical {
+                background: limegreen;
+                min-height: 20px;
+                border-radius: 6px;
+            }
+
+            QScrollBar::add-line:vertical,
+            QScrollBar::sub-line:vertical,
+            QScrollBar::add-page:vertical,
+            QScrollBar::sub-page:vertical {
+                background: none;
+                height: 0px;
+            }
+        """)
+
+        self.setWordWrapMode(QtGui.QTextOption.WrapMode.WordWrap)
+        self.setPlaceholderText(">")

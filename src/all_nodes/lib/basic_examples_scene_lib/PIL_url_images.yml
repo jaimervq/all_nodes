@@ -1,0 +1,181 @@
+# SCENE PIL_url_images
+# --------------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- CreateTempFile_1:
+    class_name: CreateTempFile
+    x_pos: -2228
+    y_pos: -146
+- CreateTempFolder_1:
+    class_name: CreateTempFolder
+    x_pos: -1962
+    y_pos: 420
+- DownloadImage_1:
+    class_name: DownloadImage
+    x_pos: -1747
+    y_pos: -244
+- DownloadMultipleImages_1:
+    class_name: DownloadMultipleImages
+    x_pos: -1568
+    y_pos: 231
+- ImageFileExtensionSelect_1:
+    class_name: ImageFileExtensionSelect
+    node_attributes:
+      internal_str: .png
+    x_pos: -2658
+    y_pos: -229
+- MultilineStrInput_1:
+    class_name: MultilineStrInput
+    node_attributes:
+      internal_str: 'https://www.python.org/static/community_logos/python-logo.png
+
+        https://cdn.sstatic.net/Sites/stackoverflow/company/img/logos/so/so-logo.png
+
+        https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f600.svg
+
+        https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png
+
+        https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60
+
+        https://cdn.pixabay.com/photo/2016/10/27/22/51/abstract-1776389_1280.png
+
+        https://avatars.githubusercontent.com/u/9919?s=280&v=4
+
+        https://cdn.iconscout.com/icon/free/png-256/github-153-675523.png
+
+        https://www.gstatic.com/webp/gallery/1.webp
+
+        https://www.gstatic.com/webp/gallery/4.webp
+
+        https://media.giphy.com/media/Ju7l5y9osyymQ/giphy.gif
+
+        https://www.apple.com/ac/structured-data/images/knowledge_graph_logo.png?202307071138
+
+        https://images.pexels.com/photos/414171/pexels-photo-414171.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500
+
+        https://cdn.dribbble.com/users/1332835/screenshots/11752547/media/bc5a32e679baed79cdb55e6f003fc3ca.png
+
+        https://raw.githubusercontent.com/github/explore/main/topics/rust/rust.png
+
+        https://upload.wikimedia.org/wikipedia/en/7/73/Rust_programming_language_black_logo.svg
+
+        https://cdn.iconscout.com/icon/free/png-256/docker-13-569463.png
+
+        https://www.python.org/static/img/python-logo@2x.png
+
+        https://developer.mozilla.org/static/img/favicon144.png
+
+        https://cdn.worldvectorlogo.com/logos/react-2.svg
+
+        https://upload.wikimedia.org/wikipedia/commons/1/18/ISO_C%2B%2B_Logo.svg
+
+        https://cdn.sstatic.net/Sites/stackoverflow/company/img/logos/so/so-logo.svg
+
+        https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg
+
+        https://cdn.pixabay.com/photo/2021/06/30/20/03/mountain-6370447_1280.jpg
+
+        https://images.unsplash.com/photo-1516116216624-53e697fedbe2?auto=format&fit=crop&w=800&q=60
+
+        https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=60
+
+        https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg
+
+        https://www.gstatic.com/webp/gallery/5.webp
+
+        https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif
+
+        https://upload.wikimedia.org/wikipedia/commons/d/d5/Crystal_Clear_app_korganizer.svg
+
+        https://cdn.iconscout.com/icon/free/png-256/nodejs-2-226035.png
+
+        https://cdn.iconscout.com/icon/free/png-256/javascript-1-225993.png
+
+        https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png
+
+        https://cdn.worldvectorlogo.com/logos/typescript.svg
+
+        https://cdn.iconscout.com/icon/free/png-256/typescript-1174965.png
+
+        https://upload.wikimedia.org/wikipedia/commons/6/6e/Golde33443r_retriever_standing_Tucker.jpg
+
+        https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500
+
+        https://upload.wikimedia.org/wikipedia/commons/e/e4/Alaskan_Malamute.jpg
+
+        https://upload.wikimedia.org/wikipedia/commons/4/49/Sunflower_from_Silesia2.jpg
+
+        https://cdn.pixabay.com/photo/2019/08/06/16/01/cat-4381467_1280.jpg
+
+        https://cdn.pixabay.com/photo/2016/11/29/03/53/waterfall-1867286_1280.jpg
+
+        https://cdn.pixabay.com/photo/2016/02/19/11/30/aurora-1209404_1280.jpg
+
+        https://cdn.pixabay.com/photo/2015/12/01/20/28/road-1072823_1280.jpg
+
+        https://cdn.pixabay.com/photo/2020/02/06/19/08/dog-4820149_1280.jpg
+
+        https://cdn.pixabay.com/photo/2017/08/06/21/43/dog-2599804_1280.jpg
+
+        https://cdn.pixabay.com/photo/2017/10/30/20/48/dog-2905213_1280.jpg
+
+        https://www.rust-lang.org/static/images/rust-logo-blk.svg
+
+        https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Big_%26_Small_Pumkins.JPG/1599px-Big_%26_Small_Pumkins.JPG'
+    x_pos: -2423
+    y_pos: 94
+- PIL_ImagePreview_1:
+    class_name: PIL_ImagePreview
+    x_pos: -1165
+    y_pos: -449
+- PIL_OpenFromUrl_1:
+    class_name: PIL_OpenFromUrl
+    x_pos: -1742
+    y_pos: -518
+- StartFile_1:
+    class_name: StartFile
+    x_pos: -1159
+    y_pos: 326
+- StartFile_2:
+    active: false
+    class_name: StartFile
+    x_pos: -1162
+    y_pos: -115
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      internal_str: https://birdsupplies.com/cdn/shop/articles/HORMONAL_BEHAVIOR_IN_PARROTS_HOW_TO_PET_A_PARROT.png
+    x_pos: -2249
+    y_pos: -433
+- StrSpecialCharacters_1:
+    class_name: StrSpecialCharacters
+    node_attributes:
+      internal_str: \n
+    x_pos: -2379
+    y_pos: 346
+- StringSplit_1:
+    class_name: StringSplit
+    x_pos: -1967
+    y_pos: 198
+
+# Connections section: connections to be done between nodes
+connections:
+- CreateTempFile_1.tempfile_path -> DownloadImage_1.filename
+- CreateTempFile_1.tempfile_path -> StartFile_2.file_path
+- CreateTempFolder_1.tempfolder_path -> DownloadMultipleImages_1.folder_path
+- CreateTempFolder_1.tempfolder_path -> StartFile_1.file_path
+- DownloadImage_1.COMPLETED -> StartFile_2.START
+- DownloadMultipleImages_1.COMPLETED -> StartFile_1.START
+- ImageFileExtensionSelect_1.out_str -> CreateTempFile_1.suffix
+- MultilineStrInput_1.out_str -> StringSplit_1.in_str
+- PIL_OpenFromUrl_1.out_image -> PIL_ImagePreview_1.in_image
+- StrInput_1.out_str -> DownloadImage_1.url
+- StrInput_1.out_str -> PIL_OpenFromUrl_1.in_url
+- StrSpecialCharacters_1.out_char -> StringSplit_1.split_char
+- StringSplit_1.out_list -> DownloadMultipleImages_1.urls
+
+
+# Scene modified at: 2025-07-11 15:04:55.453567
+# Modified by: jaime.rvq

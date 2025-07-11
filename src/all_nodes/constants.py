@@ -96,6 +96,7 @@ class PreviewsGUI(Enum):
     MULTILINE_STR_PREVIEW = "Multiline string preview"
     DICT_PREVIEW = "Dictionary preview"
     IMAGE_PREVIEW = "Image preview"
+    CONSOLE_PREVIEW = "Console preview"
 
 
 # -------------------------------- LOGGING PREFS -------------------------------- #

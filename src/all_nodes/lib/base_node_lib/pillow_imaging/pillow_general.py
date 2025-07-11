@@ -14,6 +14,7 @@ from all_nodes import utils
 
 
 LOGGER = utils.get_logger(__name__)
+MAX_W = 500  # Only for previews, otherwise it will crash
 
 
 class PIL_ImageOpen(GeneralLogicNode):
@@ -23,7 +24,7 @@ class PIL_ImageOpen(GeneralLogicNode):
     def run(self):
         self.set_output(
             "out_image",
-            PIL.Image.open(self.get_attribute_value("in_path")),
+            PIL.Image.open(self.get_input("in_path")),
         )
 
 
@@ -38,7 +39,10 @@ class PIL_ImagePreview(GeneralLogicNode):
     }
 
     def run(self):
-        self.set_attribute_value("internal_image", self.get_attribute_value("in_image"))
+        img = self.get_input("in_image")
+        w_percent = MAX_W / float(img.width)
+        new_height = int(img.height * w_percent)
+        self.set_attribute_value("internal_image", img.resize((MAX_W, new_height)))
 
 
 class PIL_DirectOpen(GeneralLogicNode):
@@ -59,9 +63,18 @@ class PIL_DirectOpen(GeneralLogicNode):
     }
 
     def run(self):
+        from io import BytesIO
+        import os
+        import requests
+
         # Get inputs
         path = self.get_attribute_value("internal_str_image_path")
-        opened_image = PIL.Image.open(path)
+        if os.path.exists(path):
+            opened_image = PIL.Image.open(path)
+        else:
+            response = requests.get(path)
+            response.raise_for_status()
+            opened_image = PIL.Image.open(BytesIO(response.content))
 
         # Set outputs
         self.set_output(
@@ -74,7 +87,26 @@ class PIL_DirectOpen(GeneralLogicNode):
         )
 
         # Display previews
-        self.set_attribute_value("internal_image", opened_image)
+        w_percent = MAX_W / float(opened_image.width)
+        new_height = int(opened_image.height * w_percent)
+        self.set_attribute_value(
+            "internal_image", opened_image.resize((MAX_W, new_height))
+        )
+
+
+class PIL_OpenFromUrl(GeneralLogicNode):
+    INPUTS_DICT = {"in_url": {"type": str}}
+    OUTPUTS_DICT = {"out_image": {"type": PIL.Image.Image}}
+
+    def run(self):
+        from io import BytesIO
+        import requests
+
+        response = requests.get(self.get_attribute_value("in_url"))
+        response.raise_for_status()
+
+        img = PIL.Image.open(BytesIO(response.content))
+        self.set_output("out_image", img)
 
 
 class PIL_Checkerboard(GeneralLogicNode):
@@ -365,3 +397,14 @@ class PIL_FbmNoise(GeneralLogicNode):
         )
         self.set_output("out_image", img)
         self.set_attribute_value("internal_image", img)
+
+
+class PIL_SaveImage(GeneralLogicNode):
+    INPUTS_DICT = {
+        "in_image": {"type": PIL.Image.Image},
+        "in_path": {"type": str},
+    }
+
+    def run(self):
+        img = self.get_input("in_image")
+        img.save(self.get_input("in_path"))
