@@ -43,6 +43,7 @@ jobs:
         env:
           DB_ENV: ${{ vars.DB_ENV }}
           DB_READ_AND_WRITE_PASSWORD: ${{ secrets.DB_READ_AND_WRITE_PASSWORD }}
+          PUSHBULLET_TOKEN: ${{ secrets.PUSHBULLET_TOKEN }}
         run: |
           echo %DB_ENV%
           python -m unittest discover ./test
