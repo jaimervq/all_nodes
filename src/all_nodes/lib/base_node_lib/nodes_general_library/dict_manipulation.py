@@ -51,3 +51,32 @@ class SetDictKey(GeneralLogicNode):
 
         in_dict[key] = new_value
         self.set_output("out_dict", in_dict)
+
+
+class CreateDictFromScratch(GeneralLogicNode):
+    NICE_NAME = "Dict from scratch"
+    HELP = "Create a dictionary from scratch, given keys and values"
+
+    INPUTS_DICT = {
+        "key_0": {"type": object},
+        "value_0": {"type": object},
+        "key_1": {"type": object},
+        "value_1": {"type": object},
+        "key_2": {"type": object, "optional": True},
+        "value_2": {"type": object, "optional": True},
+        "key_3": {"type": object, "optional": True},
+        "value_3": {"type": object, "optional": True},
+        "key_4": {"type": object, "optional": True},
+        "value_4": {"type": object, "optional": True},
+    }
+
+    OUTPUTS_DICT = {"out_dict": {"type": dict}}
+
+    def run(self):
+        out_dict = {}
+        for i in range(5):
+            key = self.get_attribute_value("key_{}".format(i))
+            value = self.get_attribute_value("value_{}".format(i))
+            if key is not None and value is not None:
+                out_dict[key] = value
+        self.set_output("out_dict", out_dict)

@@ -23,6 +23,8 @@ class StatisticsTesting(unittest.TestCase):
 
         res = list(analytics.make_query({}).limit(10))
 
+        print(res)
+
         self.assertGreater(len(res), 5)
 
     def test_make_wrong_query(self):

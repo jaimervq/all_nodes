@@ -17,6 +17,8 @@ class SendPushNotification(GeneralLogicNode):
         "body": {"type": str},
     }
 
+    OUTPUTS_DICT = {"status_code": {"type": int, "optional": True}}
+
     def run(self):
         import os
         import requests
@@ -35,7 +37,7 @@ class SendPushNotification(GeneralLogicNode):
             json=data,
             headers={"Access-Token": api_key},
         )
-        LOGGER.debug(f"Sent: {resp.status_code}")
+        self.set_output("status_code", resp.status_code)
 
 
 class DownloadToTxt(GeneralLogicNode):
