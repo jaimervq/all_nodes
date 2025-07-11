@@ -33,7 +33,7 @@ class StartFile(GeneralLogicNode):
             os.startfile(file_path)
         elif platform_name in ["linux", "ubuntu"]:
             subprocess.call(["xdg-open", file_path])
-        elif platform_name in ["dawrin"]:
+        elif platform_name in ["darwin"]:
             subprocess.call(["open", file_path])
         else:
             self.fail("Not sure how to open a file in {}...".format(platform_name))
