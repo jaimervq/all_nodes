@@ -5,7 +5,7 @@ __credits__ = []
 __license__ = "MIT License"
 
 
-from all_nodes.constants import InputsGUI
+from all_nodes.constants import InputsGUI, PreviewsGUI
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes import utils
 
@@ -42,14 +42,79 @@ class StartFile(GeneralLogicNode):
 
 class LaunchSubprocess(GeneralLogicNode):
     INPUTS_DICT = {
-        "subprocess_str": {"type": str},
+        "subprocess_command": {"type": str},
+        "subprocess_args": {"type": list},
     }
 
     def run(self):
         import subprocess
+        import platform
 
-        subprocess_str = self.get_attribute_value("subprocess_str")
-        subprocess.run(subprocess_str, shell=True)
+        subprocess_command = self.get_attribute_value("subprocess_command")
+        subprocess_args = self.get_attribute_value("subprocess_args")
+        if platform.system() == "Windows":
+            subprocess.run(["cmd", "/c"] + [subprocess_command] + subprocess_args)
+        else:
+            subprocess.run([subprocess_command] + subprocess_args)
+
+
+class LaunchSubprocessWithConsole(GeneralLogicNode):
+    INPUTS_DICT = {
+        "subprocess_command": {"type": str},
+        "subprocess_args": {"type": list},
+    }
+
+    OUTPUTS_DICT = {
+        "stdout": {"type": str},
+        "stderr": {"type": str},
+    }
+
+    INTERNALS_DICT = {
+        "internal_python_str": {
+            "type": str,
+            "gui_type": PreviewsGUI.CONSOLE_PREVIEW,
+        },
+    }
+
+    def run(self):
+        import html
+        import subprocess
+        import platform
+
+        subprocess_command = self.get_attribute_value("subprocess_command")
+        subprocess_args = self.get_attribute_value("subprocess_args")
+        if platform.system() == "Windows":
+            s = subprocess.run(
+                ["cmd", "/c"] + [subprocess_command] + subprocess_args,
+                capture_output=True,
+                text=True,
+            )
+        else:
+            s = subprocess.run(
+                [subprocess_command] + subprocess_args, capture_output=True, text=True
+            )
+
+        if s.returncode != 0:
+            self.set_output("stdout", s.stdout.strip())
+            self.set_output("stderr", s.stderr.strip())
+            self.set_attribute_value(
+                "internal_python_str",
+                '<span style="font-family: Consolas; color: lime; white-space: pre-wrap;">---- STDOUT ----\n'
+                + html.escape(s.stdout.strip())
+                + '\n\n<span style="font-family: Consolas; color: red; white-space: pre-wrap;">---- STDERR ----\n'
+                + html.escape(s.stderr.strip()),
+            )
+            self.fail("Subprocess failed with return code {}".format(s.returncode))
+        else:
+            self.set_output("stdout", s.stdout.strip())
+            self.set_output("stderr", s.stderr.strip())
+            self.set_attribute_value(
+                "internal_python_str",
+                '<span style="font-family: Consolas; color: lime; white-space: pre-wrap;">---- STDOUT ----\n'
+                + html.escape(s.stdout.strip())
+                + '\n\n<span style="font-family: Consolas; color: red; white-space: pre-wrap;">---- STDERR ----\n'
+                + html.escape(s.stderr.strip()),
+            )
 
 
 class RunPython(GeneralLogicNode):

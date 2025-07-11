@@ -1,0 +1,51 @@
+# SCENE launchers
+# ---------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- LaunchSubprocessWithConsole_1:
+    class_name: LaunchSubprocessWithConsole
+    x_pos: -965
+    y_pos: -310
+- LaunchSubprocessWithConsole_2:
+    class_name: LaunchSubprocessWithConsole
+    x_pos: -964
+    y_pos: 108
+- ListInput_1:
+    class_name: ListInput
+    node_attributes:
+      internal_list:
+      - non_existent.py
+    x_pos: -1551
+    y_pos: -281
+- ListInput_2:
+    class_name: ListInput
+    node_attributes:
+      internal_list:
+      - http://www.google.com/
+    x_pos: -1542
+    y_pos: 142
+- StrInput_1:
+    class_name: StrInput
+    node_attributes:
+      internal_str: python
+    x_pos: -1494
+    y_pos: -412
+- StrInput_2:
+    class_name: StrInput
+    node_attributes:
+      internal_str: curl
+    x_pos: -1438
+    y_pos: 0
+
+# Connections section: connections to be done between nodes
+connections:
+- ListInput_1.out_list -> LaunchSubprocessWithConsole_1.subprocess_args
+- ListInput_2.out_list -> LaunchSubprocessWithConsole_2.subprocess_args
+- StrInput_1.out_str -> LaunchSubprocessWithConsole_1.subprocess_command
+- StrInput_2.out_str -> LaunchSubprocessWithConsole_2.subprocess_command
+
+
+# Scene modified at: 2025-07-10 22:22:31.026506
+# Created by: james.rvq
