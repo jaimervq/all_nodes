@@ -107,7 +107,9 @@ class LogicSceneTesting(unittest.TestCase):
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("EmptyNode")
         n_2 = logic_scene.add_node_by_name("SendPushNotification")
-        n_2["title"].set_value("Test notification")
+        n_2["title"].set_value("[LOCAL] Test push notification")
+        if os.getenv("GITHUB_WORKFLOW"):
+            n_2["title"].set_value("[GITHUB] Test push notification")
         n_2["body"].set_value("⚙️ all_nodes tests are running...")
         n_2[constants.START].connect_to_other(n_1[constants.COMPLETED])
         logic_scene.run_all_nodes_batch()
