@@ -110,7 +110,7 @@ class LogicSceneTesting(unittest.TestCase):
         n_2["title"].set_value("⚙️ Test notification")
         n_2["body"].set_value("[LOCAL] all_nodes tests are running...")
         if os.getenv("GITHUB_ACTIONS"):
-            n_2["body"].set_value(f"[GITHUB {os.getenv('GITHUB_JOB'}] all_nodes tests are running...")
+            n_2["body"].set_value(f"[GITHUB {os.getenv('GITHUB_JOB'}"] all_nodes tests are running...")
         n_2["body"].set_value(" all_nodes tests are running...")
         n_2[constants.START].connect_to_other(n_1[constants.COMPLETED])
         logic_scene.run_all_nodes_batch()
