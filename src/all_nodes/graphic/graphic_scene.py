@@ -28,7 +28,6 @@ from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_scene import LogicScene
 from all_nodes import utils
 from all_nodes.graphic.widgets.attribute_picker import AttributePicker
-from all_nodes.graphic.widgets.class_searcher import ClassSearcher
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 from all_nodes.graphic.widgets.small_widgets import FeedbackLineEdit
 
@@ -80,10 +79,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.hourglass_animation.setMovie(self.movie)
         self.movie.start()
         self.hourglass_animation.hide()
-
-        self.class_searcher = ClassSearcher(parent=self)
-        self.class_searcher.hide()
-        GS.signals.class_searcher_move.connect(self.move_search_bar)
 
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
 
@@ -171,17 +166,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         for line in self.feedback_lines:
             line.move(25, self.height() - 50 - self.feedback_lines.index(line) * 30)
 
-    def move_search_bar(self, x, y):
-        """
-        Move the classes search bar to a new position
-
-        Args:
-            x (int)
-            y (int)
-        """
-        self.class_searcher.move(self.mapFromGlobal(QtCore.QPoint(x, y)))
-        self.class_searcher.reset()
-
     # RESIZE EVENTS ----------------------
     def resizeEvent(self, event):
         self.hourglass_animation.move(self.width() - 200, self.height() - 200)
@@ -206,7 +190,6 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
             self.middle_pressed = True
         elif event.button() == QtCore.Qt.LeftButton:
             self.left_pressed = True
-            self.class_searcher.hide()
 
         QtWidgets.QGraphicsView.mousePressEvent(self, event)
 
@@ -1369,7 +1352,8 @@ class CustomScene(QtWidgets.QGraphicsScene):
                     self.load_from_file(url.toLocalFile())
         else:
             GS.signals.dropped_node.emit(
-                self.parent().mapFromScene(event.scenePos()) - QtCore.QPoint(20, 20)
+                self.parent().mapToGlobal(self.parent().mapFromScene(event.scenePos()))
+                - QtCore.QPoint(100, 50)
             )
         QtWidgets.QGraphicsScene.dropEvent(self, event)
         event.acceptProposedAction()

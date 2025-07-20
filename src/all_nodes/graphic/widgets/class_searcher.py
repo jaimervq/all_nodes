@@ -29,11 +29,24 @@ class ClassSearcher(QtWidgets.QWidget):
         self.setLayout(self.layout)
 
         self.search_bar = QtWidgets.QLineEdit()
-        self.search_bar.setPlaceholderText("Search for a class...")
+        self.search_bar.setPlaceholderText(" Search for a class...")
+        self.search_bar.setFixedHeight(40)
+        self.search_bar.setStyleSheet("QLineEdit {font-size:16px}")
         self.layout.addWidget(self.search_bar)
 
         self.class_list = QtWidgets.QListWidget()
+        self.class_list.setStyleSheet(
+            "QListWidget {"
+            "background-color:qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+            "stop:0 rgba(255, 255, 255, 5), stop:1 rgba(255, 255, 255, 10));"
+            "border:none;"
+            "}"
+        )
+        self.class_list.setMaximumHeight(200)
         self.layout.addWidget(self.class_list)
+
+        self.setMaximumWidth(300)
+        self.setMaximumHeight(260)
 
         self.make_connections()
 
@@ -45,10 +58,10 @@ class ClassSearcher(QtWidgets.QWidget):
         """
         Reset the state of the widget.
         """
+        self.show()  # TODO should this be separate?
         self.search_bar.clear()
         self.class_list.clear()
-        self.show()  # TODO should this be separate?
-        self.search_bar.setFocus()
+        QtCore.QTimer.singleShot(50, self.search_bar.setFocus)
 
     def filter_classes(self):
         """
@@ -73,7 +86,7 @@ class ClassSearcher(QtWidgets.QWidget):
         """
         if self.class_list.selectedItems():
             GS.signals.node_creation_requested.emit(
-                self.pos(),
+                self.mapToGlobal(QtCore.QPoint(0, 0)) - QtCore.QPoint(100, 50),
                 self.class_list.selectedItems()[0].text(),
             )
         self.hide()

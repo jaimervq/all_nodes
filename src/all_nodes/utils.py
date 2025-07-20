@@ -54,7 +54,7 @@ def print_test_header(message):
     """
     header = f"TEST STARTED - {message}"
     print(
-        f"{Fore.GREEN}+-{'-' * len(header)}-+\n"
+        f"\n{Fore.GREEN}+-{'-' * len(header)}-+\n"
         f"{Fore.GREEN}| {header} |\n"
         f"{Fore.GREEN}+-{'-' * len(header)}-+ {Style.RESET_ALL}"
     )

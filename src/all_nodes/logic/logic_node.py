@@ -1159,15 +1159,13 @@ class GeneralLogicNode:
             str: with the complete text of the help
         """
         help_text = f"<h1>{self.class_name}</h1>"
-        help_text += (
-            f"<p style='white-space:pre'>Class defined at:<br>{self.FILEPATH}</p>"
-        )
+        help_text += f"<p Class defined at:<br>{self.FILEPATH}</p style='font-family: Consolas; white-space: pre-wrap'>"
 
         if self.HELP:
-            help_text += f"<h4><br>HELP:</h4> {self.HELP}"
+            help_text += f"<h3 style='font-family: Consolas; white-space: pre-wrap'><br>HELP:<br>{self.HELP}"
 
         help_text += (
-            "<h4><br>INPUTS_DICT:</h4><code>"
+            "<h3 style='font-family: Consolas; white-space: pre-wrap'><br>INPUTS_DICT:<br><br>"
             + html.escape(
                 re.sub(
                     r"<class '([^']+)'>",
@@ -1175,31 +1173,22 @@ class GeneralLogicNode:
                     pprint.pformat(self.INPUTS_DICT, indent=2),
                 )
             )
-            + "</code>"
         )
 
-        help_text += (
-            "<h4>OUTPUTS_DICT:</h4><code>"
-            + html.escape(
-                re.sub(
-                    r"<class '([^']+)'>",
-                    r"\1",
-                    pprint.pformat(self.OUTPUTS_DICT, indent=2),
-                )
+        help_text += "<br><br>OUTPUTS_DICT:<br><br>" + html.escape(
+            re.sub(
+                r"<class '([^']+)'>",
+                r"\1",
+                pprint.pformat(self.OUTPUTS_DICT, indent=2),
             )
-            + "</code>"
         )
 
-        help_text += (
-            "<h4>INTERNALS_DICT:</h4><pre><code>"
-            + html.escape(
-                re.sub(
-                    r"<class '([^']+)'>",
-                    r"\1",
-                    pprint.pformat(self.INTERNALS_DICT, indent=2),
-                )
+        help_text += "<br><br>INTERNALS_DICT:<br><br>" + html.escape(
+            re.sub(
+                r"<class '([^']+)'>",
+                r"\1",
+                pprint.pformat(self.INTERNALS_DICT, indent=2),
             )
-            + "</code></pre>"
         )
 
         return help_text
@@ -1212,9 +1201,9 @@ class GeneralLogicNode:
             run_body = self.RUN_SNAPSHOT
 
         run_body = (
-            "<p style='white-space:pre; background-color:black'><code>"
+            '<span style="font-family: Consolas; color: white; background-color:black; white-space: pre-wrap;">'
             + html.escape(run_body)
-            + "</code></p>"
+            + "</p style='font-family: Consolas; white-space: pre-wrap'>></p style='font-family: Consolas; white-space: pre-wrap'>>"
         )
         return run_body
 

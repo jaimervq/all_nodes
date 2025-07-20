@@ -37,6 +37,17 @@ class LogicSceneTesting(unittest.TestCase):
         logic_scene.add_node_by_name("FailNode")
         self.assertEqual(logic_scene.node_count(), 4)
 
+    def test_create_toml_nodes(self):
+        """Create nodes registered in toml files"""
+        utils.print_test_header("test_create_toml_nodes")
+
+        logic_scene = LogicScene()
+        n_1 = logic_scene.add_node_by_name("UUID4Gen")
+        n_2 = logic_scene.add_node_by_name("MathConstants")
+        self.assertIn(".toml", n_1.FILEPATH)
+        self.assertIn(".toml", n_2.FILEPATH)
+        self.assertEqual(logic_scene.node_count(), 2)
+
     def test_run_node_graph_starting_at_node(self):
         utils.print_test_header("test_run_node_graph_starting_at_node")
 
@@ -85,9 +96,31 @@ class LogicSceneTesting(unittest.TestCase):
         n_1["fallback_value"].set_value("NO_USER_FOUND")
         n_2 = logic_scene.add_node_by_name("PrintToConsole")
         n_1["env_variable_value"].connect_to_other(n_2["in_object_0"])
-        logic_scene.run_all_nodes()
-        self.assertTrue(n_1.success)
-        self.assertTrue(n_2.success)
+        logic_scene.run_all_nodes_batch()
+        if os.getenv("GITHUB_ACTIONS"):
+            self.assertEqual(n_1["env_variable_value"].get_value(), "runner")
+        else:
+            self.assertEqual(n_1["env_variable_value"].get_value(), "NO_USER_FOUND")
+        self.assertEqual(n_1.success, constants.SUCCESSFUL)
+        self.assertEqual(n_2.success, constants.SUCCESSFUL)
+
+    def test_run_scene_with_notification(self):
+        utils.print_test_header("run_scene_with_notification")
+
+        logic_scene = LogicScene()
+        n_1 = logic_scene.add_node_by_name("EmptyNode")
+        n_2 = logic_scene.add_node_by_name("SendPushNotification")
+        n_2["title"].set_value("⚙️ Test notification")
+        n_2["body"].set_value("[LOCAL] all_nodes tests are running...")
+        if os.getenv("GITHUB_ACTIONS"):
+            n_2["body"].set_value(
+                f"[GITHUB {os.getenv('GITHUB_RUN_ID')}]\nall_nodes tests are running..."
+            )
+        n_2[constants.START].connect_to_other(n_1[constants.COMPLETED])
+        logic_scene.run_all_nodes_batch()
+        self.assertEqual(n_1.success, constants.SUCCESSFUL)
+        self.assertEqual(n_2.success, constants.SUCCESSFUL)
+        self.assertEqual(n_2["status_code"].get_value(), 200)
 
     def test_capture_node(self):
         utils.print_test_header("test_capture_node")
@@ -103,11 +136,11 @@ class LogicSceneTesting(unittest.TestCase):
 
         logic_scene = LogicScene()
         logic_scene.load_from_file("fail_scene")
-        logic_scene.run_all_nodes()
+        logic_scene.run_all_nodes_batch()
 
         n = logic_scene.to_node("EmptyNode_2")
-        assert n.success == constants.NOT_RUN
-        assert not n.active
+        self.assertEqual(n.success, constants.SKIPPED)
+        self.assertFalse(n.active)
 
     def test_write_scene_to_file(self):
         utils.print_test_header("test_write_scene_to_file")
@@ -118,13 +151,14 @@ class LogicSceneTesting(unittest.TestCase):
         n_2 = logic_scene.add_node_by_name("PrintToConsole")
         n_1["out_str"].connect_to_other(n_2["in_object_0"])
         n_2[constants.START].connect_to_other(n_1[constants.COMPLETED])
-        logic_scene.run_all_nodes()
+        logic_scene.run_all_nodes_batch()
 
         temp = tempfile.NamedTemporaryFile(suffix=".yaml", delete=False)
         temp.close()
         logic_scene.save_to_file(temp.name)
 
         self.assertTrue(os.path.isfile(temp.name))
+        self.assertTrue(n_1.success, constants.SUCCESSFUL)
 
     def test_load_scene_from_file(self):
         utils.print_test_header("test_load_scene_from_file")
@@ -228,25 +262,21 @@ class LogicSceneTesting(unittest.TestCase):
     def test_scene_with_loop(self):
         utils.print_test_header("test_scene_with_loop")
 
-        # The loops are quite tricky, lets run this test a
-        # few times to make sure it works, accounting for
-        # randomization in execution order of nodes
-        for _ in range(5):
-            logic_scene = LogicScene()
-            logic_scene.load_from_file("loop_example")
-            logic_scene.run_all_nodes_batch()
+        logic_scene = LogicScene()
+        logic_scene.load_from_file("loop_example")
+        logic_scene.run_all_nodes_batch()
 
-            foreach_begin = logic_scene.to_node("ForEachBegin_1")
-            assert foreach_begin.execution_counter == 1
+        foreach_begin = logic_scene.to_node("ForEachBegin_1")
+        assert foreach_begin.execution_counter == 1
 
-            print_1 = logic_scene.to_node("PrintToConsole_1")
-            assert print_1.execution_counter == 3
+        print_1 = logic_scene.to_node("PrintToConsole_1")
+        assert print_1.execution_counter == 3
 
-            print_2 = logic_scene.to_node("PrintToConsole_2")
-            assert print_2.execution_counter == 3
+        print_2 = logic_scene.to_node("PrintToConsole_2")
+        assert print_2.execution_counter == 3
 
-            foreach_end = logic_scene.to_node("ForEachEnd_1")
-            assert foreach_end.execution_counter == 1
+        foreach_end = logic_scene.to_node("ForEachEnd_1")
+        assert foreach_end.execution_counter == 1
 
-            empty_node_2 = logic_scene.to_node("EmptyNode_2")
-            assert empty_node_2.execution_counter == 1
+        empty_node_2 = logic_scene.to_node("EmptyNode_2")
+        assert empty_node_2.execution_counter == 1

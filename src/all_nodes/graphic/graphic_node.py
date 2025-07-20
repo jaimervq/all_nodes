@@ -18,7 +18,7 @@ from PySide2 import QtSvg
 from all_nodes import constants
 from all_nodes import utils
 from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
-from all_nodes.graphic.widgets.small_widgets import NodeHelpWindow
+from all_nodes.graphic.widgets.small_widgets import FakeConsole, NodeHelpWindow
 
 
 GS = GlobalSignaler()
@@ -832,11 +832,11 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 )
 
                 if self.logic_node.get_attribute_value(attr_name):
-                    new_preview_widget.setText(
+                    new_preview_widget.setPlaceholderText(
                         self.logic_node.get_attribute_value(attr_name)
                     )
                 else:
-                    new_preview_widget.setText(f"[{attr_name}]")
+                    new_preview_widget.setPlaceholderText(f"[{attr_name}]")
 
                 self.preview_widgets.append(new_preview_widget)
 
@@ -866,6 +866,20 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 self.preview_widgets.append(new_preview_widget)
 
             elif gui_preview_type in [
+                constants.PreviewsGUI.CONSOLE_PREVIEW,
+                constants.PreviewsGUI.CONSOLE_PREVIEW.value,
+            ]:
+                new_preview_widget = FakeConsole(parent=None)
+                new_preview_widget.setObjectName(attr_name)
+                new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
+                new_preview_widget.setFixedSize(
+                    500,
+                    int(7 * constants.HEADER_HEIGHT),
+                )
+
+                self.preview_widgets.append(new_preview_widget)
+
+            elif gui_preview_type in [
                 constants.PreviewsGUI.DICT_PREVIEW,
                 constants.PreviewsGUI.DICT_PREVIEW.value,
             ]:
@@ -873,6 +887,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 new_preview_widget.setObjectName(attr_name)
                 new_preview_widget.setToolTip(f"Internal attribute: {attr_name}")
                 new_preview_widget.setReadOnly(True)
+                new_preview_widget.setWordWrapMode(QtGui.QTextOption.WrapMode.WordWrap)
+                new_preview_widget.document().setDocumentMargin(10)
                 new_preview_widget.setFixedSize(
                     300,
                     int(4 * constants.HEADER_HEIGHT),
@@ -1026,7 +1042,11 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 self.additional_info_text.show()
 
         # Previews
-        if self.logic_node.success == constants.SUCCESSFUL:
+        if self.logic_node.success in [
+            constants.SUCCESSFUL,
+            constants.FAILED,
+            constants.ERROR,
+        ]:
             self.update_previews_from_attributes()
 
     # CHANGE ATTRIBUTES FROM INPUT WIDGETS ----------------------
@@ -1076,11 +1096,15 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 continue
 
             value = self.logic_node.get_attribute_value(w.objectName())
+            if value is None:
+                continue
 
             if isinstance(w, QtWidgets.QLineEdit):
                 w.setText(value)
             elif isinstance(w, QtWidgets.QPlainTextEdit):
                 w.setPlainText(pprint.pformat(value))
+            elif isinstance(w, FakeConsole):
+                w.insertHtml(value)
             elif isinstance(w, QtWidgets.QCheckBox):
                 w.setChecked(value)
             elif isinstance(w, QtWidgets.QSpinBox):
@@ -1090,6 +1114,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             elif isinstance(w, QtWidgets.QComboBox):
                 w.setCurrentText(value)
             elif isinstance(w, QtWidgets.QLabel):
+                max_w = 500  # for previews, otherwise it will crash
+                w_percent = max_w / float(value.width)
+                new_height = int(value.height * w_percent)
+                value = value.resize((max_w, new_height))
                 data = value.tobytes("raw", "RGB")
                 image = QtGui.QImage(
                     data, value.width, value.height, QtGui.QImage.Format_RGB888
@@ -1112,9 +1140,11 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.logic_node[w.objectName()].clear()
 
             if isinstance(w, QtWidgets.QLineEdit):
-                w.setText(f"[{w.objectName()}]")
+                w.clear()
             elif isinstance(w, QtWidgets.QPlainTextEdit):
-                w.setPlainText(f"[{w.objectName()}]")
+                w.clear()
+            if isinstance(w, FakeConsole):
+                w.clear()
             elif isinstance(w, QtWidgets.QCheckBox):
                 w.setChecked(False)
             elif isinstance(w, QtWidgets.QSpinBox):

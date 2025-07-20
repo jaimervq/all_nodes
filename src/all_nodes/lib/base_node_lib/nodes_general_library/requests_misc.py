@@ -17,6 +17,8 @@ class SendPushNotification(GeneralLogicNode):
         "body": {"type": str},
     }
 
+    OUTPUTS_DICT = {"status_code": {"type": int, "optional": True}}
+
     def run(self):
         import os
         import requests
@@ -35,10 +37,10 @@ class SendPushNotification(GeneralLogicNode):
             json=data,
             headers={"Access-Token": api_key},
         )
-        LOGGER.debug(f"Sent: {resp.status_code}")
+        self.set_output("status_code", resp.status_code)
 
 
-class DownloadToTxt(GeneralLogicNode):
+class DownloadToTextFile(GeneralLogicNode):
     INPUTS_DICT = {
         "url": {"type": str},
         "filename": {"type": str},
@@ -58,3 +60,44 @@ class DownloadToTxt(GeneralLogicNode):
             LOGGER.info(f"Downloaded and saved as '{filename}'")
         else:
             self.fail(f"Failed to download. Status code: {response.status_code}")
+
+
+class DownloadImage(GeneralLogicNode):
+    INPUTS_DICT = {
+        "url": {"type": str},
+        "filename": {"type": str},
+    }
+
+    OUTPUTS_DICT = {"status_code": {"type": int, "optional": True}}
+
+    def run(self):
+        import requests
+
+        url = self.get_input("url")
+        filename = self.get_input("filename")
+
+        response = requests.get(url)
+
+        self.set_output("status_code", response.status_code)
+
+        if response.status_code == 200:
+            with open(filename, "wb") as f:
+                f.write(response.content)
+            LOGGER.info(f"Downloaded and saved as '{filename}'")
+        else:
+            self.fail(f"Failed to download. Status code: {response.status_code}")
+
+
+class DownloadMultipleImages(GeneralLogicNode):
+    INPUTS_DICT = {
+        "urls": {"type": list},
+        "folder_path": {"type": str},
+    }
+
+    def run(self):
+        from all_nodes.helpers.rust import rust_requests
+
+        urls = self.get_input("urls")
+        folder_path = self.get_input("folder_path")
+
+        rust_requests.download_images(urls, folder_path)

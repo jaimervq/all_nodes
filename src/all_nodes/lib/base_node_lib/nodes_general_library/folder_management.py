@@ -14,6 +14,8 @@ LOGGER = utils.get_logger(__name__)
 class MirrorFolders(GeneralLogicNode):
     NICE_NAME = "Mirror folders"
 
+    HELP = "Create mirrored version of a folder"
+
     INPUTS_DICT = {
         "src_folder": {"type": str},
         "dest_folder": {"type": str},

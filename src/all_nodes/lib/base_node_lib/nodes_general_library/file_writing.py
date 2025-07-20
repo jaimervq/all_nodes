@@ -102,3 +102,17 @@ class CreateTempFile(GeneralLogicNode):
 
         self.set_output("tempfile_path", out_tempfile)
         LOGGER.debug("Created tempfile: {}".format(out_tempfile))
+
+
+class CreateTempFolder(GeneralLogicNode):
+    NICE_NAME = "Create temp folder"
+
+    OUTPUTS_DICT = {"tempfolder_path": {"type": str}}
+
+    def run(self):
+        import tempfile
+
+        out_tempfolder = tempfile.mkdtemp()
+
+        self.set_output("tempfolder_path", out_tempfolder)
+        LOGGER.debug("Created tempfolder: {}".format(out_tempfolder))

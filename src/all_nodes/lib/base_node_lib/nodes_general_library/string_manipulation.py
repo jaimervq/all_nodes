@@ -5,6 +5,7 @@ __license__ = "MIT License"
 
 
 from all_nodes.logic.logic_node import GeneralLogicNode
+from all_nodes.constants import InputsGUI
 from all_nodes import utils
 
 
@@ -30,6 +31,23 @@ class StringSplit(GeneralLogicNode):
             split_list = in_str.splitlines()
 
         self.set_output("out_list", split_list)
+
+
+class StrSpecialCharacters(GeneralLogicNode):
+    NICE_NAME = "String special characters"
+
+    INTERNALS_DICT = {
+        "internal_str": {
+            "type": str,
+            "gui_type": InputsGUI.OPTION_INPUT,
+            "options": sorted(["\\n", "\\t", "\\r"]),
+        },
+    }
+
+    OUTPUTS_DICT = {"out_char": {"type": str}}
+
+    def run(self):
+        self.set_output("out_char", self.get_attribute_value("internal_str"))
 
 
 class StringFormat(GeneralLogicNode):
