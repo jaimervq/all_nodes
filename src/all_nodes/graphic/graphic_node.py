@@ -17,11 +17,9 @@ from PySide2 import QtSvg
 
 from all_nodes import constants
 from all_nodes import utils
-from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+from all_nodes.logic.global_signaler import GLOBAL_SIGNALER as GS
 from all_nodes.graphic.widgets.small_widgets import FakeConsole, NodeHelpWindow
 
-
-GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -1114,18 +1112,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             elif isinstance(w, QtWidgets.QComboBox):
                 w.setCurrentText(value)
             elif isinstance(w, QtWidgets.QLabel):
-                max_w = 500  # for previews, otherwise it will crash
-                w_percent = max_w / float(value.width)
-                new_height = int(value.height * w_percent)
-                value = value.resize((max_w, new_height))
-                data = value.tobytes("raw", "RGB")
-                image = QtGui.QImage(
-                    data, value.width, value.height, QtGui.QImage.Format_RGB888
-                )
-                pix = QtGui.QPixmap.fromImage(image)
-                w.setPixmap(
-                    pix.scaled(w.width(), w.height(), QtCore.Qt.KeepAspectRatio)
-                )
+                worker = GraphicNodeResizeWorker(value, w.width(), w.height())
+                worker.signaler.finished_pix.connect(w.setPixmap)
+                QtCore.QThreadPool.globalInstance().start(worker)
 
         if self.scene():
             GS.signals.attribute_editor_refresh_node_requested.emit(
@@ -1563,3 +1552,35 @@ class GeneralGraphicAttribute(QtWidgets.QGraphicsPathItem):
     # SPECIAL METHODS ----------------------
     def __str__(self):
         return self.logic_attribute.node_name
+
+
+# -------------------------------- WORKER -------------------------------- #
+class GraphicNodeWorkerSignaler(QtCore.QObject):
+    finished_pix = QtCore.Signal(QtGui.QPixmap)
+
+
+class GraphicNodeResizeWorker(QtCore.QRunnable):
+    """This class resizes the image in a separate thread, so that the GUI does not freeze
+    when the image is too big
+    """
+
+    def __init__(self, image, w, h):
+        super(GraphicNodeResizeWorker, self).__init__()
+        self.image = image
+        self.pix_w = w
+        self.pix_h = h
+
+        self.signaler = GraphicNodeWorkerSignaler()
+
+    def run(self):
+        max_w = 500  # for previews this is a good size, otherwise it will crash
+        w_percent = max_w / float(self.image.width)
+        new_height = int(self.image.height * w_percent)
+        self.image = self.image.resize((max_w, new_height))
+        data = self.image.tobytes("raw", "RGB")
+        q_image = QtGui.QImage(
+            data, self.image.width, self.image.height, QtGui.QImage.Format_RGB888
+        )
+        pix = QtGui.QPixmap.fromImage(q_image)
+        pix = pix.scaled(self.pix_w, self.pix_h, QtCore.Qt.KeepAspectRatio)
+        self.signaler.finished_pix.emit(pix)

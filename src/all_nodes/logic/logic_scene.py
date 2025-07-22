@@ -17,14 +17,13 @@ from PySide2 import QtCore
 from all_nodes import constants
 from all_nodes import utils
 from all_nodes.analytics import analytics
-from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+from all_nodes.logic.global_signaler import GLOBAL_SIGNALER as GS
 
 from all_nodes.logic import class_registry
+from all_nodes.logic.app_state import APP_STATE as AS
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 from all_nodes.logic.logic_node import GeneralLogicNode
 
-
-GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -42,6 +41,10 @@ class LogicScene:
         self.pasted_count = 0
 
         self.thread_manager = QtCore.QThreadPool.globalInstance()
+
+        GS.signals.execution_finished.connect(
+            lambda: AS.remove_state_var("stop_execution")
+        )
 
         LOGGER.debug("Initialized logic scene")
 
