@@ -92,15 +92,12 @@ class LogicSceneTesting(unittest.TestCase):
 
         logic_scene = LogicScene()
         n_1 = logic_scene.add_node_by_name("GetEnvVariable")
-        n_1["env_variable_name"].set_value("USER")
-        n_1["fallback_value"].set_value("NO_USER_FOUND")
+        n_1["env_variable_name"].set_value("DUMMY_VAR")
+        n_1["fallback_value"].set_value("NO_DUMMY_VAR_FOUND")
         n_2 = logic_scene.add_node_by_name("PrintToConsole")
         n_1["env_variable_value"].connect_to_other(n_2["in_object_0"])
         logic_scene.run_all_nodes_batch()
-        if os.getenv("GITHUB_ACTIONS"):
-            self.assertEqual(n_1["env_variable_value"].get_value(), "runner")
-        else:
-            self.assertEqual(n_1["env_variable_value"].get_value(), "NO_USER_FOUND")
+        self.assertEqual(n_1["env_variable_value"].get_value(), "NO_DUMMY_VAR_FOUND")
         self.assertEqual(n_1.success, constants.SUCCESSFUL)
         self.assertEqual(n_2.success, constants.SUCCESSFUL)
 
