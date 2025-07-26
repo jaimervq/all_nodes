@@ -21,18 +21,17 @@ from PySide2 import QtGui
 import yaml
 
 from all_nodes import constants
+from all_nodes import utils
 from all_nodes.graphic.graphic_annotation import GeneralGraphicAnnotation
 from all_nodes.graphic.graphic_node import GeneralGraphicNode, GeneralGraphicAttribute
+from all_nodes.graphic.widgets.attribute_picker import AttributePicker
+from all_nodes.graphic.widgets.small_widgets import FeedbackLineEdit, StopButton
+from all_nodes.logic.app_state import APP_STATE as AS
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
+from all_nodes.logic.global_signaler import GLOBAL_SIGNALER as GS
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_scene import LogicScene
-from all_nodes import utils
-from all_nodes.graphic.widgets.attribute_picker import AttributePicker
-from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
-from all_nodes.graphic.widgets.small_widgets import FeedbackLineEdit
 
-
-GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
@@ -80,14 +79,32 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.movie.start()
         self.hourglass_animation.hide()
 
+        self.stop_button = StopButton("icons:stop.svg", parent=self)
+        self.stop_button.setFixedSize(100, 100)
+        self.stop_button.hide()
+
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
 
         # Signals connection
         self.reset_btn.clicked.connect(self.reset)
         self.run_btn.clicked.connect(self.run)
+        self.stop_button.clicked.connect(
+            lambda: AS.set_state_var("stop_execution", True)
+        )
+        self.stop_button.clicked.connect(
+            lambda: self.show_feedback("Execution stopped", level=logging.WARNING)
+        )
+        self.stop_button.clicked.connect(self.stop_button.hide)
 
         GS.signals.execution_started.connect(self.hourglass_animation.show)
+        GS.signals.execution_started.connect(self.stop_button.show)
         GS.signals.execution_finished.connect(self.hourglass_animation.hide)
+        GS.signals.execution_finished.connect(self.stop_button.hide)
+        GS.signals.execution_finished.connect(lambda: self.run_btn.setEnabled(True))
+        GS.signals.execution_finished.connect(lambda: self.reset_btn.setEnabled(True))
+        GS.signals.execution_finished.connect(
+            lambda: self.show_feedback("Execution finished", level=logging.INFO)
+        )
         GS.signals.class_scanning_finished.connect(
             lambda: self.show_feedback("Finished scanning classes", level=logging.INFO)
         )
@@ -100,6 +117,8 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         if self.scene():
             self.scene().run_graphic_scene()
             GS.signals.attribute_editor_global_refresh_requested.emit()
+            self.run_btn.setEnabled(False)
+            self.reset_btn.setEnabled(False)
 
     def reset(self):
         """
@@ -160,24 +179,26 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         new_feedback_line.setFixedSize(self.width(), 30)
         self.feedback_lines.insert(0, new_feedback_line)
 
-        if len(self.feedback_lines) > 5:
+        if len(self.feedback_lines) > 7:
             self.feedback_lines.pop()
 
         for line in self.feedback_lines:
-            line.move(25, self.height() - 50 - self.feedback_lines.index(line) * 30)
+            line.move(25, 25 + self.feedback_lines.index(line) * 30)
 
     # RESIZE EVENTS ----------------------
     def resizeEvent(self, event):
-        self.hourglass_animation.move(self.width() - 200, self.height() - 200)
+        self.hourglass_animation.move(self.width() - 200, self.height() - 250)
         self.hourglass_animation.setFixedSize(200, 200)
         self.movie.setScaledSize(QtCore.QSize(200, 200))
 
         for line in self.feedback_lines:
-            line.move(25, self.height() - 50 - self.feedback_lines.index(line) * 30)
+            line.move(25, 25 + self.feedback_lines.index(line) * 30)
             line.setFixedSize(self.width(), 30)
 
         self.reset_btn.move(self.width() - 380, self.height() - 55)
         self.run_btn.move(self.width() - 200, self.height() - 55)
+
+        self.stop_button.move(30, self.height() - 120)
 
         QtWidgets.QGraphicsView.resizeEvent(self, event)
 

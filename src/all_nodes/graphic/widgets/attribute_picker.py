@@ -9,10 +9,7 @@ from PySide2 import QtCore, QtWidgets
 
 from all_nodes import constants
 from all_nodes import utils
-from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
 
-
-GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 

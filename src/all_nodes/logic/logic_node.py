@@ -24,6 +24,7 @@ from PySide2 import QtCore
 
 from all_nodes import constants
 from all_nodes import utils
+from all_nodes.logic.app_state import APP_STATE as AS
 
 LOGGER = utils.get_logger(__name__)
 
@@ -875,6 +876,10 @@ class GeneralLogicNode:
             execute_connected (bool): Whether to execute connected nodes. Default is True
         """
         # ------------------- PRE-CHECKS ------------------- #
+        # --------------- Global state
+        if AS.get_state_var("stop_execution"):
+            return
+
         # --------------- Status
         if self.success not in [constants.NOT_RUN, constants.IN_LOOP]:
             LOGGER.warning(
@@ -921,6 +926,9 @@ class GeneralLogicNode:
             return
 
         # ------------------- START EXECUTION ------------------- #
+        if AS.get_state_var("stop_execution"):
+            return
+
         LOGGER.info(
             "Starting execution of {} ({})".format(self.full_name, self.class_name)
         )
@@ -993,6 +1001,12 @@ class GeneralLogicNode:
         self.success = constants.SUCCESSFUL
         self.set_output(constants.COMPLETED, Run())
 
+        # --------------- Stop timer and emit signal
+        self.execution_time = time.time() - t1
+        self.signaler.finished.emit()
+        if AS.get_state_var("stop_execution"):
+            return
+
         # --------------- Propagate results
         LOGGER.debug(
             "From {}, propagating out attributes to connected nodes".format(
@@ -1000,10 +1014,6 @@ class GeneralLogicNode:
             )
         )
         self.propagate_results()
-
-        # --------------- Stop timer and emit signal
-        self.execution_time = time.time() - t1
-        self.signaler.finished.emit()
 
         # --------------- Execute connected
         if execute_connected:

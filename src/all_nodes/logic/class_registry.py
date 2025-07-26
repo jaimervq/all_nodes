@@ -21,7 +21,7 @@ import yaml
 from all_nodes import constants
 from all_nodes import utils
 from all_nodes.logic.logic_node import GeneralLogicNode
-from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+from all_nodes.logic.global_signaler import GLOBAL_SIGNALER as GS
 
 TYPE_MAP = {
     "str": str,
@@ -33,7 +33,6 @@ TYPE_MAP = {
     "object": object,
 }
 
-GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 

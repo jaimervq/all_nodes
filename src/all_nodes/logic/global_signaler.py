@@ -41,7 +41,6 @@ class GlobalSignals(QtCore.QObject):
 
 
 class GlobalSignaler:
-    # TODO should this signaler be somewhere else? It is not a widget
     __instance = None
 
     def __new__(cls):
@@ -49,3 +48,6 @@ class GlobalSignaler:
             cls.__instance = super(GlobalSignaler, cls).__new__(cls)
             cls.signals = GlobalSignals()
         return cls.__instance
+
+
+GLOBAL_SIGNALER = GlobalSignaler()

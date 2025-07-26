@@ -5,9 +5,10 @@ __license__ = "MIT License"
 
 
 from all_nodes import constants
+from all_nodes import utils
+from all_nodes.logic.app_state import APP_STATE as AS
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.logic_node import Run, RunLoop
-from all_nodes import utils
 
 
 LOGGER = utils.get_logger(__name__)
@@ -62,6 +63,9 @@ class ForEachBegin(GeneralLogicNode):
     }
 
     def _run(self, execute_connected=True):
+        if AS.get_state_var("stop_execution"):
+            return
+
         if not self.active:
             self.fail("Cannot start loop from an inactive loop node!")
             self.signaler.finished.emit()
@@ -78,6 +82,8 @@ class ForEachBegin(GeneralLogicNode):
         self.success = constants.IN_LOOP
 
         for i in range(num_iterations):
+            if AS.get_state_var("stop_execution"):
+                return
             LOGGER.info(f"{Fore.CYAN}{self.node_name}, iteration {i}{Style.RESET_ALL}")
 
             if execute_connected:
@@ -101,6 +107,9 @@ class ForEachBegin(GeneralLogicNode):
                         node._run()
 
         # Launch execution of ForEachEnd
+        if AS.get_state_var("stop_execution"):
+            return
+
         self.success = constants.SUCCESSFUL
         self.set_output("foreach_end", RunLoop())
         self.propagate_results()

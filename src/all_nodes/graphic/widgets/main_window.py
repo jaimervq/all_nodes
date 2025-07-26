@@ -19,13 +19,11 @@ from all_nodes import constants
 from all_nodes.graphic import graphic_scene
 from all_nodes.graphic.widgets.attribute_editor import AttributeEditor
 from all_nodes.graphic.widgets.class_searcher import ClassSearcher
-from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+from all_nodes.logic.global_signaler import GLOBAL_SIGNALER as GS
 from all_nodes.graphic.widgets.shortcuts_help import ShortcutsHelp
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 from all_nodes import utils
 
-
-GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 

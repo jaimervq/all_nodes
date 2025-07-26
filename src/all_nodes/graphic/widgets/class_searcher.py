@@ -10,11 +10,9 @@ from PySide2 import QtGui
 from PySide2 import QtWidgets
 
 from all_nodes import utils
-from all_nodes.graphic.widgets.global_signaler import GlobalSignaler
+from all_nodes.logic.global_signaler import GLOBAL_SIGNALER as GS
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 
-
-GS = GlobalSignaler()
 
 LOGGER = utils.get_logger(__name__)
 
