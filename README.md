@@ -1,19 +1,19 @@
 <h1 align="center">
     <img src="https://raw.githubusercontent.com/jaimervq/all_nodes/main/docs/all_nodes_banner.png"/><br>
     <a href=https://github.com/jaimervq/all_nodes/actions/workflows/tests.yml> 
-        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=tests&style=plastic"> 
+        <img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/jaimervq/all_nodes/tests.yml?label=tests"> 
     </a>
     <a href=https://opensource.org/licenses/MIT> 
-        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=plastic&label=license"> 
+        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?label=license"> 
     </a>
     <a href=https://github.com/astral-sh/ruff> 
-        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=plastic&label=style"> 
+        <img alt="Formatting" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&label=style"> 
     </a>
-    <img alt="Closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes?style=plastic">
+    <img alt="Closed pull requests" src="https://img.shields.io/github/issues-pr-closed-raw/jaimervq/all_nodes">
     <br>
-    <img alt="PyPI - Version" src="https://img.shields.io/pypi/v/all-nodes?style=plastic">
-    <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/all-nodes?style=plastic">
-    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/all-nodes?style=plastic">
+    <img alt="PyPI - Version" src="https://img.shields.io/pypi/v/all-nodes">
+    <a href="https://pepy.tech/projects/all-nodes"><img src="https://static.pepy.tech/badge/all-nodes" alt="PyPI Downloads"></a>
+    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/all-nodes">
 </h1>
 <h3 align="center">
     <a href=https://github.com/jaimervq/all_nodes?tab=readme-ov-file#-features>Features</a> • 
