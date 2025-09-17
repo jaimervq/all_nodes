@@ -427,6 +427,13 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 reason,
                 logging.DEBUG,
             )
+            if graphic_attr_2.connector_type == constants.INPUT:
+                for line in self.items():
+                    if line.data(0) == constants.CONNECTOR_LINE and graphic_attr_2 in [
+                        line.data(1),
+                        line.data(2),
+                    ]:
+                        self.removeItem(line)
             self.draw_valid_line(graphic_attr_1, graphic_attr_2)
         else:
             GS.signals.main_screen_feedback.emit(
@@ -1280,16 +1287,6 @@ class CustomScene(QtWidgets.QGraphicsScene):
             graphic_attr_1 = self.testing_graphic_attr
             graphic_attr_2 = test_item.parentItem()
             if graphic_attr_1.parent_node != graphic_attr_2.parent_node:
-                if graphic_attr_2.connector_type == constants.INPUT:
-                    graphic_attr_2.disconnect_input()
-                    for line in self.items():
-                        if line.data(
-                            0
-                        ) == constants.CONNECTOR_LINE and graphic_attr_2 in [
-                            line.data(1),
-                            line.data(2),
-                        ]:
-                            self.removeItem(line)
                 self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
             else:
                 GS.signals.main_screen_feedback.emit(

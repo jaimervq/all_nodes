@@ -98,14 +98,20 @@ class PIL_OpenFromUrl(GeneralLogicNode):
     INPUTS_DICT = {"in_url": {"type": str}}
     OUTPUTS_DICT = {"out_image": {"type": PIL.Image.Image}}
 
+    NICE_NAME = "Open from URL"
+    HELP = "Open an image from a URL"
+
     def run(self):
         from io import BytesIO
         import requests
 
-        response = requests.get(self.get_attribute_value("in_url"))
-        response.raise_for_status()
+        img = self.get_cached_attribute("out_image")
+        if not img:
+            response = requests.get(self.get_attribute_value("in_url"))
+            response.raise_for_status()
+            img = PIL.Image.open(BytesIO(response.content))
+            self.cache_attribute("out_image", img)
 
-        img = PIL.Image.open(BytesIO(response.content))
         self.set_output("out_image", img)
 
 
@@ -212,33 +218,36 @@ class PIL_VoronoiNoise(GeneralLogicNode):
 
         from PIL import Image
 
-        width = self.get_attribute_value("in_width")
-        height = self.get_attribute_value("in_height")
-        num_seeds = self.get_attribute_value("num_seeds")
-
         execution_start = time.perf_counter()
 
-        if self.get_attribute_value("executor_type") == "Rust":
-            if platform.system() in ["Windows", "Linux"]:
-                from all_nodes.helpers.rust import rust_noise
+        img = self.get_cached_attribute("internal_image")
+        if not img:
+            width = self.get_attribute_value("in_width")
+            height = self.get_attribute_value("in_height")
+            num_seeds = self.get_attribute_value("num_seeds")
 
-                rgb_flat = rust_noise.voronoi_rgb(width, height, num_seeds)
+            if self.get_attribute_value("executor_type") == "Rust":
+                if platform.system() in ["Windows", "Linux"]:
+                    from all_nodes.helpers.rust import rust_noise
+
+                    rgb_flat = rust_noise.voronoi_rgb(width, height, num_seeds)
+                else:
+                    self.fail(
+                        "Rust executor is not avaliable for this platform. Please use Python executor instead"
+                    )
             else:
-                self.fail(
-                    "Rust executor is not avaliable for this platform. Please use Python executor instead"
-                )
-        else:
-            rgb_flat = self.generate_voronoi_rgb(width, height, num_seeds)
+                rgb_flat = self.generate_voronoi_rgb(width, height, num_seeds)
 
-        img = Image.frombytes("RGB", (width, height), bytes(rgb_flat))
+            img = Image.frombytes("RGB", (width, height), bytes(rgb_flat))
+            self.cache_attribute("internal_image", img)
 
         # Out
         self.set_attribute_value(
             "internal_time_feedback",
             f"Execution time: {(time.perf_counter() - execution_start):.4f}",
         )
-        self.set_output("out_image", img)
         self.set_attribute_value("internal_image", img)
+        self.set_output("out_image", img)
 
 
 class PIL_PerlinNoise(GeneralLogicNode):
@@ -374,29 +383,34 @@ class PIL_FbmNoise(GeneralLogicNode):
 
         from PIL import Image
 
-        width = self.get_attribute_value("in_width")
-        height = self.get_attribute_value("in_height")
-        scale = self.get_attribute_value("scale")
-        seed = self.get_attribute_value("seed")
-
         execution_start = time.perf_counter()
 
-        if platform.system() in ["Windows", "Linux"]:
-            from all_nodes.helpers.rust import rust_noise
+        img = self.get_cached_attribute("internal_image")
 
-            rgb_flat = rust_noise.colorful_fbm_noise(width, height, scale, seed)
-            img = Image.frombytes("RGB", (width, height), bytes(rgb_flat))
-        else:
-            self.fail("This node is not supported on this platform")
-            return
+        if not img:
+            width = self.get_attribute_value("in_width")
+            height = self.get_attribute_value("in_height")
+            scale = self.get_attribute_value("scale")
+            seed = self.get_attribute_value("seed")
+
+            if platform.system() in ["Windows", "Linux"]:
+                from all_nodes.helpers.rust import rust_noise
+
+                rgb_flat = rust_noise.colorful_fbm_noise(width, height, scale, seed)
+                img = Image.frombytes("RGB", (width, height), bytes(rgb_flat))
+                self.cache_attribute("internal_image", img)
+            else:
+                self.fail("This node is not supported on this platform")
+                return
 
         # Out
         self.set_attribute_value(
             "internal_time_feedback",
             f"Execution time: {(time.perf_counter() - execution_start):.4f}",
         )
-        self.set_output("out_image", img)
+        # TODO check this perf counter and use the node one?
         self.set_attribute_value("internal_image", img)
+        self.set_output("out_image", img)
 
 
 class PIL_SaveImage(GeneralLogicNode):
