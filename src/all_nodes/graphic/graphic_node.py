@@ -100,11 +100,11 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         # DIRECT INPUT WIDGETS AND PREVIEWS
         self.input_widgets = []
         self.proxy_input_widgets = []
+        self.input_widget_registry = []
 
         self.preview_widgets = []
         self.proxy_preview_widgets = []
-
-        self.widget_registry = []
+        self.preview_widget_registry = []
 
         # SETUP
         self.setup_node()
@@ -520,10 +520,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         for attr_name in gui_internals_inputs:
             # Check if a widget was already created
-            if attr_name in self.widget_registry:
+            if attr_name in self.input_widget_registry:
                 continue
             else:
-                self.widget_registry.append(attr_name)
+                self.input_widget_registry.append(attr_name)
 
             # Setup a widget for this attr
             gui_input_type = gui_internals_inputs.get(attr_name).get("gui_type")
@@ -788,7 +788,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             return
 
         # Separator label
-        if not self.widget_registry:
+        if not self.preview_widget_registry:
             previews_label = QtWidgets.QLabel(parent=None)
             previews_label.setFixedSize(
                 150,
@@ -805,10 +805,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
         for attr_name in gui_internals_previews:
             # Check if a widget was already created
-            if attr_name in self.widget_registry:
+            if attr_name in self.preview_widget_registry:
                 continue
             else:
-                self.widget_registry.append(attr_name)
+                self.preview_widget_registry.append(attr_name)
 
             # Create widget for attribute
             gui_preview_type = gui_internals_previews.get(attr_name).get("gui_type")
@@ -964,7 +964,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.badge_icon.hide()
         self.error_marquee.hide()
         self.additional_info_text.hide()
-        self.update_attributes_from_widgets()
+        self.update_attributes_from_widgets(clear_cache=False)
         self.clear_previews()
 
     def show_executing(self):
@@ -1048,11 +1048,13 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.update_previews_from_attributes()
 
     # CHANGE ATTRIBUTES FROM INPUT WIDGETS ----------------------
-    def update_attributes_from_widgets(self, *args):
+    def update_attributes_from_widgets(self, *args, clear_cache=True):
         gui_internal_attr_name = args[0] if args else None
         for w in self.input_widgets:
             if (
                 w.objectName() == gui_internal_attr_name
+                # If gui_internal_attr_name is None, it means that we are updating all the attributes from the input widgets.
+                # If it is not None, it means that we are updating a specific attribute based on the widget's objectName()
                 or gui_internal_attr_name is None
             ):
                 value = None
@@ -1081,6 +1083,9 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                 elif isinstance(w, QtWidgets.QComboBox):
                     value = w.currentText()
                     self.logic_node[w.objectName()].set_value(value)
+
+        if clear_cache:
+            self.logic_node.propagate_clear_cache()
 
         if self.scene():
             GS.signals.attribute_editor_refresh_node_requested.emit(

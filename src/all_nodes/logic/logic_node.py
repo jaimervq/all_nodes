@@ -79,6 +79,7 @@ class GeneralLogicNode:
         self.all_attributes = []
         self.check_attributes_validity()
         self.create_attributes()
+        self.cached_attributes = {}
 
         # Context it belongs to
         self.context = None
@@ -583,6 +584,45 @@ class GeneralLogicNode:
                             attribute.get_datatype_str(),
                         )
                     )
+
+    def cache_attribute(self, attribute_name: str, value):
+        if attribute_name not in self.all_attribute_names:
+            raise RuntimeError(
+                "Error! No valid attribute '{}' in the node {}, cannot cache".format(
+                    attribute_name, self.node_name
+                )
+            )
+
+        self.cached_attributes[attribute_name] = value
+
+    def get_cached_attribute(self, attribute_name: str):
+        """
+        Get the value of an attribute with the given name.
+
+        Args:
+            attribute_name (str): The name of the attribute to retrieve the value of.
+
+        Returns:
+            The value of the attribute, or None if the attribute does not exist or is not cached.
+        """
+        if attribute_name not in self.all_attribute_names:
+            LOGGER.error(
+                "Error! No valid attribute '{}' in the node {}".format(
+                    attribute_name, self.node_name
+                )
+            )
+            return
+
+        return self.cached_attributes.get(attribute_name)
+
+    def propagate_clear_cache(self):
+        self.clear_cache()
+        for node in self.out_connected_nodes():
+            node.propagate_clear_cache()
+
+    def clear_cache(self):
+        print("Clear cache for node {}".format(self.node_name))
+        self.cached_attributes = dict()
 
     def get_input(self, attribute_name: str):
         """
@@ -1289,6 +1329,12 @@ class GeneralLogicAttribute:
         """
         self.value = None
 
+    def propagate_clear_cache(self):
+        self.parent_node.clear_cache()
+
+        for connected_attr in self.connected_attributes:
+            connected_attr.propagate_clear_cache()
+
     # CONNECTIONS ----------------------
     def get_connections_list(self):
         """
@@ -1396,8 +1442,10 @@ class GeneralLogicAttribute:
         # Connection -------------------------
         if self.connector_type == constants.OUTPUT:
             self.connected_attributes.add(other_attribute)
+            other_attribute.disconnect_input()
             other_attribute.connected_attributes = {self}
         else:
+            self.disconnect_input()
             self.connected_attributes = {other_attribute}
             other_attribute.connected_attributes.add(self)
 

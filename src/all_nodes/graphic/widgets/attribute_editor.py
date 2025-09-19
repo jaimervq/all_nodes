@@ -248,6 +248,9 @@ class NodePanel(QtWidgets.QWidget):
                     attr_name, attrib_value_le.text()
                 )
             )
+            attrib_value_le.editingFinished.connect(
+                self.logic_node.propagate_clear_cache
+            )
 
         self.grid_layout.addWidget(attrib_value_le, self.row_count, 1, 1, 1)
 

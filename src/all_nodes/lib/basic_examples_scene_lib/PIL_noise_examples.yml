@@ -55,6 +55,7 @@ nodes:
     x_pos: -1038
     y_pos: -591
 - StartFile_1:
+    active: false
     class_name: StartFile
     x_pos: 553
     y_pos: -901
