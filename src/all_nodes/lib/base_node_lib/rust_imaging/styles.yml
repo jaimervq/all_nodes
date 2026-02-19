@@ -1,0 +1,5 @@
+## Registry of the styles (colors and icons) for this lib
+
+rust_imaging:
+    color: '#007513'
+    default_icon: image

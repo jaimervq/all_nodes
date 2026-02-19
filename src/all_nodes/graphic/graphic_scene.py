@@ -177,6 +177,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         anim.start()
 
         new_feedback_line.setFixedSize(self.width(), 30)
+        new_feedback_line.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, True)
         self.feedback_lines.insert(0, new_feedback_line)
 
         if len(self.feedback_lines) > 7:
@@ -209,6 +210,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
         self.drag_pos = event.pos()
         if event.button() == QtCore.Qt.MidButton:
             self.middle_pressed = True
+            self.setCursor(QtCore.Qt.ClosedHandCursor)
         elif event.button() == QtCore.Qt.LeftButton:
             self.left_pressed = True
 
@@ -230,6 +232,7 @@ class CustomGraphicsView(QtWidgets.QGraphicsView):
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.MidButton:
             self.middle_pressed = False
+            self.setCursor(QtCore.Qt.ArrowCursor)
             self.drag_pos = None
 
         QtWidgets.QGraphicsView.mouseReleaseEvent(self, event)
@@ -258,6 +261,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
     def __init__(self, context=None):
         QtWidgets.QGraphicsScene.__init__(self)
 
+        self.setSceneRect(-1e6, -1e6, 2e6, 2e6)
+        self.setItemIndexMethod(QtWidgets.QGraphicsScene.NoIndex)
+
         # Logic scene
         self.logic_scene = context.internal_scene if context else LogicScene()
         self.filepath = context.CONTEXT_DEFINITION_FILE if context else None
@@ -278,39 +284,93 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
     # SCENE SETUP ----------------------
     def drawBackground(self, painter, rect):
-        pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 150), 2)
-        painter.setPen(pen)
-        for i in range(-20_000, 20_000, 200):
-            if i > rect.x() and i < rect.x() + rect.width():
-                painter.drawLine(QtCore.QLine(i, -20_000, i, 20_000))
-            if i > rect.y() and i < rect.y() + rect.height():
-                painter.drawLine(QtCore.QLine(-20_000, i, 20_000, i))
+        painter.save()
+
+        step = 200  # minor grid
+        major_every = 5  # major line
+
+        minor_pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 120), 1, QtCore.Qt.DotLine)
+        major_pen = QtGui.QPen(QtGui.QColor(255, 230, 255, 200), 2)
+
+        import math
+
+        left = math.floor(rect.left() / step) * step
+        right = rect.right()
+        top = math.floor(rect.top() / step) * step
+        bottom = rect.bottom()
+
+        # Vertical lines
+        x = left
+        while x <= right:
+            if (x / step) % major_every == 0:
+                painter.setPen(major_pen)
+            else:
+                painter.setPen(minor_pen)
+
+            painter.drawLine(x, rect.top(), x, rect.bottom())
+            x += step
+
+        # Horizontal lines
+        y = top
+        while y <= bottom:
+            if (y / step) % major_every == 0:
+                painter.setPen(major_pen)
+            else:
+                painter.setPen(minor_pen)
+
+            painter.drawLine(rect.left(), y, rect.right(), y)
+            y += step
+
+        painter.restore()
 
     # ANNOTATIONS ----------------------
     def add_annotation_by_type(
-        self, annotation_type: str, x: int = 0, y: int = 0
+        self, annotation_type: str, x=None, y=None
     ) -> GeneralGraphicAnnotation:
+        view = self.views()[0]
+        if x is None and y is None:
+            scene_pos = view.mapToScene(
+                view.viewport().mapFromGlobal(QtGui.QCursor.pos())
+            )
+            x = scene_pos.x() - 100
+            y = scene_pos.y() - 50
+
         new_annotation = GeneralGraphicAnnotation(annotation_type)
         new_annotation.setPos(x, y)
         self.all_graphic_annotations.add(new_annotation)
         self.addItem(new_annotation)
+
         return new_annotation
 
     # ADD AND DELETE NODES ----------------------
     def add_graphic_node_by_class_name(
-        self, node_classname: str, x: int = 0, y: int = 0
+        self, node_classname: str, position=None
     ) -> GeneralGraphicNode:
         """
         Create a new graphic node just by giving the class name
 
         Args:
             node_classname (str): class name to be instantiated
-            x (int): optional, coords to place the node at
-            y (int): optional, coords to place the node at
+            position (QtCore.QPoint, optional): position to place the node
 
         Returns:
             GeneralGraphicNode: newly created node
         """
+        view = self.views()[0]
+
+        # Save camera center
+        center_before = view.mapToScene(view.viewport().rect().center())
+
+        x, y = 0, 0
+        if position is None:
+            scene_pos = view.mapToScene(
+                view.viewport().mapFromGlobal(QtGui.QCursor.pos())
+            )
+        else:
+            scene_pos = view.mapToScene(view.viewport().mapFromGlobal(position))
+        x = scene_pos.x() - 100
+        y = scene_pos.y() - 50
+
         all_classes = CR.get_all_classes()
         for lib in sorted(all_classes):
             for m in all_classes[lib]:
@@ -334,6 +394,10 @@ class CustomScene(QtWidgets.QGraphicsScene):
             "Could not create graphic node {}".format(node_classname),
             logging.ERROR,
         )
+
+        # Restore camera
+        view.centerOn(center_before)
+
         return None
 
     def add_graphic_node_from_logic_node(
@@ -519,6 +583,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
         Args:
             filepath (str, optional): filepath to save to. Defaults to None.
         """
+        # Get filepath
         target_file = filepath
         if not filepath:
             dialog = QtWidgets.QFileDialog()
@@ -540,6 +605,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
             if button == QtWidgets.QMessageBox.No:
                 return
+
+        # Only save a resetted version of the scene!
+        self.reset_graphic_scene()
 
         # Grab logic scene info and add the xy coords
         the_dict = self.logic_scene.convert_scene_to_dict()
@@ -746,6 +814,16 @@ class CustomScene(QtWidgets.QGraphicsScene):
         )
         pprint.pprint(graphic_node.logic_node.get_node_full_dict())
 
+    def soft_reset_and_run_nodes(self, graphic_node_list: list = None):
+        """
+        Soft-reset some nodes and then run them.
+
+        Args:
+             graphic_node_list (list): nodes to soft-reset and run
+        """
+        self.soft_reset_nodes(graphic_node_list)
+        self.run_nodes(graphic_node_list)
+
     def run_nodes(self, graphic_node_list: list = None):
         """
         Execute a graphic node.
@@ -886,6 +964,10 @@ class CustomScene(QtWidgets.QGraphicsScene):
         for n in self.all_graphic_nodes:
             n.setSelected(False)
 
+    def set_viewed_node(self, uuid):
+        for n in self.all_graphic_nodes:
+            n.set_viewed(n.logic_node.uuid == uuid)
+
     # ANNOTATION SPECIFIC ----------------------
     def bring_annotation_to_front(self, annotation_list: list):
         if not annotation_list:
@@ -972,6 +1054,16 @@ class CustomScene(QtWidgets.QGraphicsScene):
             rect + QtCore.QMarginsF(20.0, 20.0, 20.0, 20.0), QtCore.Qt.KeepAspectRatio
         )
 
+    def fit_viewed(self):
+        for node in self.all_graphic_nodes:
+            if node.eye_icon.isVisible():
+                rect = node.sceneBoundingRect()
+                self.parent().fitInView(
+                    rect + QtCore.QMarginsF(20.0, 20.0, 20.0, 20.0),
+                    QtCore.Qt.KeepAspectRatio,
+                )
+                break
+
     # CONTEXT EVENTS ----------------------
     def contextMenuEvent(self, event):
         selection_rect = QtCore.QRect(
@@ -1011,7 +1103,9 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         run_nodes_action = menu.addAction(" Run only this node")
         run_nodes_action.setIcon(QtGui.QIcon("icons:run_one.svg"))
-        run_nodes_action.triggered.connect(lambda: self.run_nodes([node]))
+        run_nodes_action.triggered.connect(
+            lambda: self.soft_reset_and_run_nodes([node])
+        )
 
         reset_nodes_action = menu.addAction(" Reset only this node")
         reset_nodes_action.setIcon(QtGui.QIcon("icons:reset.png"))
@@ -1138,7 +1232,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
         # --- Execution
         elif event.key() == QtCore.Qt.Key_Return and not modifiers:
-            self.run_nodes(self.selected_nodes())
+            self.soft_reset_and_run_nodes(self.selected_nodes())
 
         elif event.key() == QtCore.Qt.Key_R and not modifiers:
             self.reset_nodes(self.selected_nodes())
@@ -1177,6 +1271,14 @@ class CustomScene(QtWidgets.QGraphicsScene):
         elif event.key() == QtCore.Qt.Key_F:
             self.fit_in_view()
 
+        # --- View node
+        elif event.key() == QtCore.Qt.Key_V and not modifiers:
+            for n in self.selected_nodes():
+                GS.signals.viewer_node_changed.emit(n.logic_node.uuid)
+                break
+            if not self.selected_nodes():
+                self.fit_viewed()
+
         # --- Class search
         elif event.key() == QtCore.Qt.Key_Tab and not modifiers:
             GS.signals.class_searcher_move.emit(
@@ -1187,15 +1289,12 @@ class CustomScene(QtWidgets.QGraphicsScene):
 
     # MOUSE EVENTS ----------------------
     def mousePressEvent(self, event):
-        QtWidgets.QGraphicsScene.mousePressEvent(
-            self, event
-        )  # TODO check if these have to go at the bottom and with return
 
         if not event.button() == QtCore.Qt.LeftButton:
             return
 
         test_item = None
-        selection_rect = QtCore.QRect(
+        selection_rect = QtCore.QRectF(
             event.scenePos().x() - 3 * constants.PLUG_RADIUS,
             event.scenePos().y() - constants.PLUG_RADIUS,
             6 * constants.PLUG_RADIUS,
@@ -1207,23 +1306,34 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 test_item = item
                 break
 
+        to_remove = []
         if test_item:
             self.testing_graphic_attr = test_item.parentItem()
-
+            if not self.testing_graphic_attr or not self.testing_graphic_attr.scene():
+                return
             if (
                 self.testing_graphic_attr.has_input_connected()
             ):  # It is input and had connection
-                connected_out_graphic_attr = next(
-                    iter(self.testing_graphic_attr.connected_graphic_attrs)
-                )
+                attrs = self.testing_graphic_attr.connected_graphic_attrs
+                if not attrs:
+                    return
+                connected_out_graphic_attr = next(iter(attrs))
                 self.disconnect_graphic_attrs(
                     connected_out_graphic_attr, self.testing_graphic_attr
                 )
-                for item in self.items():
+                for item in list(self.items()):
+                    if not item.scene():
+                        continue
                     if item.data(0) == constants.CONNECTOR_LINE:
                         if self.testing_graphic_attr in [item.data(1), item.data(2)]:
-                            self.removeItem(item)
+                            to_remove.append(item)
                 self.testing_graphic_attr = connected_out_graphic_attr
+
+        for item in to_remove:
+            if item.scene():
+                self.removeItem(item)
+
+        super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         QtWidgets.QGraphicsScene.mouseDoubleClickEvent(self, event)
@@ -1298,39 +1408,27 @@ class CustomScene(QtWidgets.QGraphicsScene):
             if graphic_attr_1.connector_type == constants.INPUT:
                 new_g_node = None
                 if graphic_attr_1.logic_attribute.data_type is str:
-                    new_g_node = self.add_graphic_node_by_class_name(
-                        "StrInput", event_x, event_y
-                    )
+                    new_g_node = self.add_graphic_node_by_class_name("StrInput")
                     graphic_attr_2 = new_g_node["out_str"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type is list:
-                    new_g_node = self.add_graphic_node_by_class_name(
-                        "ListInput", event_x, event_y
-                    )
+                    new_g_node = self.add_graphic_node_by_class_name("ListInput")
                     graphic_attr_2 = new_g_node["out_list"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type is dict:
-                    new_g_node = self.add_graphic_node_by_class_name(
-                        "DictInput", event_x, event_y
-                    )
+                    new_g_node = self.add_graphic_node_by_class_name("DictInput")
                     graphic_attr_2 = new_g_node["out_dict"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type is int:
-                    new_g_node = self.add_graphic_node_by_class_name(
-                        "IntInput", event_x, event_y
-                    )
+                    new_g_node = self.add_graphic_node_by_class_name("IntInput")
                     graphic_attr_2 = new_g_node["out_int"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type is float:
-                    new_g_node = self.add_graphic_node_by_class_name(
-                        "FloatInput", event_x, event_y
-                    )
+                    new_g_node = self.add_graphic_node_by_class_name("FloatInput")
                     graphic_attr_2 = new_g_node["out_float"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
                 elif graphic_attr_1.logic_attribute.data_type is bool:
-                    new_g_node = self.add_graphic_node_by_class_name(
-                        "BoolInput", event_x, event_y
-                    )
+                    new_g_node = self.add_graphic_node_by_class_name("BoolInput")
                     graphic_attr_2 = new_g_node["out_bool"]
                     self.connect_graphic_attrs(graphic_attr_1, graphic_attr_2)
 
@@ -1369,10 +1467,7 @@ class CustomScene(QtWidgets.QGraphicsScene):
                 if os.path.isfile(url.toLocalFile()):
                     self.load_from_file(url.toLocalFile())
         else:
-            GS.signals.dropped_node.emit(
-                self.parent().mapToGlobal(self.parent().mapFromScene(event.scenePos()))
-                - QtCore.QPoint(100, 50)
-            )
+            GS.signals.dropped_node.emit()
         QtWidgets.QGraphicsScene.dropEvent(self, event)
         event.acceptProposedAction()
 

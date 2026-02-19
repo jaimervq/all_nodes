@@ -1,37 +1,118 @@
 @echo off
-:: If building these libs from Windows, just run this .bat
+setlocal enabledelayedexpansion
 
-:: CD to this folder
 cd /d "%~dp0"
 cls
 
-:: Compile for Windows (very important to set PYO3_PYTHON to correct version!)
-echo [---WINDOWS---]
-echo Building...
+echo ======================================
+echo        PYTHON RUST BUILD (WIN)
+echo ======================================
+echo.
+
+:: Build mode (default release)
+set BUILD_MODE=release
+if /I "%1"=="debug" set BUILD_MODE=debug
+
+echo Build mode: %BUILD_MODE%
+echo.
+
+:: Detect Python for PyO3
 for /f %%i in ('py -3.10 -c "import sys; print(sys.executable)"') do set PYO3_PYTHON=%%i
+echo Using Python: %PYO3_PYTHON%
+echo.
 
-del /q .\rust_noise.pyd 2>nul
-del /q .\rust_noise.so 2>nul
-cargo fmt -q --manifest-path=./rust_noise/Cargo.toml
-cargo build -q --manifest-path=./rust_noise/Cargo.toml  --release
-move .\rust_noise\target\release\rust_noise.dll .\rust_noise.pyd >nul
+:: Collect crates first
+set CRATES=
 
-del /q .\rust_regex.pyd 2>nul
-del /q .\rust_regex.so 2>nul
-cargo fmt -q --manifest-path=./rust_regex/Cargo.toml
-cargo build -q --manifest-path=./rust_regex/Cargo.toml  --release
-move .\rust_regex\target\release\rust_regex.dll .\rust_regex.pyd >nul
+for /d %%D in (rust_*) do (
+    if exist "%%D\Cargo.toml" (
+        set CRATES=!CRATES! %%D
+    )
+)
 
-del /q .\rust_requests.pyd 2>nul
-del /q .\rust_requests.so 2>nul
-cargo fmt -q --manifest-path=./rust_requests/Cargo.toml
-cargo build -q --manifest-path=./rust_requests/Cargo.toml  --release
-move .\rust_requests\target\release\rust_requests.dll .\rust_requests.pyd >nul
+if "%CRATES%"=="" (
+    echo No rust_* crates found
+    goto docker
+)
 
-echo Built and renamed rust libs (Windows)
-echo:
+echo Found crates:
+chcp 65001 >nul
+for %%D in (%CRATES%) do (
+    echo     🦀 %%D
+)
+echo.
 
-:: Docker for compiling in Linux
-echo [---CONTAINER FOR LINUX---]
+:: Build crates in parallel
+for %%D in (%CRATES%) do (
+    call :buildcrate %%D
+)
+
+echo --------------------------------------
+echo.
+echo.
+
+::goto docker
+
+:: ------------------------------
+:: Build crate function
+:: ------------------------------
+:buildcrate
+set CRATE=%1
+echo Building !CRATE!
+
+:: Read crate name from Cargo.toml
+for /f "tokens=1,2 delims==" %%A in ('findstr /r "^name *= *" "!CRATE!\Cargo.toml"') do (
+    set RAW=%%B
+)
+set CRATE_NAME=!RAW:"=!
+set CRATE_NAME=!CRATE_NAME: =!
+
+:: Delete old artifacts
+del /q "!CRATE_NAME!.pyd" 2>nul
+del /q "!CRATE_NAME!.so" 2>nul
+
+:: Format
+cargo fmt -q --manifest-path="!CRATE!\Cargo.toml"
+
+:: Build
+if "%BUILD_MODE%"=="release" (
+    cargo build -q --manifest-path="!CRATE!\Cargo.toml" --release
+) else (
+    cargo build -q --manifest-path="!CRATE!\Cargo.toml"
+)
+
+if errorlevel 1 (
+    echo ERROR building !CRATE!
+    exit /b
+)
+
+:: Rename DLL -> PYD
+if "%BUILD_MODE%"=="release" (
+    set TARGET=!CRATE!\target\release\!CRATE_NAME!.dll
+) else (
+    set TARGET=!CRATE!\target\debug\!CRATE_NAME!.dll
+)
+
+if exist "!TARGET!" (
+    move "!TARGET!" "!CRATE_NAME!.pyd" >nul
+    echo     Built !CRATE_NAME!.pyd
+) else (
+    echo WARNING: DLL not found for !CRATE_NAME!
+)
+
+exit /b
+
+:: ------------------------------
+:: Docker build
+:: ------------------------------
+:docker
+
+echo =================================
+echo        CONTAINER FOR LINUX
+echo =================================
 docker build -t python-rust-lib .
-docker run --rm -v .:/usr/src/out python-rust-lib
+docker run --rm -v "%cd%":/usr/src/out python-rust-lib
+
+echo.
+echo Done.
+pause

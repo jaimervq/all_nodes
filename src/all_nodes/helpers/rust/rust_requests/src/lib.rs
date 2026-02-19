@@ -2,11 +2,11 @@
 // Copyright: Copyright 2022, Jaime Rivera
 // License: "MIT License"
 
-use chrono::Local;
 use percent_encoding::percent_decode_str;
 use pyo3::prelude::*;
 use rayon::prelude::*;
 use reqwest::blocking::Client;
+use rust_logging::*;
 use std::{
     fs::File,
     io::Write,
@@ -88,11 +88,8 @@ fn download_images(urls: Vec<String>, target_dir: &str) -> PyResult<Vec<PathBuf>
 
     let mut result = written.lock().unwrap().clone();
     result.sort();
-    println!(
-        "{}  🦀 INFO- Downloaded {} images",
-        Local::now().format("%Y%m%d %H:%M:%S%.3f"),
-        result.len()
-    );
+    info!("Downloaded {} images", result.len());
+
     Ok(result)
 }
 

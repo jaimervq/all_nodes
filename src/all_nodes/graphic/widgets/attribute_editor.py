@@ -4,12 +4,14 @@ __copyright__ = "Copyright 2022, Jaime Rivera"
 __credits__ = []
 __license__ = "MIT License"
 
+import logging
 
 from PySide2 import QtCore
 from PySide2 import QtGui
 from PySide2 import QtWidgets
 
 from all_nodes import constants
+from all_nodes.logic.global_signaler import GLOBAL_SIGNALER as GS
 from all_nodes.logic.logic_node import GeneralLogicNode
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
 
@@ -27,6 +29,7 @@ class NodePanel(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self)
 
         self.grid_layout = QtWidgets.QGridLayout()
+        self.grid_layout.setContentsMargins(10, 10, 10, 10)
         self.setLayout(self.grid_layout)
 
         self.logic_node = logic_node
@@ -264,6 +267,11 @@ class NodePanel(QtWidgets.QWidget):
             copy_btn.clicked.connect(
                 lambda: QtWidgets.QApplication.clipboard().setText(
                     attrib_value_le.text()
+                )
+            )
+            copy_btn.clicked.connect(
+                lambda: GS.signals.main_screen_feedback.emit(
+                    "Copied to clipboard", logging.INFO
                 )
             )
             self.grid_layout.addWidget(copy_btn, self.row_count, 2, 1, 1)

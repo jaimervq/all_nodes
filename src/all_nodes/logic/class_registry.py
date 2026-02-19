@@ -47,6 +47,7 @@ CLASSES_TO_SKIP = [
     "GrabInputFromCtx",
     "SetOutputToCtx",
 ]  # Classes to skip when gathering all usable clases, populating widgets...
+# TODO remove?
 
 
 def register_node_lib(lib_path):

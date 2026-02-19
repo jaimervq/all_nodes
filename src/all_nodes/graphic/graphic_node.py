@@ -27,15 +27,15 @@ LOGGER = utils.get_logger(__name__)
 # -------------------------------- NODE CLASS -------------------------------- #
 class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
     def __init__(self, logic_node, color_name):
-        # LOGIC NODE
+        # ------------ LOGIC NODE
         self.logic_node = logic_node
 
-        # SHAPE
+        # ------------ SHAPE
         self.extra_header = 0
         self.extra_bottom = 0
         self.node_width = 450
 
-        # INIT
+        # ------------ INIT
         QtWidgets.QGraphicsPathItem.__init__(self)
         self.setData(0, constants.GRAPHIC_NODE)
         self.setAcceptHoverEvents(True)
@@ -45,11 +45,12 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             | QtWidgets.QGraphicsPathItem.ItemSendsScenePositionChanges
         )
 
-        # COLOR
+        # ------------ COLOR
         self.base_color = QtGui.QColor(color_name)
         self.bright_color_name = utils.get_bright_color(color_name)
 
-        # SUB-ITEMS
+        # ------------ SUB-ITEMS
+        # Node icon
         if "svg" in self.logic_node.ICON_PATH:
             self.class_icon_renderer = QtSvg.QSvgRenderer(self.logic_node.ICON_PATH)
             self.class_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
@@ -65,11 +66,12 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             )
             self.class_icon = QtWidgets.QGraphicsPixmapItem(class_pixmap, parent=self)
 
+        # More sub items
         self.class_text = QtWidgets.QGraphicsTextItem(parent=self)
 
         self.proxy_help_btn = QtWidgets.QGraphicsProxyWidget(parent=self)
 
-        self.stripes = []
+        self.stripes = []  # To place graphical attrs on them
 
         self.selection_marquee = QtWidgets.QGraphicsPathItem(parent=self)
         self.selection_marquee.hide()
@@ -86,18 +88,28 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.glow = QtWidgets.QGraphicsPathItem(parent=self)
         self.glow.hide()
 
+        # Badges
         self.badge_renderer = QtSvg.QSvgRenderer("icons:badges.svg")
         self.badge_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
         self.badge_icon.setSharedRenderer(self.badge_renderer)
         self.badge_icon.setElementId("neutral")
         self.badge_icon.hide()
 
+        # Context icon
         self.extras_renderer = QtSvg.QSvgRenderer("icons:ctx.svg")
 
-        # ATTRIBUTES
+        # Eye / viewer
+        self.eye_renderer = QtSvg.QSvgRenderer("icons:eye.svg")
+        self.eye_icon = QtSvg.QGraphicsSvgItem(parentItem=self)
+        self.eye_icon.setSharedRenderer(self.eye_renderer)
+        self.eye_icon.setScale(0.1)
+        self.eye_icon.setOpacity(0.7)
+        self.eye_icon.hide()
+
+        # ------------ ATTRIBUTES
         self.graphic_attributes = []
 
-        # DIRECT INPUT WIDGETS AND PREVIEWS
+        # ------------ DIRECT INPUT WIDGETS AND PREVIEWS
         self.input_widgets = []
         self.proxy_input_widgets = []
         self.input_widget_registry = []
@@ -106,7 +118,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
         self.proxy_preview_widgets = []
         self.preview_widget_registry = []
 
-        # SETUP
+        # ------------ SETUP
         self.setup_node()
         self.setup_graphic_attributes()
         self.setup_input_widgets()
@@ -434,6 +446,13 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
             self.node_height - constants.STRIPE_HEIGHT / 2,
         )
 
+        # EYE / VIEWER
+        self.eye_icon.setZValue(80)
+        self.eye_icon.setPos(
+            self.node_width - constants.CHAMFER_RADIUS,
+            -6 * constants.CHAMFER_RADIUS,
+        )
+
         # EXTRA TEXT
         self.additional_info_text.setTextWidth(self.node_width * 1.4)
         self.additional_info_text.moveBy(
@@ -489,11 +508,14 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                     self.preview_widgets[i].height(),
                 )
 
-                self.proxy_preview_widgets.append(
-                    QtWidgets.QGraphicsProxyWidget(parent=self)
+                preview_widget = self.preview_widgets[i]
+                preview_widget.setAttribute(
+                    QtCore.Qt.WA_TransparentForMouseEvents, True
                 )
-                self.proxy_preview_widgets[i].setWidget(self.preview_widgets[i])
-                self.proxy_preview_widgets[i].setPos(
+                preview_widget.setFocusPolicy(QtCore.Qt.NoFocus)
+                new_proxy = PreviewProxy(parent=self)
+                new_proxy.setWidget(preview_widget)
+                new_proxy.setPos(
                     constants.CHAMFER_RADIUS,
                     constants.HEADER_HEIGHT
                     + self.extra_header
@@ -501,6 +523,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                     * constants.STRIPE_HEIGHT
                     + constants.CHAMFER_RADIUS,
                 )
+                self.proxy_preview_widgets.append(new_proxy)
+
                 if i:
                     prev_widget = self.proxy_preview_widgets[i - 1].widget()
                     self.proxy_preview_widgets[i].setPos(
@@ -919,7 +943,7 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
                     QtCore.Qt.AlignVCenter and QtCore.Qt.AlignCenter
                 )
                 new_preview_widget.setStyleSheet(
-                    "background:transparent; color:white; border:none;"
+                    "background:transparent; color: white; border:none;"
                 )
                 if self.logic_node.get_attribute_value(attr_name):
                     pass  # TODO
@@ -928,6 +952,8 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
 
                 self.preview_widgets.append(new_preview_widget)
 
+        for preview_widget in self.preview_widgets:
+            preview_widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, True)
         # Measure
         self.extra_bottom = sum([w.height() for w in self.preview_widgets])
 
@@ -1204,6 +1230,10 @@ class GeneralGraphicNode(QtWidgets.QGraphicsPathItem):
     def show_deactivated(self):
         """Force to show deactivated."""
         self.deactivated_cross.setVisible(True)
+
+    def set_viewed(self, state=False):
+        """Force to show viewed."""
+        self.eye_icon.setVisible(state)
 
     # UTILITY ----------------------
     def update_name(self):
@@ -1578,14 +1608,51 @@ class GraphicNodeResizeWorker(QtCore.QRunnable):
         self.signaler = GraphicNodeWorkerSignaler()
 
     def run(self):
-        max_w = 500  # for previews this is a good size, otherwise it will crash
+        max_w = 500
         w_percent = max_w / float(self.image.width)
         new_height = int(self.image.height * w_percent)
+
         self.image = self.image.resize((max_w, new_height))
-        data = self.image.tobytes("raw", "RGB")
+
+        has_alpha = "A" in self.image.getbands()
+
+        if has_alpha:
+            data = self.image.tobytes("raw", "BGRA")
+            fmt = QtGui.QImage.Format_ARGB32
+            bpl = self.image.width * 4
+        else:
+            self.image = self.image.convert("RGB")
+            data = self.image.tobytes("raw", "RGB")
+            fmt = QtGui.QImage.Format_RGB888
+            bpl = self.image.width * 3
+
+        self._buffer = data  # keep alive
+
         q_image = QtGui.QImage(
-            data, self.image.width, self.image.height, QtGui.QImage.Format_RGB888
+            self._buffer,
+            self.image.width,
+            self.image.height,
+            bpl,
+            fmt,
         )
+
         pix = QtGui.QPixmap.fromImage(q_image)
         pix = pix.scaled(self.pix_w, self.pix_h, QtCore.Qt.KeepAspectRatio)
         self.signaler.finished_pix.emit(pix)
+
+
+# -------------------------------- UTILITY CLASSES -------------------------------- #
+class PreviewProxy(QtWidgets.QGraphicsProxyWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+
+    def mousePressEvent(self, event):
+        if event.modifiers() & QtCore.Qt.AltModifier:
+            super().mousePressEvent(event)
+        else:
+            event.ignore()
+
+    # IMPORTANT: keep wheel event for scrolling
+    def wheelEvent(self, event):
+        super().wheelEvent(event)

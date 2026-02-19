@@ -1,0 +1,83 @@
+# SCENE exr_load
+# --------------
+# Description: 
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- CreateTempFile_1:
+    class_name: CreateTempFile
+    x_pos: -2112
+    y_pos: 176
+- DownloadImage_1:
+    class_name: DownloadImage
+    x_pos: -1623
+    y_pos: -182
+- EXR_EXAMPLES:
+    class_name: MultilineStrInput
+    node_attributes:
+      internal_str: 'https://raw.githubusercontent.com/AcademySoftwareFoundation/openexr-images/main/ScanLines/PrismsLenses.exr
+
+        https://raw.githubusercontent.com/AcademySoftwareFoundation/openexr-images/main/ScanLines/Carrots.exr
+
+        https://raw.githubusercontent.com/AcademySoftwareFoundation/openexr-images/main/Tiles/Spirals.exr
+
+        https://raw.githubusercontent.com/AcademySoftwareFoundation/openexr-images/main/TestImages/SquaresSwirls.exr
+
+        https://raw.githubusercontent.com/AcademySoftwareFoundation/openexr-images/main/TestImages/WideColorGamut.exr
+
+        https://raw.githubusercontent.com/AcademySoftwareFoundation/openexr-images/main/ScanLines/Blobbies.exr
+
+        https://raw.githubusercontent.com/AcademySoftwareFoundation/openexr-images/main/ScanLines/Desk.exr'
+    x_pos: -3011
+    y_pos: -414
+- ImageFileExtensionSelect_1:
+    class_name: ImageFileExtensionSelect
+    node_attributes:
+      internal_str: .exr
+    x_pos: -2587
+    y_pos: 197
+- LoadExr_Rust_1:
+    class_name: LoadExr_Rust
+    x_pos: -1274
+    y_pos: -47
+- PreviewExr_Rust_1:
+    class_name: PreviewExr_Rust
+    x_pos: -843
+    y_pos: -100
+- RandomPick_1:
+    class_name: RandomPick
+    x_pos: -2117
+    y_pos: -213
+- StrSpecialCharacters_1:
+    class_name: StrSpecialCharacters
+    node_attributes:
+      internal_str: \n
+    x_pos: -2984
+    y_pos: -74
+- StringSplit_1:
+    class_name: StringSplit
+    x_pos: -2530
+    y_pos: -189
+
+# Connections section: connections to be done between nodes
+connections:
+- CreateTempFile_1.tempfile_path -> DownloadImage_1.filename
+- CreateTempFile_1.tempfile_path -> LoadExr_Rust_1.in_exr_path
+- DownloadImage_1.COMPLETED -> LoadExr_Rust_1.START
+- EXR_EXAMPLES.out_str -> StringSplit_1.in_str
+- ImageFileExtensionSelect_1.out_str -> CreateTempFile_1.suffix
+- LoadExr_Rust_1.out_image -> PreviewExr_Rust_1.in_image
+- RandomPick_1.out_element -> DownloadImage_1.url
+- StrSpecialCharacters_1.out_char -> StringSplit_1.split_char
+- StringSplit_1.out_list -> RandomPick_1.in_list
+
+# Annotations section: list of annotations in the scene
+annotations:
+- annotation_type: long_tag
+  text: Some online example images
+  x_pos: -3025
+  y_pos: -513
+
+
+# Scene modified at: 2026-02-24 18:22:40.852599
+# Modified by: jaime.rvq

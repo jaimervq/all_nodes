@@ -26,9 +26,7 @@ class FeedbackLineEdit(QtWidgets.QLineEdit):
 
     def dropEvent(self, event):
         event.ignore()
-        GS.signals.dropped_node.emit(
-            self.mapToGlobal(event.pos()) - QtCore.QPoint(100, 50)
-        )
+        GS.signals.dropped_node.emit()
 
     def contextMenuEvent(self, event):
         event.ignore()
@@ -72,22 +70,57 @@ class NodeHelpWindow(QtWidgets.QDialog):
         self.run_text.insertHtml(run_html_text)
 
 
-class FakeConsole(QtWidgets.QTextEdit):
+class FakeConsole(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setReadOnly(True)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+
+        # Label
+        self.hint_label = QtWidgets.QLabel(
+            "Use Alt to click on the console text or scrollbar"
+        )
+        self.hint_label.setAlignment(QtCore.Qt.AlignLeft)
+
+        # Editor
+        self.editor = QtWidgets.QTextEdit()
+        self.editor.setReadOnly(True)
+        self.editor.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+
         font = QtGui.QFont("Consolas")
         font.setStyleHint(QtGui.QFont.Monospace)
-        self.setFont(font)
-        self.setStyleSheet("""
-            QTextEdit {     
+        self.editor.setFont(font)
+
+        self.editor.setWordWrapMode(QtGui.QTextOption.WordWrap)
+        self.editor.setPlaceholderText(">")
+
+        # Layout
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        layout.addWidget(self.hint_label)
+        layout.addWidget(self.editor)
+
+        # Style
+        self.setStyleSheet("""                       
+            QWidget {
+                background:transparent;
+                border: none;
+                border-radius: 5px;
+            }    
+                                        
+            QLabel {
+                color: white;
+                font-size: 10px;
+                padding: 2px;
+                background: transparent;
+            }
+
+            QTextEdit {
                 background-color: black;
                 color: lime;
                 border: none;
                 padding: 5px;
             }
-                    
+
             QScrollBar:vertical {
                 background: transparent;
                 width: 12px;
@@ -111,8 +144,11 @@ class FakeConsole(QtWidgets.QTextEdit):
             }
         """)
 
-        self.setWordWrapMode(QtGui.QTextOption.WrapMode.WordWrap)
-        self.setPlaceholderText(">")
+    def insertHtml(self, html_text):
+        self.editor.insertHtml(html_text)
+
+    def clear(self):
+        self.editor.clear()
 
 
 class StopButton(QtWidgets.QPushButton):

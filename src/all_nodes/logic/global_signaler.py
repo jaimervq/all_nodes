@@ -12,28 +12,30 @@ class GlobalSignals(QtCore.QObject):
     class_scanning_finished = QtCore.Signal()
 
     # -------------------------- WIDGETS -------------------------- #
-    # Widget move ----------------------
-    class_searcher_move = QtCore.Signal(int, int)
-
-    # Tabs ----------------------
+    # Main window ----------------------
     tab_names_refresh_requested = QtCore.Signal()
+    main_screen_feedback = QtCore.Signal(str, int)
+    workspace_cleared = QtCore.Signal()
+
+    # Class search ----------------------
+    class_searcher_move = QtCore.Signal(int, int)
 
     # Attribute editor ----------------------
     attribute_editor_node_addition_requested = QtCore.Signal(str)
     attribute_editor_refresh_node_requested = QtCore.Signal(str)
     attribute_editor_remove_node_requested = QtCore.Signal(str)
-
     attribute_editor_global_refresh_requested = QtCore.Signal()
+
+    # Viewer ----------------------
+    viewer_refresh_requested = QtCore.Signal()
+    viewer_node_changed = QtCore.Signal(str)
 
     # Contexts ----------------------
     context_expansion_requested = QtCore.Signal(str)
 
     # Node creation ----------------------
-    dropped_node = QtCore.Signal(QtCore.QPoint)
-    node_creation_requested = QtCore.Signal(QtCore.QPoint, str)
-
-    # Feedback ----------------------
-    main_screen_feedback = QtCore.Signal(str, int)
+    dropped_node = QtCore.Signal()
+    node_creation_requested_from_searcher = QtCore.Signal(str, QtCore.QPoint)
 
     # -------------------------- EXECUTION -------------------------- #
     execution_started = QtCore.Signal()

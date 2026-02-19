@@ -135,6 +135,7 @@ nodes:
     x_pos: -1742
     y_pos: -518
 - StartFile_1:
+    active: false
     class_name: StartFile
     x_pos: -1159
     y_pos: 326
@@ -146,7 +147,7 @@ nodes:
 - StrInput_1:
     class_name: StrInput
     node_attributes:
-      internal_str: https://birdsupplies.com/cdn/shop/articles/HORMONAL_BEHAVIOR_IN_PARROTS_HOW_TO_PET_A_PARROT.png
+      internal_str: https://bellard.org/bpg/2.png
     x_pos: -2249
     y_pos: -433
 - StrSpecialCharacters_1:
@@ -177,5 +178,5 @@ connections:
 - StringSplit_1.out_list -> DownloadMultipleImages_1.urls
 
 
-# Scene modified at: 2025-07-11 15:04:55.453567
+# Scene modified at: 2026-02-21 22:07:08.308002
 # Modified by: jaime.rvq

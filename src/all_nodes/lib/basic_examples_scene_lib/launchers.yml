@@ -27,7 +27,7 @@ nodes:
     class_name: ListInput
     node_attributes:
       internal_list:
-      - http://www.google.com/
+      - http://www.example.com/
     x_pos: -1542
     y_pos: 142
 - StrInput_1:
@@ -53,5 +53,5 @@ connections:
 - StrInput_2.out_str -> LaunchSubprocessWithConsole_2.subprocess_command
 
 
-# Scene modified at: 2025-07-11 00:57:55.281288
-# Modified by: Jaime
+# Scene modified at: 2026-02-20 10:25:45.439039
+# Modified by: jaime.rvq

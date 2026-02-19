@@ -68,3 +68,19 @@ class RandomBool(GeneralLogicNode):
     def run(self):
         random_bool = random.choice([True, False])
         self.set_output("out_bool", random_bool)
+
+
+class RandomPick(GeneralLogicNode):
+    NICE_NAME = "Random Pick"
+    HELP = "Pick a random element from a list"
+
+    INPUTS_DICT = {
+        "in_list": {"type": list},
+    }
+
+    OUTPUTS_DICT = {"out_element": {"type": object}}
+
+    def run(self):
+        in_list = self.get_attribute_value("in_list") or []
+        random_element = random.choice(in_list)
+        self.set_output("out_element", random_element)

@@ -13,4 +13,5 @@ percent-encoding = "2"
 pyo3 = { version = "0.25.0", features = ["extension-module"] }
 rayon = "1.7.0"
 reqwest  = { version = "0.12.22", features = ["stream", "json", "blocking"] }
+rust_logging = { path = "../rust_logging" }
 url = "2.4.1"

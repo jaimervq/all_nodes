@@ -2,6 +2,7 @@
    Copyright (c) 2022 Jaime Rivera
 */
 
+
 /* ---------------------------- QWidget ---------------------------- */
 QWidget
 {
@@ -163,12 +164,130 @@ QLabel
 	background-color: transparent;
 }
 
-/* ---------------------------- QDockWidget ---------------------------- */
-QDockWidget
+/* ---------------------------- TABLE VIEW ---------------------------- */
+
+QTableView
 {
-	background-color: transparent;
-	titlebar-close-icon: url("icons:close.svg");
-	titlebar-normal-icon: url("icons:float.svg");
+    background-color: #2b2e3a;
+    gridline-color: #404040;
+    selection-background-color: rgba(235,122,2,60);
+    selection-color: white;
+    border: 1px solid #404040;
+}
+
+/* remove ugly focus rectangle */
+QTableView::item:focus
+{
+    outline: none;
+}
+
+/* ---------------------------- HEADER ---------------------------- */
+
+QHeaderView
+{
+    background-color: #262933;
+}
+
+/* main header sections */
+QHeaderView::section
+{
+    background-color: #262933;
+    color: #d6d6d6;
+    padding: 4px;
+    border: 1px solid #404040;
+}
+
+/* hover */
+QHeaderView::section:hover
+{
+    background-color: #2f3340;
+}
+
+/* pressed (when resizing) */
+QHeaderView::section:pressed
+{
+    background-color: #eb7a02;
+    color: white;
+}
+
+/* remove ugly corner square */
+QTableCornerButton::section
+{
+    background-color: #262933;
+    border: 1px solid #404040;
+}
+
+/* ---------------------------- QComboBox ---------------------------- */
+QComboBox
+{
+    background-color: rgba(0,0,0,100);
+    color: white;
+    border: 1px solid #10111494;
+    border-radius: 2px;
+    padding: 3px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+QComboBox::drop-down
+{
+    border: none;
+    background: transparent;
+    width: 18px;
+}
+
+QComboBox::down-arrow {
+    image: url("icons:dropdown.svg");
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox:enabled:hover
+{
+    border: 1px solid #eb7a02;
+}
+
+
+QComboBox:focus
+{
+    border: 1px solid #eb7a02;
+}
+
+
+QComboBox QAbstractItemView
+{
+    background-color: #303340;
+    color: white;
+    border: 1px solid #404040;
+    selection-background-color: rgba(235,122,2,60);
+    selection-color: white;
+}
+
+QComboBox QAbstractItemView::item:hover
+{
+    border: 1px dashed #eb7a02;
+}
+
+QComboBox QAbstractItemView::item:selected
+{
+    border: 2px solid #eb7a02;
+}
+
+/* ---------------------------- QDockWidget ---------------------------- */
+QDockWidget::title {
+    background: rgba(0,0,0,100);
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+QDockWidget {
+    padding-right: 8px;
+    padding-top: 4px;
+	margin-right:10px;
+
 }
 
 /* ---------------------------- QToolButton ---------------------------- */
@@ -190,6 +309,12 @@ QToolButton:pressed
 {
 	background-color: qlineargradient(spread:repeat, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0,0,0,150), stop:0.2 rgba(0,0,0,0), stop:0.8 rgba(0,0,0,0), stop:1 rgba(0,0,0,150));
 	border: 1px solid #b36500;
+}
+
+/* ---------------------------- QScrollArea ---------------------------- */
+QScrollArea {
+    border: none;
+    background: transparent;
 }
 
 /* ---------------------------- QScrollBar ---------------------------- */
@@ -215,4 +340,29 @@ background-color: transparent;
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical
 {
 background-color: transparent;
+}
+
+QScrollBar:horizontal
+{
+    background-color: transparent;
+    height: 8px;
+}
+
+QScrollBar::handle:horizontal
+{
+    border-radius:4px;
+    background: #eb7a02;
+    min-width: 20px;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal
+{
+    background-color: transparent;
+}
+
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal
+{
+    background-color: transparent;
 }

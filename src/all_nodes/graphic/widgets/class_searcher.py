@@ -83,9 +83,9 @@ class ClassSearcher(QtWidgets.QWidget):
         Send a signal to request the creation of a node based on selection
         """
         if self.class_list.selectedItems():
-            GS.signals.node_creation_requested.emit(
-                self.mapToGlobal(QtCore.QPoint(0, 0)) - QtCore.QPoint(100, 50),
+            GS.signals.node_creation_requested_from_searcher.emit(
                 self.class_list.selectedItems()[0].text(),
+                self.mapToGlobal(QtCore.QPoint(0, 0)),
             )
         self.hide()
 

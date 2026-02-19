@@ -1,0 +1,42 @@
+# SCENE dataframes
+# ----------------
+# Description: Example scene to show how to read dataframes. Can also be used to test the viewer functionality for dataframes
+
+# Nodes section: overall list of nodes to be created
+nodes:
+- CreateTempFile_1:
+    class_name: CreateTempFile
+    x_pos: -2438
+    y_pos: -131
+- DownloadToTextFile_1:
+    class_name: DownloadToTextFile
+    x_pos: -2061
+    y_pos: -355
+- PolarsCsv_1:
+    class_name: PolarsCsv
+    x_pos: -1540
+    y_pos: -306
+- StrInput_2:
+    class_name: StrInput
+    node_attributes:
+      internal_str: https://drive.google.com/uc?id=1NW7EnwxuY6RpMIxOazRVibOYrZfMjsb2&export=download
+    x_pos: -2636
+    y_pos: -449
+- TextFileExtensionSelect_1:
+    class_name: TextFileExtensionSelect
+    node_attributes:
+      internal_str: .csv
+    x_pos: -2889
+    y_pos: -71
+
+# Connections section: connections to be done between nodes
+connections:
+- CreateTempFile_1.tempfile_path -> DownloadToTextFile_1.filename
+- CreateTempFile_1.tempfile_path -> PolarsCsv_1.in_csv_filepath
+- DownloadToTextFile_1.COMPLETED -> PolarsCsv_1.START
+- StrInput_2.out_str -> DownloadToTextFile_1.url
+- TextFileExtensionSelect_1.out_str -> CreateTempFile_1.suffix
+
+
+# Scene modified at: 2026-02-23 14:50:50.089773
+# Modified by: jaime.rvq

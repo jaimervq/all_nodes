@@ -621,7 +621,6 @@ class GeneralLogicNode:
             node.propagate_clear_cache()
 
     def clear_cache(self):
-        print("Clear cache for node {}".format(self.node_name))
         self.cached_attributes = dict()
 
     def get_input(self, attribute_name: str):
@@ -760,6 +759,17 @@ class GeneralLogicNode:
             return
 
         return self[attribute_name].get_value()
+
+    def get_attribute_value_as_string(self, attribute_name: str):
+        if attribute_name not in self.all_attribute_names:
+            LOGGER.error(
+                "Error! No valid attribute '{}' in the node {}".format(
+                    attribute_name, self.node_name
+                )
+            )
+            return
+
+        return self[attribute_name].get_value_as_string()
 
     def connect_attribute(
         self,
@@ -1058,7 +1068,11 @@ class GeneralLogicNode:
         # --------------- Execute connected
         if execute_connected:
             for node in self.out_connected_nodes():
-                if node.success not in [constants.FAILED, constants.ERROR]:
+                if node.success not in [
+                    constants.FAILED,
+                    constants.ERROR,
+                    constants.SUCCESSFUL,
+                ]:
                     LOGGER.info(
                         "From {}, launching execution of {}".format(
                             self.full_name, node.full_name
@@ -1301,6 +1315,12 @@ class GeneralLogicAttribute:
     # GET AND SET ----------------------
     def get_value(self):
         return self.value
+
+    def get_value_as_string(self):
+        if self.get_datatype_str() in ["list", "tuple", "set", "dict"]:
+            return pprint.pformat(self.value)
+        else:
+            return str(self.value)
 
     def is_empty(self) -> bool:
         """

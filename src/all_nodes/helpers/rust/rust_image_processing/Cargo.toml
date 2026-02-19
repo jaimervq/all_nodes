@@ -1,0 +1,13 @@
+[package]
+name = "rust_image_processing"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+bytemuck = "1.15"
+exr = "1.74"
+pyo3 = { version = "0.28", features = ["extension-module"] }
+rust_logging = { path = "../rust_logging" }

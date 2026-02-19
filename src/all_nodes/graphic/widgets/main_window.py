@@ -19,6 +19,8 @@ from all_nodes import constants
 from all_nodes.graphic import graphic_scene
 from all_nodes.graphic.widgets.attribute_editor import AttributeEditor
 from all_nodes.graphic.widgets.class_searcher import ClassSearcher
+from all_nodes.graphic.widgets.generic_dock import GenericDock
+from all_nodes.graphic.widgets.viewer import ViewerWidget
 from all_nodes.logic.global_signaler import GLOBAL_SIGNALER as GS
 from all_nodes.graphic.widgets.shortcuts_help import ShortcutsHelp
 from all_nodes.logic.class_registry import CLASS_REGISTRY as CR
@@ -52,12 +54,19 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         loader = QtUiTools.QUiLoader()
         self.ui = loader.load(file, self)
         self.setCentralWidget(self.ui)
+        self.layout().setContentsMargins(20, 20, 20, 20)
 
-        # DOCK
-        self.attr_editr_dock = QtWidgets.QDockWidget()
-        self.attr_editr_dock.setWindowTitle("Attribute Editor")
+        # ATTRIBUTE EDITOR
         self.attr_editor = AttributeEditor()
-        self.attr_editr_dock.setWidget(self.attr_editor)
+        self.attr_editr_dock = GenericDock(
+            parent=None, widget=self.attr_editor, title="Attributes"
+        )
+
+        # VIEWER
+        self.viewer_dock = GenericDock(
+            parent=None, widget=ViewerWidget(self), title="Viewer"
+        )
+        self.viewer_dock.hide()
 
         # STYLE
         self.setMinimumWidth(850)
@@ -129,7 +138,9 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         # Global signaler
         GS.signals.dropped_node.connect(self.add_node_to_current)
-        GS.signals.node_creation_requested.connect(self.add_node_to_current)
+        GS.signals.node_creation_requested_from_searcher.connect(
+            self.add_node_to_current
+        )
 
         GS.signals.tab_names_refresh_requested.connect(self.refresh_tab_names)
 
@@ -142,6 +153,10 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         GS.signals.attribute_editor_remove_node_requested.connect(
             self.remove_node_in_attribute_editor_by_uuid
         )
+
+        GS.signals.viewer_node_changed.connect(self.viewer_dock.show)
+        GS.signals.viewer_node_changed.connect(self.set_node_in_viewer_by_uuid)
+        GS.signals.viewer_node_changed.connect(self.toggle_viewer)
 
         GS.signals.context_expansion_requested.connect(self.expand_context)
 
@@ -218,10 +233,14 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         add_scenes_recursive(all_scenes, scene_menu)
 
         window_menu = menu.addMenu("&Window")
-        show_attr_editor = QtWidgets.QAction("Show attribute editor", self)
+        show_attr_editor = QtWidgets.QAction("Attribute editor", self)
         show_attr_editor.setIcon(QtGui.QIcon("icons:eye.svg"))
         show_attr_editor.triggered.connect(self.attr_editr_dock.show)
         window_menu.addAction(show_attr_editor)
+        show_viewer = QtWidgets.QAction("Viewer", self)
+        show_viewer.setIcon(QtGui.QIcon("icons:eye.svg"))
+        show_viewer.triggered.connect(self.viewer_dock.show)
+        window_menu.addAction(show_viewer)
 
         help_menu = menu.addMenu("&Help")
         shortcuts_action = QtWidgets.QWidgetAction(help_menu)
@@ -234,6 +253,8 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         )
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.attr_editr_dock)
         self.attr_editr_dock.hide()
+
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.viewer_dock)
 
     def populate_annotations(self):
         annotation_items_folder = QtCore.QDir.searchPaths("graphics")[0]
@@ -293,17 +314,13 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                     class_item.setText(0, name)
                     class_item.setToolTip(
                         0,
-                        "<h2>Class:&nbsp;<b>{}</b></h2><p style='white-space:pre'>{}".format(
-                            name, module_full_path
-                        ),
+                        f"<h2>Class:&nbsp;<b>{name}</b></h2><p style='white-space:pre'>{cls.HELP + '<br>' if cls.HELP else ''}{module_full_path}",
                     )
                     class_item.setData(0, QtCore.Qt.UserRole, name)
                     class_item.setData(
                         0, QtCore.Qt.UserRole + 1, constants.GRAPHIC_NODE
                     )
-                    if (
-                        hasattr(cls, "NICE_NAME") and cls.NICE_NAME
-                    ):  # TODO inheritance not working here?
+                    if cls.NICE_NAME:
                         class_item.setText(0, cls.NICE_NAME)
 
                     icon = QtGui.QIcon(cls.ICON_PATH)
@@ -419,6 +436,12 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         """
         self.ui.tabWidget.clear()
 
+        # Clear attr editor
+        self.attr_editor.clear_all()
+
+        # Emit signal
+        GS.signals.workspace_cleared.emit()
+
     def add_scene(self, context=None):
         """
         Add a new graphic scene to the widget (in a new tab).
@@ -438,7 +461,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         graphics_scene = graphic_scene.CustomScene(context)
         graphics_view.setScene(graphics_scene)
 
-        graphics_scene.setSceneRect(-20000, -20000, 40000, 40000)
         graphics_scene.setParent(graphics_view)
         GS.signals.main_screen_feedback.connect(graphics_view.show_feedback)
 
@@ -507,14 +529,13 @@ class AllNodesWindow(QtWidgets.QMainWindow):
                 if n.uuid == uuid:
                     return n
 
-    def add_node_to_current(self, pos, class_name=None):
+    def add_node_to_current(self, class_name=None, position=None):
         """
         Add a new node to the current graphic scene.
 
         Args:
-            x (int): horizontal coord t (in view coords) add the node to
-            y (int): vertical coord t (in view coords) add the node to
             class_name (str, optional): class name of the node to instantiate
+            position (QtCore.QPoint, optional): position to place the node
         """
         current_gw = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
         current_scene = current_gw.scene()
@@ -533,18 +554,15 @@ class AllNodesWindow(QtWidgets.QMainWindow):
             item_type = str(selected.data(0, QtCore.Qt.UserRole + 1)).strip()
 
         if item_type == constants.GRAPHIC_NODE:
-            current_scene.add_graphic_node_by_class_name(
-                node_class_name,
-                current_gw.mapToScene(current_gw.mapFromGlobal(pos)).x(),
-                current_gw.mapToScene(current_gw.mapFromGlobal(pos)).y(),
-            )
+            current_scene.add_graphic_node_by_class_name(node_class_name, position)
 
         elif item_type == constants.GRAPHIC_ANNOTATION:
-            current_scene.add_annotation_by_type(
-                node_class_name,
-                current_gw.mapToScene(current_gw.mapFromGlobal(pos)).x(),
-                current_gw.mapToScene(current_gw.mapFromGlobal(pos)).y(),
-            )
+            if position is None:
+                current_scene.add_annotation_by_type(node_class_name)
+            else:
+                current_scene.add_annotation_by_type(
+                    node_class_name, position.x(), position.y()
+                )
 
     # ATTRIBUTE EDITOR ----------------------
     def refresh_node_in_attribute_editor_by_uuid(self, uuid):
@@ -577,6 +595,17 @@ class AllNodesWindow(QtWidgets.QMainWindow):
         n = self.get_node_by_uuid(uuid)
         self.attr_editor.add_node_panel(n)
         self.attr_editr_dock.show()
+
+    # VIEWER ----------------------
+    def set_node_in_viewer_by_uuid(self, uuid):
+        n = self.get_node_by_uuid(uuid)
+        self.viewer_dock.widget.set_node(n)
+
+    def toggle_viewer(self, uuid):
+        for index in range(self.ui.tabWidget.count()):
+            gw = self.ui.tabWidget.widget(index)
+            scene = gw.scene()
+            scene.set_viewed_node(uuid)
 
     # SAVE AND LOAD ----------------------
     def save_scene(self):
@@ -617,9 +646,6 @@ class AllNodesWindow(QtWidgets.QMainWindow):
 
         # Clear scenes
         self.clear_tabs()
-
-        # Clear attr editor
-        self.attr_editor.clear_all()
 
         # Add scene and load
         self.add_scene()

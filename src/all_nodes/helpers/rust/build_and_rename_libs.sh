@@ -1,16 +1,27 @@
 #!/bin/bash
+set -e
 
-# Build libs
-echo Building...
+OUT=/usr/src/out
+mkdir -p "$OUT"
 
-cargo build -q --manifest-path=./rust_noise/Cargo.toml  --release
-cp "/usr/src/rust_noise/target/release/librust_noise.so" "/usr/src/out/rust_noise.so"
+for d in rust_*; do
+    if [ -f "$d/Cargo.toml" ]; then
+        echo "Building $d"
 
-cargo build -q --manifest-path=./rust_regex/Cargo.toml  --release
-cp "/usr/src/rust_regex/target/release/librust_regex.so" "/usr/src/out/rust_regex.so"
+        CRATE_NAME=$(grep '^name' "$d/Cargo.toml" | head -n1 | cut -d '"' -f2)
 
-cargo build -q --manifest-path=./rust_requests/Cargo.toml  --release
-cp "/usr/src/rust_requests/target/release/librust_requests.so" "/usr/src/out/rust_requests.so"
+        cargo build -q --manifest-path="$d/Cargo.toml" --release
 
-# END
-printf "Built and renamed rust libs (Linux)\n"
+        TARGET=$(find $d/target/release -name "*${CRATE_NAME}*.so" | head -n1)
+
+        if [ -f "$TARGET" ]; then
+            cp "$TARGET" "$OUT/${CRATE_NAME}.so"
+            echo "    Built ${CRATE_NAME}.so"
+        else
+            echo "WARNING: missing ${CRATE_NAME}.so"
+        fi
+    fi
+done
+
+echo
+echo "Built and renamed rust libs (Linux)"
